@@ -1,0 +1,34 @@
+From 8b93677a64a776ff0557b2698b886f264fe940f7 Mon Sep 17 00:00:00 2001
+From: Evan Laird <evanlaird@google.com>
+Date: Tue, 23 Mar 2021 10:38:01 -0400
+Subject: [PATCH 27/28] Add null check to batterymeterview in case the percent
+ view becomes null
+
+Seems like this can only happen if we have a successful battery reading and
+then immediately the conditions change causing us to remove the precent
+view.
+
+Test: atest SystemUITests
+Fixes: 180019511
+Change-Id: I4bf8508a9cef18ade62863b07086254e39897059
+---
+ .../SystemUI/src/com/android/systemui/BatteryMeterView.java    | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/BatteryMeterView.java b/packages/SystemUI/src/com/android/systemui/BatteryMeterView.java
+index 681b09d572d0..6c03cf20d205 100644
+--- a/packages/SystemUI/src/com/android/systemui/BatteryMeterView.java
++++ b/packages/SystemUI/src/com/android/systemui/BatteryMeterView.java
+@@ -414,6 +414,9 @@ public class BatteryMeterView extends LinearLayout implements
+     }
+ 
+     private void setPercentTextAtCurrentLevel() {
++        if (mBatteryPercentView == null) {
++            return;
++        }
+         mBatteryPercentView.setText(
+                 NumberFormat.getPercentInstance().format(mLevel / 100f));
+         setContentDescription(
+-- 
+2.30.2
+

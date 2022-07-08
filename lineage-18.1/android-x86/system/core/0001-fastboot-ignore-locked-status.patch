@@ -1,0 +1,30 @@
+From dcb8174782f498ca23edda4d54c92c9a1583834a Mon Sep 17 00:00:00 2001
+From: Build Server <build@localhost>
+Date: Thu, 30 Jun 2022 07:51:14 +0000
+Subject: [PATCH 01/26] fastboot: ignore locked status
+
+---
+ fastboot/device/utility.cpp | 7 +------
+ 1 file changed, 1 insertion(+), 6 deletions(-)
+
+diff --git a/fastboot/device/utility.cpp b/fastboot/device/utility.cpp
+index 5e2088f23..e1264f539 100644
+--- a/fastboot/device/utility.cpp
++++ b/fastboot/device/utility.cpp
+@@ -201,12 +201,7 @@ std::vector<std::string> ListPartitions(FastbootDevice* device) {
+ }
+ 
+ bool GetDeviceLockStatus() {
+-    std::string cmdline;
+-    // Return lock status true if unable to read kernel command line.
+-    if (!android::base::ReadFileToString("/proc/cmdline", &cmdline)) {
+-        return true;
+-    }
+-    return cmdline.find("androidboot.verifiedbootstate=green") != std::string::npos;
++    return false;
+ }
+ 
+ bool UpdateAllPartitionMetadata(FastbootDevice* device, const std::string& super_name,
+-- 
+2.30.2
+

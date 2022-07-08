@@ -1,0 +1,32 @@
+From 73b93ca96995cf6eb52968a050edaef410a5216c Mon Sep 17 00:00:00 2001
+From: Build Server <build@localhost>
+Date: Wed, 4 May 2022 10:02:20 +0000
+Subject: [PATCH] skip updating recovery
+
+---
+ tools/releasetools/common.py | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/tools/releasetools/common.py b/tools/releasetools/common.py
+index c5758c7f04..eef5b8f882 100644
+--- a/tools/releasetools/common.py
++++ b/tools/releasetools/common.py
+@@ -3106,6 +3106,7 @@ def MakeRecoveryPatch(input_dir, output_sink, recovery_img, boot_img,
+     # create a symlink from /vendor to /system/vendor.
+ 
+     sh = """#!/vendor/bin/sh
++exit 0
+ if ! applypatch --check %(type)s:%(device)s:%(size)d:%(sha1)s; then
+   applypatch \\
+           --flash /vendor/etc/recovery.img \\
+@@ -3121,6 +3122,7 @@ fi
+        'size': recovery_img.size}
+   else:
+     sh = """#!/vendor/bin/sh
++exit 0
+ if ! applypatch --check %(recovery_type)s:%(recovery_device)s:%(recovery_size)d:%(recovery_sha1)s; then
+   applypatch %(bonus_args)s \\
+           --patch /vendor/recovery-from-boot.p \\
+-- 
+2.30.2
+

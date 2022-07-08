@@ -1,0 +1,29 @@
+From 93035bec7ef9b4118c7c5cd29f74685c55bb95e2 Mon Sep 17 00:00:00 2001
+From: Arthur Ishiguro <arthuri@google.com>
+Date: Sat, 13 Nov 2021 00:16:49 +0000
+Subject: [PATCH 16/17] Reconnect to all hidl sensors HALs
+
+Fixes: 206162862
+Test: Restart sensors HAL and verify resume
+Change-Id: Iba93246a30565783a0634a9a0cd966a7ccf841d3
+(cherry picked from commit 4b26b7fb4604ded2ec4e2bb3e4f40a76c48c6fcf)
+---
+ services/sensorservice/SensorDevice.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/services/sensorservice/SensorDevice.cpp b/services/sensorservice/SensorDevice.cpp
+index e355594176..3dfb39786a 100644
+--- a/services/sensorservice/SensorDevice.cpp
++++ b/services/sensorservice/SensorDevice.cpp
+@@ -325,7 +325,7 @@ void SensorDevice::reconnect() {
+     mActivationCount.clear();
+     mSensorList.clear();
+ 
+-    if (connectHidlServiceV2_0() == HalConnectionStatus::CONNECTED) {
++    if (connectHidlService()) {
+         initializeSensorList();
+ 
+         if (sensorHandlesChanged(previousSensorList, mSensorList)) {
+-- 
+2.30.2
+

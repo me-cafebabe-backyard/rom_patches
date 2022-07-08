@@ -1,0 +1,27 @@
+From 46ea6e53e95ac2ea2e6bc57a8f7da73052177b95 Mon Sep 17 00:00:00 2001
+From: Build Server <build@localhost>
+Date: Thu, 30 Jun 2022 14:47:03 +0000
+Subject: [PATCH] Fix x86 kernel compilation
+
+---
+ build/tasks/kernel.mk | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/build/tasks/kernel.mk b/build/tasks/kernel.mk
+index 97aa37de..8dedc3fb 100644
+--- a/build/tasks/kernel.mk
++++ b/build/tasks/kernel.mk
+@@ -404,10 +404,6 @@ $(KERNEL_CONFIG): $(KERNEL_DEFCONFIG_SRC) $(KERNEL_ADDITIONAL_CONFIG_OUT)
+ $(TARGET_PREBUILT_INT_KERNEL): $(KERNEL_CONFIG) $(DEPMOD) $(DTC)
+ 	@echo "Building Kernel Image ($(BOARD_KERNEL_IMAGE_NAME))"
+ 	$(call make-kernel-target,$(BOARD_KERNEL_IMAGE_NAME))
+-	$(hide) if grep -q '^CONFIG_OF=y' $(KERNEL_CONFIG); then \
+-			echo "Building DTBs"; \
+-			$(call make-kernel-target,dtbs); \
+-		fi
+ 	$(hide) if grep -q '=m' $(KERNEL_CONFIG); then \
+ 			echo "Building Kernel Modules"; \
+ 			$(call make-kernel-target,modules) || exit "$$?"; \
+-- 
+2.30.2
+

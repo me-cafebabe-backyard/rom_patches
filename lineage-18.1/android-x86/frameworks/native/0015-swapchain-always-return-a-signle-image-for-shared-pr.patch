@@ -1,0 +1,35 @@
+From be537b78c05b52a03c090b6f55aa1ad7a07f0661 Mon Sep 17 00:00:00 2001
+From: Ady Abraham <adyabr@google.com>
+Date: Thu, 26 Aug 2021 13:12:30 -0700
+Subject: [PATCH 15/17] swapchain: always return a signle image for shared
+ presentation mode
+
+cherry-pick of Android S commit ef14146f7de705c2facfc8c470ea100503dbdb57
+
+Bug: 197790618
+Test: atest CtsDeqpTestCases -- --module-arg CtsDeqpTestCases:include-filter:dEQP-VK.wsi.android.*
+Change-Id: If3c086479dfc03af31f503216294eba4fba989de
+---
+ vulkan/libvulkan/swapchain.cpp | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/vulkan/libvulkan/swapchain.cpp b/vulkan/libvulkan/swapchain.cpp
+index 043b5656e6..1cf1998fec 100644
+--- a/vulkan/libvulkan/swapchain.cpp
++++ b/vulkan/libvulkan/swapchain.cpp
+@@ -1248,6 +1248,12 @@ VkResult CreateSwapchainKHR(VkDevice device,
+         return VK_ERROR_SURFACE_LOST_KHR;
+     }
+ 
++    // In shared mode the num_images must be one regardless of how many
++    // buffers were allocated for the buffer queue.
++    if (swapchain_image_usage & VK_SWAPCHAIN_IMAGE_USAGE_SHARED_BIT_ANDROID) {
++        num_images = 1;
++    }
++
+     int32_t legacy_usage = 0;
+     if (dispatch.GetSwapchainGrallocUsage2ANDROID) {
+         uint64_t consumer_usage, producer_usage;
+-- 
+2.30.2
+

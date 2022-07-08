@@ -1,0 +1,57 @@
+From a83364b0fe7cdea316c0c5434a1d0bba279fc894 Mon Sep 17 00:00:00 2001
+From: Build Server <build@localhost>
+Date: Thu, 30 Jun 2022 07:55:23 +0000
+Subject: [PATCH 23/26] Revert "init: set ro.boot.hardware to product name"
+
+This reverts commit 9bd565d733e626435e78b348cea551ba9be91e61.
+---
+ init/property_service.cpp | 16 +---------------
+ 1 file changed, 1 insertion(+), 15 deletions(-)
+
+diff --git a/init/property_service.cpp b/init/property_service.cpp
+index 5b7d770b9..c0f7c5d35 100644
+--- a/init/property_service.cpp
++++ b/init/property_service.cpp
+@@ -59,7 +59,6 @@
+ #include <selinux/android.h>
+ #include <selinux/label.h>
+ #include <selinux/selinux.h>
+-#include <sys/system_properties.h>
+ 
+ #include "debug_ramdisk.h"
+ #include "epoll.h"
+@@ -77,7 +76,6 @@ using namespace std::literals;
+ 
+ using android::base::GetProperty;
+ using android::base::ReadFileToString;
+-using android::base::SetProperty;
+ using android::base::Split;
+ using android::base::StartsWith;
+ using android::base::StringPrintf;
+@@ -998,22 +996,10 @@ static void ExportKernelBootProps() {
+         { "ro.boot.mode",       "ro.bootmode",   "unknown", },
+         { "ro.boot.baseband",   "ro.baseband",   "unknown", },
+         { "ro.boot.bootloader", "ro.bootloader", "unknown", },
+-        { "ro.boot.hardware",   "ro.hardware",   UNSET, },
++        { "ro.boot.hardware",   "ro.hardware",   "unknown", },
+         { "ro.boot.revision",   "ro.revision",   "0", },
+             // clang-format on
+     };
+-    const char *hardware = prop_map[4].src_prop;
+-    if (GetProperty(hardware, UNSET).empty()) {
+-        char line[PROP_NAME_MAX + PROP_VALUE_MAX + 2], value[PROP_VALUE_MAX];
+-        auto f = fopen("/system/build.prop", "r");
+-        while (fgets(line, sizeof(line), f) == line) {
+-            if (sscanf(line, "ro.product.system.name=%s", value) > 0) {
+-                InitPropertySet(hardware, value);
+-                break;
+-            }
+-        }
+-        fclose(f);
+-    }
+     for (const auto& prop : prop_map) {
+         std::string value = GetProperty(prop.src_prop, prop.default_value);
+         if (value != UNSET) InitPropertySet(prop.dst_prop, value);
+-- 
+2.30.2
+

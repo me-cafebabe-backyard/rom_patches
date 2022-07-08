@@ -1,0 +1,35 @@
+From 0be1368b2fde5128a2f2cd44568b2a6bb8b42002 Mon Sep 17 00:00:00 2001
+From: Bruno Martins <bgcngm@gmail.com>
+Date: Sun, 22 Sep 2019 13:17:37 +0100
+Subject: [PATCH 1/6] audio: Skip libhdmipassthru on OSS builds
+
+Change-Id: I23e25aa8e6ae63fcb40a0a1bd3bc68565527d176
+---
+ hal/audio_extn/Android.mk | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/hal/audio_extn/Android.mk b/hal/audio_extn/Android.mk
+index 65e0d3ea0e..fc07feb22f 100644
+--- a/hal/audio_extn/Android.mk
++++ b/hal/audio_extn/Android.mk
+@@ -565,6 +565,8 @@ include $(BUILD_SHARED_LIBRARY)
+ #-------------------------------------------
+ #            Build HDMI PASSTHROUGH
+ #-------------------------------------------
++ifneq ($(QCPATH),)
++
+ include $(CLEAR_VARS)
+ 
+ LOCAL_MODULE := libhdmipassthru
+@@ -634,6 +636,8 @@ LOCAL_SANITIZE := integer_overflow
+ endif
+ include $(BUILD_SHARED_LIBRARY)
+ 
++endif
++
+ #-------------------------------------------
+ #            Build BATTERY_LISTENER
+ #-------------------------------------------
+-- 
+2.30.2
+

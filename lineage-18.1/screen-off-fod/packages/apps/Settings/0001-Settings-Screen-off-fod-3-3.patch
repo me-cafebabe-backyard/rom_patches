@@ -1,0 +1,130 @@
+From d31076020c17b6c472cb79f49a42bfbddf556dab Mon Sep 17 00:00:00 2001
+From: TheScarastic <warabhishek@gmail.com>
+Date: Thu, 9 Jul 2020 12:28:51 +0000
+Subject: [PATCH] Settings: Screen off fod [3/3]
+
+Change-Id: I7d443192a1929630d9dbe409f23c9aaff0e4c542
+---
+ res/values/cm_strings.xml                     |  4 ++
+ res/values/lineage_config.xml                 |  3 ++
+ res/xml/screen_lock_settings.xml              |  7 +++
+ .../screenlock/ScreenLockSettings.java        |  1 +
+ .../ScreenOffFodPreferenceController.java     | 53 +++++++++++++++++++
+ 5 files changed, 68 insertions(+)
+ create mode 100644 src/com/android/settings/security/screenlock/ScreenOffFodPreferenceController.java
+
+diff --git a/res/values/cm_strings.xml b/res/values/cm_strings.xml
+index ab38dec706..4837c85de2 100644
+--- a/res/values/cm_strings.xml
++++ b/res/values/cm_strings.xml
+@@ -175,4 +175,8 @@
+ 
+     <!-- Display settings screen, peak refresh rate settings summary [CHAR LIMIT=NONE] -->
+     <string name="peak_refresh_rate_summary_custom">Automatically raises the refresh rate from 60 to %1$d Hz for some content. Increases battery usage.</string>
++
++    <!-- Screen off fod -->
++    <string name="fod_gesture_title">Screen off fingerprint</string>
++    <string name="fod_gesture_summary">Allows unlocking the device without having to wake up the screen first</string>
+ </resources>
+diff --git a/res/values/lineage_config.xml b/res/values/lineage_config.xml
+index a44a28d805..4135df74a0 100644
+--- a/res/values/lineage_config.xml
++++ b/res/values/lineage_config.xml
+@@ -34,4 +34,7 @@
+ 
+     <!-- Whether to show peak refresh rate in display settings -->
+     <bool name="config_show_peak_refresh_rate_switch">false</bool>
++
++    <!-- Screen off FOD -->
++    <bool name="config_supportScreenOffFod">false</bool>
+ </resources>
+diff --git a/res/xml/screen_lock_settings.xml b/res/xml/screen_lock_settings.xml
+index 7feea02afa..6a128a8c04 100644
+--- a/res/xml/screen_lock_settings.xml
++++ b/res/xml/screen_lock_settings.xml
+@@ -54,4 +54,11 @@
+         android:title="@string/unlock_scramble_pin_layout_title"
+         android:summary="@string/unlock_scramble_pin_layout_summary" />
+ 
++    <lineageos.preference.LineageSystemSettingSwitchPreference
++        android:key="fod_gesture"
++        android:title="@string/fod_gesture_title"
++        android:summary="@string/fod_gesture_summary"
++        android:defaultValue="false"
++        settings:controller="com.android.settings.security.screenlock.ScreenOffFodPreferenceController" />
++
+ </PreferenceScreen>
+diff --git a/src/com/android/settings/security/screenlock/ScreenLockSettings.java b/src/com/android/settings/security/screenlock/ScreenLockSettings.java
+index a3e24af890..1d43328b29 100644
+--- a/src/com/android/settings/security/screenlock/ScreenLockSettings.java
++++ b/src/com/android/settings/security/screenlock/ScreenLockSettings.java
+@@ -82,6 +82,7 @@ public class ScreenLockSettings extends DashboardFragment
+         controllers.add(new PinScramblePreferenceController(
+                 context, MY_USER_ID, lockPatternUtils));
+         controllers.add(new OwnerInfoPreferenceController(context, parent));
++        controllers.add(new ScreenOffFodPreferenceController(context));
+         return controllers;
+     }
+ 
+diff --git a/src/com/android/settings/security/screenlock/ScreenOffFodPreferenceController.java b/src/com/android/settings/security/screenlock/ScreenOffFodPreferenceController.java
+new file mode 100644
+index 0000000000..f774d14114
+--- /dev/null
++++ b/src/com/android/settings/security/screenlock/ScreenOffFodPreferenceController.java
+@@ -0,0 +1,53 @@
++/*
++ * Copyright (C) 2017 The Android Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package com.android.settings.security.screenlock;
++
++import android.content.Context;
++import android.content.pm.PackageManager;
++import android.hardware.fingerprint.FingerprintManager;
++
++import com.android.settings.R;
++import com.android.settings.Utils;
++import com.android.settings.core.BasePreferenceController;
++
++import lineageos.app.LineageContextConstants;
++
++public class ScreenOffFodPreferenceController extends BasePreferenceController {
++    private static final String KEY_FOD_GESTURE = "fod_gesture";
++    private Context mContext;
++
++    private FingerprintManager fpm;
++    private PackageManager packageManager;
++
++    public ScreenOffFodPreferenceController(Context context) {
++        super(context, KEY_FOD_GESTURE);
++        mContext = context;
++
++        fpm = Utils.getFingerprintManagerOrNull(context);
++        packageManager = context.getPackageManager();
++    }
++
++    @Override
++    public int getAvailabilityStatus() {
++        if (fpm != null && fpm.isHardwareDetected() && fpm.hasEnrolledFingerprints()
++                && packageManager.hasSystemFeature(LineageContextConstants.Features.FOD)
++                && mContext.getResources().getBoolean(R.bool.config_supportScreenOffFod)) {
++            return AVAILABLE;
++        }
++        return UNSUPPORTED_ON_DEVICE;
++    }
++}
+-- 
+2.30.2
+

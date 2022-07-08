@@ -1,0 +1,61 @@
+From 3708cee3d7b8ce895400b2ba7813a6c63c92f443 Mon Sep 17 00:00:00 2001
+From: me-cafebabe <me_cafebabe@hotmail.com>
+Date: Mon, 25 Apr 2022 23:53:47 +0800
+Subject: [PATCH 6/6] hal: msm8974: Add support for msm8917-sku5-snd-card
+
+Also fix indents for msm8920 codes
+---
+ hal/msm8974/hw_info.c  | 16 +++++++++++++---
+ hal/msm8974/platform.c |  2 ++
+ 2 files changed, 15 insertions(+), 3 deletions(-)
+
+diff --git a/hal/msm8974/hw_info.c b/hal/msm8974/hw_info.c
+index 46e0888cf3..dea3feb979 100644
+--- a/hal/msm8974/hw_info.c
++++ b/hal/msm8974/hw_info.c
+@@ -816,6 +816,13 @@ static void update_hardware_info_sdm439(struct hardware_info *hw_info, const cha
+     }
+ }
+ 
++static void update_hardware_info_msm8917(struct hardware_info *hw_info, const char *snd_card_name)
++{
++	if (!strcmp(snd_card_name, "msm8917-sku5-snd-card")) {
++		strlcpy(hw_info->name, "msm8917", sizeof(hw_info->name));
++	}
++}
++
+ static void update_hardware_info_msm8920(struct hardware_info *hw_info, const char *snd_card_name)
+ {
+ 	if (!strcmp(snd_card_name, "msm8920-sku7-snd-card")) {
+@@ -948,9 +955,12 @@ void *hw_info_init(const char *snd_card_name)
+     } else if(strstr(snd_card_name, "sdm439")) {
+         ALOGV("SDM439 - variant soundcard");
+         update_hardware_info_sdm439(hw_info, snd_card_name);
+-	} else if (strstr(snd_card_name, "msm8920")) {
+-		ALOGV("MSM8920 - variant soundcard");
+-		update_hardware_info_msm8920(hw_info, snd_card_name);
++    } else if (strstr(snd_card_name, "msm8917")) {
++        ALOGV("MSM8917 - variant soundcard");
++        update_hardware_info_msm8917(hw_info, snd_card_name);
++    } else if (strstr(snd_card_name, "msm8920")) {
++        ALOGV("MSM8920 - variant soundcard");
++        update_hardware_info_msm8920(hw_info, snd_card_name);
+     } else if (strstr(snd_card_name, "msm8937")) {
+         ALOGV("MSM8937 - variant soundcard");
+         update_hardware_info_msm8937(hw_info, snd_card_name);
+diff --git a/hal/msm8974/platform.c b/hal/msm8974/platform.c
+index d70d35a003..185f3363c7 100644
+--- a/hal/msm8974/platform.c
++++ b/hal/msm8974/platform.c
+@@ -1829,6 +1829,8 @@ static void update_codec_type_and_interface(struct platform_data * my_data,
+                    sizeof("holi-mtp-snd-card")) ||
+          !strncmp(snd_card_name, "holi-qrd-snd-card",
+                    sizeof("holi-qrd-snd-card")) ||
++         !strncmp(snd_card_name, "msm8917-sku5-snd-card",
++                   sizeof("msm8917-sku5-snd-card")) ||
+          !strncmp(snd_card_name, "msm8920-sku7-snd-card",
+                    sizeof("msm8920-sku7-snd-card")) ||
+          !strncmp(snd_card_name, "msm8937-snd-card-mtp",
+-- 
+2.30.2
+
