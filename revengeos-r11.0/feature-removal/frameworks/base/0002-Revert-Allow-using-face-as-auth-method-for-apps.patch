@@ -1,0 +1,480 @@
+From 3d472eb805dfc5f45b7887b0d408e94d76dc96cb Mon Sep 17 00:00:00 2001
+From: anonymous <anonymous>
+Date: Tue, 16 Nov 2021 02:33:45 +0000
+Subject: [PATCH 2/9] Revert "Allow using face as auth method for apps"
+
+This reverts commit f68b2ad8a6b5631c82399171aa8a1de81e6b3627.
+---
+ .../IBiometricServiceReceiverInternal.aidl    |   2 -
+ .../res/layout/auth_biometric_contents.xml    |  10 --
+ packages/SystemUI/res/values/strings.xml      |   3 -
+ .../biometrics/AuthBiometricView.java         |   7 --
+ .../biometrics/AuthContainerView.java         |   3 -
+ .../systemui/biometrics/AuthController.java   |  13 --
+ .../biometrics/AuthDialogCallback.java        |   5 -
+ .../android/systemui/biometrics/Utils.java    |  18 ---
+ .../server/biometrics/AuthService.java        |   2 +-
+ .../server/biometrics/BiometricService.java   | 113 ++----------------
+ .../com/android/server/biometrics/Utils.java  |  14 ---
+ .../biometrics/face/CustomFaceService.java    |   8 +-
+ 12 files changed, 15 insertions(+), 183 deletions(-)
+
+diff --git a/core/java/android/hardware/biometrics/IBiometricServiceReceiverInternal.aidl b/core/java/android/hardware/biometrics/IBiometricServiceReceiverInternal.aidl
+index c58ba0efcc13..e57abd548057 100644
+--- a/core/java/android/hardware/biometrics/IBiometricServiceReceiverInternal.aidl
++++ b/core/java/android/hardware/biometrics/IBiometricServiceReceiverInternal.aidl
+@@ -42,8 +42,6 @@ oneway interface IBiometricServiceReceiverInternal {
+     void onTryAgainPressed();
+     // Notifies that the user has pressed the "use password" button on SystemUI
+     void onDeviceCredentialPressed();
+-    // Notifies that the user has pressed the "use face" button on SystemUI
+-    void onUseFacePressed();
+     // Notifies the client that an internal event, e.g. back button has occurred.
+     void onSystemEvent(int event);
+ }
+diff --git a/packages/SystemUI/res/layout/auth_biometric_contents.xml b/packages/SystemUI/res/layout/auth_biometric_contents.xml
+index b80aa480ccb2..a87c7b3fa927 100644
+--- a/packages/SystemUI/res/layout/auth_biometric_contents.xml
++++ b/packages/SystemUI/res/layout/auth_biometric_contents.xml
+@@ -92,16 +92,6 @@
+             android:maxWidth="@dimen/biometric_dialog_button_positive_max_width"
+             android:text="@string/biometric_dialog_confirm"
+             android:visibility="gone"/>
+-        <!-- Use Face Button -->
+-        <Button android:id="@+id/button_use_face"
+-            android:layout_width="wrap_content"
+-            android:layout_height="wrap_content"
+-            style="@*android:style/Widget.DeviceDefault.Button.Colored"
+-            android:layout_gravity="center_vertical"
+-            android:ellipsize="end"
+-            android:maxLines="2"
+-            android:maxWidth="@dimen/biometric_dialog_button_positive_max_width"
+-            android:text="@string/biometric_dialog_button_use_face"/>
+         <!-- Try Again Button -->
+         <Button android:id="@+id/button_try_again"
+             android:layout_width="wrap_content"
+diff --git a/packages/SystemUI/res/values/strings.xml b/packages/SystemUI/res/values/strings.xml
+index 241b38a5bb6d..74c132ba4b0c 100644
+--- a/packages/SystemUI/res/values/strings.xml
++++ b/packages/SystemUI/res/values/strings.xml
+@@ -2891,7 +2891,4 @@
+     <!-- Text to display in a notification when ACTION_BATTERY_CHANGED.EXTRA_PRESENT field is false
+     [CHAR LIMIT=NONE] -->
+     <string name="battery_state_unknown_notification_text">Tap for more information</string>
+-
+-     <!-- Biometric Dialog - Use Face -->
+-    <string name="biometric_dialog_button_use_face">Use Face</string>
+ </resources>
+diff --git a/packages/SystemUI/src/com/android/systemui/biometrics/AuthBiometricView.java b/packages/SystemUI/src/com/android/systemui/biometrics/AuthBiometricView.java
+index a4f69ac80352..f9c6d32d1d19 100644
+--- a/packages/SystemUI/src/com/android/systemui/biometrics/AuthBiometricView.java
++++ b/packages/SystemUI/src/com/android/systemui/biometrics/AuthBiometricView.java
+@@ -98,7 +98,6 @@ public abstract class AuthBiometricView extends LinearLayout {
+         int ACTION_BUTTON_TRY_AGAIN = 4;
+         int ACTION_ERROR = 5;
+         int ACTION_USE_DEVICE_CREDENTIAL = 6;
+-        int ACTION_USE_FACE = 7;
+ 
+         /**
+          * When an action has occurred. The caller will only invoke this when the callback should
+@@ -124,10 +123,6 @@ public abstract class AuthBiometricView extends LinearLayout {
+             return mBiometricView.findViewById(R.id.button_try_again);
+         }
+ 
+-        public Button getUseFaceButton() {
+-            return mBiometricView.findViewById(R.id.button_use_face);
+-        }
+-
+         public TextView getTitleView() {
+             return mBiometricView.findViewById(R.id.title);
+         }
+@@ -178,7 +173,6 @@ public abstract class AuthBiometricView extends LinearLayout {
+     @VisibleForTesting Button mNegativeButton;
+     @VisibleForTesting Button mPositiveButton;
+     @VisibleForTesting Button mTryAgainButton;
+-    Button mUseFaceButton;
+ 
+     // Measurements when biometric view is showing text, buttons, etc.
+     private int mMediumHeight;
+@@ -597,7 +591,6 @@ public abstract class AuthBiometricView extends LinearLayout {
+         mNegativeButton = mInjector.getNegativeButton();
+         mPositiveButton = mInjector.getPositiveButton();
+         mTryAgainButton = mInjector.getTryAgainButton();
+-        mUseFaceButton = mInjector.getUseFaceButton();
+ 
+         mNegativeButton.setOnClickListener((view) -> {
+             if (mState == STATE_PENDING_CONFIRMATION) {
+diff --git a/packages/SystemUI/src/com/android/systemui/biometrics/AuthContainerView.java b/packages/SystemUI/src/com/android/systemui/biometrics/AuthContainerView.java
+index f8718d0dbf23..c1233fe6b9da 100644
+--- a/packages/SystemUI/src/com/android/systemui/biometrics/AuthContainerView.java
++++ b/packages/SystemUI/src/com/android/systemui/biometrics/AuthContainerView.java
+@@ -235,9 +235,6 @@ public class AuthContainerView extends LinearLayout
+                         addCredentialView(false /* animatePanel */, true /* animateContents */);
+                     }, mInjector.getAnimateCredentialStartDelayMs());
+                     break;
+-                case AuthBiometricView.Callback.ACTION_USE_FACE:
+-                    mConfig.mCallback.onUseFacePressed();
+-                    break;
+                 default:
+                     Log.e(TAG, "Unhandled action: " + action);
+             }
+diff --git a/packages/SystemUI/src/com/android/systemui/biometrics/AuthController.java b/packages/SystemUI/src/com/android/systemui/biometrics/AuthController.java
+index 2dc9a1ab23fb..9f0ea3ee46ff 100644
+--- a/packages/SystemUI/src/com/android/systemui/biometrics/AuthController.java
++++ b/packages/SystemUI/src/com/android/systemui/biometrics/AuthController.java
+@@ -164,19 +164,6 @@ public class AuthController extends SystemUI implements CommandQueue.Callbacks,
+         }
+     }
+ 
+-    @Override
+-    public void onUseFacePressed() {
+-        if (mReceiver == null) {
+-            Log.e(TAG, "onUseFacePressed: Receiver is null");
+-            return;
+-        }
+-        try {
+-            mReceiver.onUseFacePressed();
+-        } catch (RemoteException e) {
+-            Log.e(TAG, "RemoteException when handling credential button", e);
+-        }
+-    }
+-
+     @Override
+     public void onSystemEvent(int event) {
+         if (mReceiver == null) {
+diff --git a/packages/SystemUI/src/com/android/systemui/biometrics/AuthDialogCallback.java b/packages/SystemUI/src/com/android/systemui/biometrics/AuthDialogCallback.java
+index 0978b62da89a..d3bd4fbd921c 100644
+--- a/packages/SystemUI/src/com/android/systemui/biometrics/AuthDialogCallback.java
++++ b/packages/SystemUI/src/com/android/systemui/biometrics/AuthDialogCallback.java
+@@ -59,11 +59,6 @@ public interface AuthDialogCallback {
+      */
+     void onDeviceCredentialPressed();
+ 
+-    /**
+-     * Invoked when the "use face" button is clicked
+-     */
+-    void onUseFacePressed();
+-
+     /**
+      * See {@link android.hardware.biometrics.BiometricPrompt.Builder
+      * #setReceiveSystemEvents(boolean)}
+diff --git a/packages/SystemUI/src/com/android/systemui/biometrics/Utils.java b/packages/SystemUI/src/com/android/systemui/biometrics/Utils.java
+index 7f4ca5164804..7d237c45c7b3 100644
+--- a/packages/SystemUI/src/com/android/systemui/biometrics/Utils.java
++++ b/packages/SystemUI/src/com/android/systemui/biometrics/Utils.java
+@@ -23,10 +23,8 @@ import android.annotation.IntDef;
+ import android.app.admin.DevicePolicyManager;
+ import android.content.Context;
+ import android.hardware.biometrics.BiometricPrompt;
+-import android.hardware.face.FaceManager;
+ import android.os.Bundle;
+ import android.os.UserManager;
+-import android.provider.Settings;
+ import android.util.DisplayMetrics;
+ import android.view.ViewGroup;
+ import android.view.accessibility.AccessibilityEvent;
+@@ -37,8 +35,6 @@ import com.android.internal.widget.LockPatternUtils;
+ import java.lang.annotation.Retention;
+ import java.lang.annotation.RetentionPolicy;
+ 
+-import com.android.internal.util.custom.faceunlock.FaceUnlockUtils;
+-
+ public class Utils {
+ 
+     public static final int CREDENTIAL_PIN = 1;
+@@ -81,20 +77,6 @@ public class Utils {
+         return (authenticators & Authenticators.BIOMETRIC_WEAK) != 0;
+     }
+ 
+-    static boolean canAuthenticateWithFace(Context context, int userId) {
+-        if (!FaceUnlockUtils.isFaceUnlockSupported()){
+-            return false;
+-        }
+-        boolean enabledForApps = Settings.Secure.getIntForUser(
+-                context.getContentResolver(),
+-                Settings.Secure.FACE_UNLOCK_APP_ENABLED, 1, userId) != 0;
+-        if (!enabledForApps){
+-            return false;
+-        }
+-        FaceManager faceManager = (FaceManager) context.getSystemService(FaceManager.class);
+-        return faceManager != null && faceManager.hasEnrolledTemplates(userId);
+-    }
+-
+     static int getAuthenticators(Bundle biometricPromptBundle) {
+         return biometricPromptBundle.getInt(BiometricPrompt.KEY_AUTHENTICATORS_ALLOWED);
+     }
+diff --git a/services/core/java/com/android/server/biometrics/AuthService.java b/services/core/java/com/android/server/biometrics/AuthService.java
+index a7501181316b..131267924179 100644
+--- a/services/core/java/com/android/server/biometrics/AuthService.java
++++ b/services/core/java/com/android/server/biometrics/AuthService.java
+@@ -100,7 +100,7 @@ public class AuthService extends SystemService {
+          */
+         @VisibleForTesting
+         public String[] getConfiguration(Context context) {
+-            return Utils.getConfiguration(context);
++            return context.getResources().getStringArray(R.array.config_biometric_sensors);
+         }
+ 
+         /**
+diff --git a/services/core/java/com/android/server/biometrics/BiometricService.java b/services/core/java/com/android/server/biometrics/BiometricService.java
+index 58d2b3aead3c..1217a507a8dc 100644
+--- a/services/core/java/com/android/server/biometrics/BiometricService.java
++++ b/services/core/java/com/android/server/biometrics/BiometricService.java
+@@ -114,7 +114,6 @@ public class BiometricService extends SystemService {
+     private static final int MSG_ON_DEVICE_CREDENTIAL_PRESSED = 12;
+     private static final int MSG_ON_SYSTEM_EVENT = 13;
+     private static final int MSG_CLIENT_DIED = 14;
+-    private static final int MSG_ON_USE_FACE_PRESSED = 15;
+ 
+     /**
+      * Authentication either just called and we have not transitioned to the CALLED state, or
+@@ -184,8 +183,8 @@ public class BiometricService extends SystemService {
+         final int mCallingUserId;
+         // Continue authentication with the same modality/modalities after "try again" is
+         // pressed
+-        int mModality;
+-        boolean mRequireConfirmation;
++        final int mModality;
++        final boolean mRequireConfirmation;
+ 
+         // The current state, which can be either idle, called, or started
+         int mState = STATE_AUTH_IDLE;
+@@ -242,15 +241,6 @@ public class BiometricService extends SystemService {
+             return false;
+         }
+ 
+-        void clearCookie() {
+-            if (mModalitiesWaiting != null) {
+-                mModalitiesWaiting.clear();
+-            }
+-            if (mModalitiesMatched != null) {
+-                mModalitiesMatched.clear();
+-            }
+-        }
+-
+         boolean isAllowDeviceCredential() {
+             return Utils.isCredentialRequested(mBundle);
+         }
+@@ -394,11 +384,6 @@ public class BiometricService extends SystemService {
+                     break;
+                 }
+ 
+-                case MSG_ON_USE_FACE_PRESSED: {
+-                    handleOnUseFacePressed();
+-                    break;
+-                }
+-
+                 case MSG_ON_SYSTEM_EVENT: {
+                     handleOnSystemEvent((int) msg.obj);
+                     break;
+@@ -682,11 +667,6 @@ public class BiometricService extends SystemService {
+             mHandler.sendEmptyMessage(MSG_ON_DEVICE_CREDENTIAL_PRESSED);
+         }
+ 
+-        @Override
+-        public void onUseFacePressed() {
+-            mHandler.sendEmptyMessage(MSG_ON_USE_FACE_PRESSED);
+-        }
+-
+         @Override
+         public void onSystemEvent(int event) {
+             mHandler.obtainMessage(MSG_ON_SYSTEM_EVENT, event).sendToTarget();
+@@ -1000,7 +980,7 @@ public class BiometricService extends SystemService {
+          */
+         @VisibleForTesting
+         public String[] getConfiguration(Context context) {
+-            return Utils.getConfiguration(context);
++            return context.getResources().getStringArray(R.array.config_biometric_sensors);
+         }
+     }
+ 
+@@ -1454,13 +1434,7 @@ public class BiometricService extends SystemService {
+                     if (mCurrentAuthSession.isAllowDeviceCredential() && errorLockout) {
+                         // SystemUI handles transition from biometric to device credential.
+                         mCurrentAuthSession.mState = STATE_SHOWING_DEVICE_CREDENTIAL;
+-                        mHandler.postDelayed(() -> {
+-                            try{
+-                                mStatusBarService.onBiometricError(modality, error, vendorCode);
+-                            } catch (RemoteException e) {
+-                                Slog.e(TAG, "Remote exception", e);
+-                            }
+-                        }, 500);
++                        mStatusBarService.onBiometricError(modality, error, vendorCode);
+                     } else if (error == BiometricConstants.BIOMETRIC_ERROR_CANCELED) {
+                         mStatusBarService.hideAuthenticationDialog();
+                         // TODO: If multiple authenticators are simultaneously running, this will
+@@ -1470,13 +1444,7 @@ public class BiometricService extends SystemService {
+                         mCurrentAuthSession = null;
+                     } else {
+                         mCurrentAuthSession.mState = STATE_ERROR_PENDING_SYSUI;
+-                        mHandler.postDelayed(() -> {
+-                            try{
+-                                mStatusBarService.onBiometricError(modality, error, vendorCode);
+-                            } catch (RemoteException e) {
+-                                Slog.e(TAG, "Remote exception", e);
+-                            }
+-                        }, 500);
++                        mStatusBarService.onBiometricError(modality, error, vendorCode);
+                     }
+                 } else if (mCurrentAuthSession.mState == STATE_AUTH_PAUSED) {
+                     // In the "try again" state, we should forward canceled errors to
+@@ -1645,58 +1613,6 @@ public class BiometricService extends SystemService {
+                 mCurrentAuthSession.mModality);
+     }
+ 
+-    private void handleOnUseFacePressed() {
+-        Slog.d(TAG, "onUseFacePressed");
+-        if (mCurrentAuthSession == null) {
+-            Slog.e(TAG, "Auth session null");
+-            return;
+-        }
+-
+-        // Cancel authentication. Skip the token/package check since we are cancelling
+-        // from system server. The interface is permission protected so this is fine.
+-        AuthSession currentAuthSession = mCurrentAuthSession;
+-        mCurrentAuthSession = null;
+-        cancelInternal(null /* token */, null /* package */, Binder.getCallingUid(),
+-                Binder.getCallingPid(), UserHandle.getCallingUserId(),
+-                false /* fromClient */, TYPE_FINGERPRINT);
+-
+-        // Re-authenticate with face modality
+-        switchToFaceModality(currentAuthSession);
+-    }
+-
+-    private void switchToFaceModality(AuthSession authSession) {
+-        Slog.d(TAG, "switchToFaceModality");
+-        // Generate random cookies to pass to the services that should prepare to start
+-        // authenticating. Store the cookie here and wait for all services to "ack"
+-        // with the cookie. Once all cookies are received, we can show the prompt
+-        // and let the services start authenticating. The cookie should be non-zero.
+-        final int cookie = mRandom.nextInt(Integer.MAX_VALUE - 1) + 1;
+-        Slog.d(TAG, "switchToFaceModality, cookie=" + cookie);
+-
+-        // Use custom session
+-        mPendingAuthSession = authSession;
+-        mPendingAuthSession.clearCookie();
+-        mPendingAuthSession.mModality = TYPE_FACE;
+-        mPendingAuthSession.mRequireConfirmation = true;
+-        mPendingAuthSession.mModalitiesWaiting.put(TYPE_FACE, cookie);
+-        try {
+-            mPendingAuthSession.mState = STATE_AUTH_CALLED;
+-            for (AuthenticatorWrapper authenticator : mAuthenticators) {
+-                // TODO(b/141025588): use ids instead of modalities to avoid ambiguity.
+-                if (authenticator.modality == TYPE_FACE) {
+-                    authenticator.impl.prepareForAuthentication(requireConfirmation,
+-                            authSession.mToken, authSession.mSessionId, authSession.mUserId,
+-                            mInternalReceiver, authSession.mOpPackageName, cookie,
+-                            authSession.mCallingUid, authSession.mCallingPid,
+-                            authSession.mCallingUserId);
+-                    break;
+-                }
+-            }
+-        } catch (RemoteException e) {
+-            Slog.e(TAG, "Unable to start authentication", e);
+-        }
+-    }
+-
+     private void handleOnDeviceCredentialPressed() {
+         Slog.d(TAG, "onDeviceCredentialPressed");
+         if (mCurrentAuthSession == null) {
+@@ -1876,8 +1792,9 @@ public class BiometricService extends SystemService {
+         boolean requireConfirmation = bundle.getBoolean(
+                 BiometricPrompt.KEY_REQUIRE_CONFIRMATION, true /* default */);
+         if ((modality & TYPE_FACE) != 0) {
+-            // Always force confirmation if Face
+-            requireConfirmation = true;
++            // Check if the user has forced confirmation to be required in Settings.
++            requireConfirmation = requireConfirmation
++                    || mSettingObserver.getFaceAlwaysRequireConfirmation(userId);
+         }
+         // Generate random cookies to pass to the services that should prepare to start
+         // authenticating. Store the cookie here and wait for all services to "ack"
+@@ -1963,13 +1880,10 @@ public class BiometricService extends SystemService {
+ 
+     void cancelInternal(IBinder token, String opPackageName, int callingUid, int callingPid,
+             int callingUserId, boolean fromClient) {
+-        cancelInternal(token, opPackageName, callingUid, callingPid, callingUserId, fromClient, -1);
+-    }
+-
+-    void cancelInternal(IBinder token, String opPackageName, int callingUid, int callingPid,
+-            int callingUserId, boolean fromClient, int modality) {
+-        if (mCurrentAuthSession != null
+-                && mCurrentAuthSession.mState != STATE_AUTH_STARTED
++        if (mCurrentAuthSession == null) {
++            Slog.w(TAG, "Skipping cancelInternal");
++            return;
++        } else if (mCurrentAuthSession.mState != STATE_AUTH_STARTED
+                 && mCurrentAuthSession.mState != STATE_CLIENT_DIED_CANCELLING) {
+             Slog.w(TAG, "Skipping cancelInternal, state: " + mCurrentAuthSession.mState);
+             return;
+@@ -1978,8 +1892,7 @@ public class BiometricService extends SystemService {
+         // TODO: For multiple modalities, send a single ERROR_CANCELED only when all
+         // drivers have canceled authentication.
+         for (AuthenticatorWrapper authenticator : mAuthenticators) {
+-            if (modality == authenticator.modality ||
+-                    (mCurrentAuthSession != null && (authenticator.modality & mCurrentAuthSession.mModality) != 0)) {
++            if ((authenticator.modality & mCurrentAuthSession.mModality) != 0) {
+                 try {
+                     authenticator.impl.cancelAuthenticationFromService(token, opPackageName,
+                             callingUid, callingPid, callingUserId, fromClient);
+diff --git a/services/core/java/com/android/server/biometrics/Utils.java b/services/core/java/com/android/server/biometrics/Utils.java
+index 1a81c26d8eae..c661f452820d 100644
+--- a/services/core/java/com/android/server/biometrics/Utils.java
++++ b/services/core/java/com/android/server/biometrics/Utils.java
+@@ -43,12 +43,8 @@ import android.util.Slog;
+ import com.android.internal.R;
+ import com.android.internal.widget.LockPatternUtils;
+ 
+-import java.util.ArrayList;
+-import java.util.Collections;
+ import java.util.List;
+ 
+-import com.android.server.biometrics.face.CustomFaceService;
+-
+ public class Utils {
+     private static final String TAG = "BiometricUtils";
+ 
+@@ -324,14 +320,4 @@ public class Utils {
+         Slog.d(TAG, "isEncrypted: " + isEncrypted + " isLockdown: " + isLockDown);
+         return isEncrypted || isLockDown;
+     }
+-
+-    public static String[] getConfiguration(Context context) {
+-        ArrayList<String> sensors = new ArrayList();
+-        Collections.addAll(sensors, context.getResources().getStringArray(
+-            R.array.config_biometric_sensors));
+-        if (CustomFaceService.isSupported()){
+-            Collections.addAll(sensors, CustomFaceService.getConfiguration());
+-        }
+-        return sensors.toArray(new String[0]);
+-    }
+ }
+diff --git a/services/core/java/com/android/server/biometrics/face/CustomFaceService.java b/services/core/java/com/android/server/biometrics/face/CustomFaceService.java
+index 51f8eda40612..1a79610e33db 100644
+--- a/services/core/java/com/android/server/biometrics/face/CustomFaceService.java
++++ b/services/core/java/com/android/server/biometrics/face/CustomFaceService.java
+@@ -28,8 +28,6 @@ import android.content.IntentFilter;
+ import android.content.ServiceConnection;
+ import android.content.pm.PackageManager;
+ import android.content.pm.ResolveInfo;
+-import android.hardware.biometrics.BiometricAuthenticator;
+-import android.hardware.biometrics.BiometricManager.Authenticators;
+ import android.hardware.face.Face;
+ import android.os.Binder;
+ import android.os.Handler;
+@@ -386,11 +384,7 @@ public class CustomFaceService {
+         return info != null && info.serviceInfo.isEnabled();
+     }
+ 
+-    public static String getConfiguration() {
+-        return HAL_DEVICE_ID + ":" + BiometricAuthenticator.TYPE_FACE + ":" + Authenticators.BIOMETRIC_STRONG;
+-    }
+-
+-    public static boolean isSupported() {
++    public boolean isSupported() {
+         return FaceUnlockUtils.isFaceUnlockSupported();
+     }
+ 
+-- 
+2.30.2
+

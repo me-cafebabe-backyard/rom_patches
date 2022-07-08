@@ -1,0 +1,44 @@
+From ca4499fc24b5a50b3d80d67a6ff2560d5af49f30 Mon Sep 17 00:00:00 2001
+From: Bharath <bharath@teamb58.org>
+Date: Wed, 22 Dec 2021 18:34:11 +0530
+Subject: [PATCH 1/2] msm8953: Split msm8953 from UM_3_18_FAMILY [2/2]
+
+msm8953 has updated HAL projects. Make use of them.
+
+This can be made use of by setting `TARGET_ENFORCE_QSSI`
+to true.
+
+Change-Id: Ib7ababd52470913c915f1da3d6b726eff2f38410
+---
+ config/BoardConfigQcom.mk | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/config/BoardConfigQcom.mk b/config/BoardConfigQcom.mk
+index d0b6a967..b348f611 100644
+--- a/config/BoardConfigQcom.mk
++++ b/config/BoardConfigQcom.mk
+@@ -11,7 +11,7 @@ LAHAINA := lahaina #SM8350
+ B_FAMILY := msm8226 msm8610 msm8974
+ B64_FAMILY := msm8992 msm8994
+ BR_FAMILY := msm8909 msm8916
+-UM_3_18_FAMILY := msm8937 msm8953 msm8996
++UM_3_18_FAMILY := msm8937 msm8996
+ UM_4_4_FAMILY := msm8998 sdm660
+ UM_4_9_FAMILY := sdm845 sdm710
+ UM_4_14_FAMILY := $(MSMNILE) $(MSMSTEPPE) $(TRINKET) $(ATOLL)
+@@ -20,6 +20,12 @@ UM_5_4_FAMILY := $(LAHAINA)
+ UM_PLATFORMS := $(UM_3_18_FAMILY) $(UM_4_4_FAMILY) $(UM_4_9_FAMILY) $(UM_4_14_FAMILY) $(UM_4_19_FAMILY) $(UM_5_4_FAMILY)
+ QSSI_SUPPORTED_PLATFORMS := $(UM_4_9_FAMILY) $(UM_4_14_FAMILY) $(UM_4_19_FAMILY) $(UM_5_4_FAMILY)
+ 
++ifeq (,$(TARGET_ENFORCE_QSSI))
++UM_3_18_FAMILY += msm8953
++else
++QSSI_SUPPORTED_PLATFORMS += msm8953
++endif
++
+ BOARD_USES_ADRENO := true
+ 
+ # Add qtidisplay to soong config namespaces
+-- 
+2.30.2
+

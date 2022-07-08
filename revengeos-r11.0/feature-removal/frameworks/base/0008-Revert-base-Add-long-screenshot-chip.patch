@@ -1,0 +1,278 @@
+From 4e3cab90f59fcbb161b1503b79748b732e6a99ae Mon Sep 17 00:00:00 2001
+From: me-cafebabe <me_cafebabe@hotmail.com>
+Date: Sat, 4 Jun 2022 19:43:58 +0800
+Subject: [PATCH 8/9] Revert "base: Add long screenshot chip"
+
+This reverts commit b411d878ddbe63198be562bc35ddf723c228286b.
+---
+ packages/SystemUI/AndroidManifest.xml         |  4 --
+ .../res/drawable/ic_screenshot_scrollss.xml   |  7 --
+ .../SystemUI/res/values/revenge_strings.xml   | 17 -----
+ .../DefaultBroadcastReceiverBinder.java       | 10 ---
+ .../systemui/screenshot/GlobalScreenshot.java | 16 -----
+ .../screenshot/SaveImageInBackgroundTask.java | 23 -------
+ .../systemui/screenshot/ScreenshotEvent.java  |  2 -
+ .../screenshot/ScrollScreenshotReceiver.java  | 68 -------------------
+ 8 files changed, 147 deletions(-)
+ delete mode 100644 packages/SystemUI/res/drawable/ic_screenshot_scrollss.xml
+ delete mode 100644 packages/SystemUI/res/values/revenge_strings.xml
+ delete mode 100644 packages/SystemUI/src/com/android/systemui/screenshot/ScrollScreenshotReceiver.java
+
+diff --git a/packages/SystemUI/AndroidManifest.xml b/packages/SystemUI/AndroidManifest.xml
+index 423dec646063..4d7adedde183 100644
+--- a/packages/SystemUI/AndroidManifest.xml
++++ b/packages/SystemUI/AndroidManifest.xml
+@@ -419,10 +419,6 @@
+         <receiver android:name=".screenshot.DeleteScreenshotReceiver"
+             android:exported="false" />
+ 
+-        <!-- Callback for scrolling screenshot notification -->
+-        <receiver android:name=".screenshot.ScrollScreenshotReceiver"
+-            android:exported="false" />
+-
+         <!-- Callback for invoking a smart action from the screenshot notification. -->
+         <receiver android:name=".screenshot.SmartActionsReceiver"
+                   android:exported="false"/>
+diff --git a/packages/SystemUI/res/drawable/ic_screenshot_scrollss.xml b/packages/SystemUI/res/drawable/ic_screenshot_scrollss.xml
+deleted file mode 100644
+index 57b8172da867..000000000000
+--- a/packages/SystemUI/res/drawable/ic_screenshot_scrollss.xml
++++ /dev/null
+@@ -1,7 +0,0 @@
+-<vector xmlns:android="http://schemas.android.com/apk/res/android"
+-    android:height="24dp"
+-    android:width="24dp"
+-    android:viewportWidth="24"
+-    android:viewportHeight="24">
+-    <path android:fillColor="#FFF" android:pathData="M7,1A2,2 0 0,0 5,3V21A2,2 0 0,0 7,23H17A2,2 0 0,0 19,21V3A2,2 0 0,0 17,1H7M7,4H17V20H7V4M9,6V10H10.5V7.5H13V6H9M13.5,14V16.5H11V18H15V14H13.5Z" />
+-</vector>
+diff --git a/packages/SystemUI/res/values/revenge_strings.xml b/packages/SystemUI/res/values/revenge_strings.xml
+deleted file mode 100644
+index 9665a772fc78..000000000000
+--- a/packages/SystemUI/res/values/revenge_strings.xml
++++ /dev/null
+@@ -1,17 +0,0 @@
+-<?xml version="1.0" encoding="utf-8"?>
+-<!--
+-     Copyright (C) 2019-2020 The RevengeOS Project
+-     Licensed under the Apache License, Version 2.0 (the "License");
+-     you may not use this file except in compliance with the License.
+-     You may obtain a copy of the License at
+-          http://www.apache.org/licenses/LICENSE-2.0
+-     Unless required by applicable law or agreed to in writing, software
+-     distributed under the License is distributed on an "AS IS" BASIS,
+-     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-     See the License for the specific language governing permissions and
+-     limitations under the License.
+--->
+-<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+-    <!-- Scrolling Screenshot string -->
+-    <string name="scrollss">Scroll</string>
+- </resources>
+diff --git a/packages/SystemUI/src/com/android/systemui/dagger/DefaultBroadcastReceiverBinder.java b/packages/SystemUI/src/com/android/systemui/dagger/DefaultBroadcastReceiverBinder.java
+index 5f6ce463d896..25d02a66d56d 100644
+--- a/packages/SystemUI/src/com/android/systemui/dagger/DefaultBroadcastReceiverBinder.java
++++ b/packages/SystemUI/src/com/android/systemui/dagger/DefaultBroadcastReceiverBinder.java
+@@ -21,7 +21,6 @@ import android.content.BroadcastReceiver;
+ import com.android.systemui.media.dialog.MediaOutputDialogReceiver;
+ import com.android.systemui.screenshot.ActionProxyReceiver;
+ import com.android.systemui.screenshot.DeleteScreenshotReceiver;
+-import com.android.systemui.screenshot.ScrollScreenshotReceiver;
+ import com.android.systemui.screenshot.SmartActionsReceiver;
+ 
+ import dagger.Binds;
+@@ -52,15 +51,6 @@ public abstract class DefaultBroadcastReceiverBinder {
+     public abstract BroadcastReceiver bindDeleteScreenshotReceiver(
+             DeleteScreenshotReceiver broadcastReceiver);
+ 
+-    /**
+-     *
+-     */
+-    @Binds
+-    @IntoMap
+-    @ClassKey(ScrollScreenshotReceiver.class)
+-    public abstract BroadcastReceiver bindScrollScreenshotReceiver(
+-            ScrollScreenshotReceiver broadcastReceiver);
+-
+     /**
+      *
+      */
+diff --git a/packages/SystemUI/src/com/android/systemui/screenshot/GlobalScreenshot.java b/packages/SystemUI/src/com/android/systemui/screenshot/GlobalScreenshot.java
+index 64ed19f89f31..39d5eb4bf20d 100644
+--- a/packages/SystemUI/src/com/android/systemui/screenshot/GlobalScreenshot.java
++++ b/packages/SystemUI/src/com/android/systemui/screenshot/GlobalScreenshot.java
+@@ -132,7 +132,6 @@ public class GlobalScreenshot implements ViewTreeObserver.OnComputeInternalInset
+         public Notification.Action shareAction;
+         public Notification.Action editAction;
+         public Notification.Action deleteAction;
+-        public Notification.Action scrollAction;
+         public List<Notification.Action> smartActions;
+ 
+         /**
+@@ -143,7 +142,6 @@ public class GlobalScreenshot implements ViewTreeObserver.OnComputeInternalInset
+             shareAction = null;
+             editAction = null;
+             deleteAction = null;
+-            scrollAction = null;
+             smartActions = null;
+         }
+     }
+@@ -159,7 +157,6 @@ public class GlobalScreenshot implements ViewTreeObserver.OnComputeInternalInset
+     static final String ACTION_TYPE_DELETE = "Delete";
+     static final String ACTION_TYPE_SHARE = "Share";
+     static final String ACTION_TYPE_EDIT = "Edit";
+-    static final String ACTION_TYPE_SCROLL = "Scroll";
+     static final String EXTRA_SMART_ACTIONS_ENABLED = "android:smart_actions_enabled";
+     static final String EXTRA_ACTION_INTENT = "android:screenshot_action_intent";
+ 
+@@ -1016,19 +1013,6 @@ public class GlobalScreenshot implements ViewTreeObserver.OnComputeInternalInset
+         mActionsView.addView(deleteChip);
+         chips.add(deleteChip);
+ 
+-        // Scrolling Screenshot
+-        ScreenshotActionChip scrollChip = (ScreenshotActionChip) inflater.inflate(
+-                R.layout.global_screenshot_action_chip, mActionsView, false);
+-        scrollChip.setText(imageData.scrollAction.title);
+-        scrollChip.setIcon(imageData.scrollAction.getIcon(), true);
+-        scrollChip.setPendingIntent(imageData.scrollAction.actionIntent, () -> {
+-            mUiEventLogger.log(ScreenshotEvent.SCREENSHOT_SCROLL_TAPPED);
+-            dismissScreenshot("chip tapped", false);
+-            mOnCompleteRunnable.run();
+-        });
+-        mActionsView.addView(scrollChip);
+-        chips.add(scrollChip);
+-
+         mScreenshotPreview.setOnClickListener(v -> {
+             try {
+                 imageData.editAction.actionIntent.send();
+diff --git a/packages/SystemUI/src/com/android/systemui/screenshot/SaveImageInBackgroundTask.java b/packages/SystemUI/src/com/android/systemui/screenshot/SaveImageInBackgroundTask.java
+index 33d8fc7b7806..be396b26135d 100644
+--- a/packages/SystemUI/src/com/android/systemui/screenshot/SaveImageInBackgroundTask.java
++++ b/packages/SystemUI/src/com/android/systemui/screenshot/SaveImageInBackgroundTask.java
+@@ -224,7 +224,6 @@ class SaveImageInBackgroundTask extends AsyncTask<Void, Void, Void> {
+             mImageData.shareAction = createShareAction(mContext, mContext.getResources(), uri);
+             mImageData.editAction = createEditAction(mContext, mContext.getResources(), uri);
+             mImageData.deleteAction = createDeleteAction(mContext, mContext.getResources(), uri);
+-            mImageData.scrollAction = createScrollAction(mContext, mContext.getResources(), uri);
+ 
+             mParams.mActionsReadyListener.onActionsReady(mImageData);
+             mParams.finisher.accept(mImageData.uri);
+@@ -388,28 +387,6 @@ class SaveImageInBackgroundTask extends AsyncTask<Void, Void, Void> {
+         return deleteActionBuilder.build();
+     }
+ 
+-    Notification.Action createScrollAction(Context context, Resources r, Uri uri) {
+-        // Make sure pending intents for the system user are still unique across users
+-        // by setting the (otherwise unused) request code to the current user id.
+-        int requestCode = mContext.getUserId();
+-
+-        // Create a scroll action for the notification
+-        PendingIntent scrollAction = PendingIntent.getBroadcast(context, requestCode,
+-                new Intent(context, ScrollScreenshotReceiver.class)
+-                        .putExtra(GlobalScreenshot.SCREENSHOT_URI_ID, uri.toString())
+-                        .putExtra(GlobalScreenshot.EXTRA_ID, mScreenshotId)
+-                        .putExtra(GlobalScreenshot.EXTRA_SMART_ACTIONS_ENABLED,
+-                                mSmartActionsEnabled)
+-                        .addFlags(Intent.FLAG_RECEIVER_FOREGROUND),
+-                PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_ONE_SHOT);
+-        Notification.Action.Builder scrollActionBuilder = new Notification.Action.Builder(
+-                Icon.createWithResource(r, R.drawable.ic_screenshot_scrollss),
+-                r.getString(R.string.scrollss), scrollAction);
+-
+-        return scrollActionBuilder.build();
+-    }
+-
+-
+     private int getUserHandleOfForegroundApplication(Context context) {
+         // This logic matches
+         // com.android.systemui.statusbar.phone.PhoneStatusBarPolicy#updateManagedProfile
+diff --git a/packages/SystemUI/src/com/android/systemui/screenshot/ScreenshotEvent.java b/packages/SystemUI/src/com/android/systemui/screenshot/ScreenshotEvent.java
+index 9ada0ebc88dd..e1dd4ef45976 100644
+--- a/packages/SystemUI/src/com/android/systemui/screenshot/ScreenshotEvent.java
++++ b/packages/SystemUI/src/com/android/systemui/screenshot/ScreenshotEvent.java
+@@ -51,8 +51,6 @@ public enum ScreenshotEvent implements UiEventLogger.UiEventEnum {
+     SCREENSHOT_SHARE_TAPPED(309),
+     @UiEvent(doc = "screenshot delete button tapped")
+     SCREENSHOT_DELETE_TAPPED(369),
+-    @UiEvent(doc = "screenshot long ss button tapped")
+-    SCREENSHOT_SCROLLSS_TAPPED(420),
+     @UiEvent(doc = "screenshot smart action chip tapped")
+     SCREENSHOT_SMART_ACTION_TAPPED(374),
+     @UiEvent(doc = "screenshot scroll tapped")
+diff --git a/packages/SystemUI/src/com/android/systemui/screenshot/ScrollScreenshotReceiver.java b/packages/SystemUI/src/com/android/systemui/screenshot/ScrollScreenshotReceiver.java
+deleted file mode 100644
+index 3d5493b2a1ae..000000000000
+--- a/packages/SystemUI/src/com/android/systemui/screenshot/ScrollScreenshotReceiver.java
++++ /dev/null
+@@ -1,68 +0,0 @@
+-/*
+- * Copyright (C) 2020 The Android Open Source Project
+- * Copyright (C) 2020-2021 ProjectFluid
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-
+-package com.android.systemui.screenshot;
+-
+-import static com.android.systemui.screenshot.GlobalScreenshot.ACTION_TYPE_SCROLL;
+-import static com.android.systemui.screenshot.GlobalScreenshot.EXTRA_ID;
+-import static com.android.systemui.screenshot.GlobalScreenshot.EXTRA_SMART_ACTIONS_ENABLED;
+-import static com.android.systemui.screenshot.GlobalScreenshot.SCREENSHOT_URI_ID;
+-
+-import android.content.BroadcastReceiver;
+-import android.content.ContentResolver;
+-import android.content.Context;
+-import android.content.Intent;
+-import android.content.ComponentName;
+-import android.net.Uri;
+-
+-import com.android.systemui.dagger.qualifiers.Background;
+-
+-import java.util.concurrent.Executor;
+-
+-import javax.inject.Inject;
+-
+-public class ScrollScreenshotReceiver extends BroadcastReceiver {
+-
+-    private final ScreenshotSmartActions mScreenshotSmartActions;
+-    private final Executor mBackgroundExecutor;
+-
+-    @Inject
+-    public ScrollScreenshotReceiver(ScreenshotSmartActions screenshotSmartActions,
+-            @Background Executor backgroundExecutor) {
+-        mScreenshotSmartActions = screenshotSmartActions;
+-        mBackgroundExecutor = backgroundExecutor;
+-    }
+-
+-    @Override
+-    public void onReceive(Context context, Intent intent) {
+-        if (!intent.hasExtra(SCREENSHOT_URI_ID)) {
+-            return;
+-        }
+-
+-        final Uri uri = Uri.parse(intent.getStringExtra(SCREENSHOT_URI_ID));
+-        mBackgroundExecutor.execute(() -> {
+-             Intent intentt = new Intent();
+-             intentt.setComponent(new ComponentName("com.asus.stitchimage", "com.asus.stitchimage.OverlayService"));
+-             intentt.putExtra("callfrom", "AsusSettings");
+-             context.startService(intentt);
+-        });
+-        if (intent.getBooleanExtra(EXTRA_SMART_ACTIONS_ENABLED, false)) {
+-            mScreenshotSmartActions.notifyScreenshotAction(
+-                    context, intent.getStringExtra(EXTRA_ID), ACTION_TYPE_SCROLL, false);
+-        }
+-    }
+-}
+-- 
+2.30.2
+

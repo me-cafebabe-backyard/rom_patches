@@ -1,0 +1,47 @@
+From d57a73404495553a4de58794e46b89de1fd54cac Mon Sep 17 00:00:00 2001
+From: SOOJONG HWANG <sjong.hwang@samsung.com>
+Date: Fri, 1 Oct 2021 00:36:06 +0900
+Subject: [PATCH 17/17] GLConsumer: add HW_TEXTURE usage when create texture
+
+GPU expects external image to be aligned with its h/w requirement.
+GraphicBuffer which will be used as texture, should be created with HW_TEXTURE usage.
+
+Fixes: 201564624
+Signed-off-by: SOOJONG HWANG <sjong.hwang@samsung.com>
+Change-Id: Icac81da95f3c98bb2fe8d0cad2cef81c62951726
+Merged-In: Icac81da95f3c98bb2fe8d0cad2cef81c62951726
+(cherry picked from commit 0babcd36504281a179338e5ebab73146b1458316)
+---
+ libs/gui/GLConsumer.cpp                           | 2 +-
+ libs/nativedisplay/surfacetexture/EGLConsumer.cpp | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/libs/gui/GLConsumer.cpp b/libs/gui/GLConsumer.cpp
+index 59f1bcd24..4aa4bef54 100644
+--- a/libs/gui/GLConsumer.cpp
++++ b/libs/gui/GLConsumer.cpp
+@@ -301,7 +301,7 @@ sp<GraphicBuffer> GLConsumer::getDebugTexImageBuffer() {
+         // continues to use it.
+         sp<GraphicBuffer> buffer = new GraphicBuffer(
+                 kDebugData.width, kDebugData.height, PIXEL_FORMAT_RGBA_8888,
+-                GraphicBuffer::USAGE_SW_WRITE_RARELY,
++                DEFAULT_USAGE_FLAGS | GraphicBuffer::USAGE_SW_WRITE_RARELY,
+                 "[GLConsumer debug texture]");
+         uint32_t* bits;
+         buffer->lock(GraphicBuffer::USAGE_SW_WRITE_RARELY, reinterpret_cast<void**>(&bits));
+diff --git a/libs/nativedisplay/surfacetexture/EGLConsumer.cpp b/libs/nativedisplay/surfacetexture/EGLConsumer.cpp
+index 2f31888bf..6882ea309 100644
+--- a/libs/nativedisplay/surfacetexture/EGLConsumer.cpp
++++ b/libs/nativedisplay/surfacetexture/EGLConsumer.cpp
+@@ -191,7 +191,7 @@ sp<GraphicBuffer> EGLConsumer::getDebugTexImageBuffer() {
+         // continues to use it.
+         sp<GraphicBuffer> buffer =
+                 new GraphicBuffer(kDebugData.width, kDebugData.height, PIXEL_FORMAT_RGBA_8888,
+-                                  GraphicBuffer::USAGE_SW_WRITE_RARELY,
++                                  DEFAULT_USAGE_FLAGS | GraphicBuffer::USAGE_SW_WRITE_RARELY,
+                                   "[EGLConsumer debug texture]");
+         uint32_t* bits;
+         buffer->lock(GraphicBuffer::USAGE_SW_WRITE_RARELY, reinterpret_cast<void**>(&bits));
+-- 
+2.30.2
+

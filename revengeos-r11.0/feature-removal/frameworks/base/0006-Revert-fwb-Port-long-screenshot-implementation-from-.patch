@@ -1,0 +1,430 @@
+From 87d6744242f1e7bc9ac963e3d330413ad35fbe54 Mon Sep 17 00:00:00 2001
+From: me-cafebabe <me_cafebabe@hotmail.com>
+Date: Sat, 4 Jun 2022 19:23:37 +0800
+Subject: [PATCH 6/9] Revert "fwb: Port long screenshot implementation from
+ Asus"
+
+This reverts commit fe0a649bf9d5dd37c5d7a7c97198cbae4eed1d88.
+---
+ core/java/android/view/IWindowManager.aidl    |  7 --
+ .../custom/screenshot/StitchImageUtility.java | 93 -------------------
+ .../internal/util/ScreenshotHelper.java       | 50 ++--------
+ packages/SystemUI/AndroidManifest.xml         |  3 -
+ .../SystemUI/res-revengeos/values/config.xml  |  3 -
+ .../globalactions/GlobalActionsDialog.java    |  8 +-
+ .../screenshot/SaveImageInBackgroundTask.java |  2 +-
+ .../statusbar/policy/CastControllerImpl.java  |  6 --
+ .../server/policy/PhoneWindowManager.java     |  5 -
+ .../server/policy/WindowManagerPolicy.java    |  6 --
+ .../server/uri/UriGrantsManagerService.java   |  6 +-
+ .../com/android/server/wm/DisplayPolicy.java  |  4 +-
+ .../server/wm/WindowManagerService.java       |  5 -
+ 13 files changed, 11 insertions(+), 187 deletions(-)
+ delete mode 100644 core/java/com/android/internal/custom/screenshot/StitchImageUtility.java
+
+diff --git a/core/java/android/view/IWindowManager.aidl b/core/java/android/view/IWindowManager.aidl
+index b22653021c82..00fc67214f75 100644
+--- a/core/java/android/view/IWindowManager.aidl
++++ b/core/java/android/view/IWindowManager.aidl
+@@ -762,11 +762,4 @@ interface IWindowManager
+      */
+     void requestScrollCapture(int displayId, IBinder behindClient, int taskId,
+             IScrollCaptureController controller);
+-
+-    /**
+-     * Long screenshot
+-     * @hide
+-     */
+-    void takeAlternativeScreenshot();
+-
+ }
+diff --git a/core/java/com/android/internal/custom/screenshot/StitchImageUtility.java b/core/java/com/android/internal/custom/screenshot/StitchImageUtility.java
+deleted file mode 100644
+index ad181d4c9b49..000000000000
+--- a/core/java/com/android/internal/custom/screenshot/StitchImageUtility.java
++++ /dev/null
+@@ -1,93 +0,0 @@
+-/*
+- * Copyright (C) 2019 PixelExperience
+- *
+- * This program is free software; you can redistribute it and/or modify it under the terms of the
+- * GNU General Public License as published by the Free Software Foundation; either version 3 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
+- * the GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License along with this program;
+- * if not, see <http://www.gnu.org/licenses>.
+- */
+-
+-package com.android.internal.custom.screenshot;
+-
+-import android.content.ComponentName;
+-import android.content.Context;
+-import android.content.Intent;
+-import android.content.pm.PackageManager;
+-import android.content.pm.ResolveInfo;
+-import android.media.MediaActionSound;
+-import android.net.Uri;
+-import android.os.UserHandle;
+-import android.provider.Settings;
+-import android.util.Log;
+-
+-import java.util.List;
+-
+-public class StitchImageUtility {
+-    public static final String STITCHIMAGE_APP_PACKAGE_NAME = "com.asus.stitchimage";
+-    public static final String STITCHIMAGE_FILEPROVIDER_CLASS = "com.asus.stitchimage.fileprovider";
+-    private static final String STITCHIMAGE_OVERLAY_SERVICE_CLASS = "com.asus.stitchimage.OverlayService";
+-    private static final String STITCHIMAGE_SERVICE_PACKAGE_NAME = "com.asus.stitchimage.service";
+-    private static final String EXTRA_KEY_STITCHIMAGE_SETTINGS_CALLFROM = "callfrom";
+-    private static final String EXTRA_VALUE_STITCHIMAGE_SETTINGS_CALLFROM_ASUSSETTINGS = "AsusSettings";
+-    private static String TAG = "StitchImageUtility";
+-    private final Context mContext;
+-    private MediaActionSound mCameraSound;
+-    private PackageManager mPackageManager;
+-
+-    public StitchImageUtility(Context context) {
+-        mContext = context;
+-        mPackageManager = mContext.getPackageManager();
+-    }
+-
+-    public boolean takeScreenShot(String focusedPackageName) {
+-        if (isPackageAllowed(focusedPackageName)) {
+-            try {
+-                Log.i(TAG, "Take long screenshot.");
+-                Intent intent = new Intent();
+-                intent.setComponent(new ComponentName(STITCHIMAGE_APP_PACKAGE_NAME, STITCHIMAGE_OVERLAY_SERVICE_CLASS));
+-                intent.putExtra(EXTRA_KEY_STITCHIMAGE_SETTINGS_CALLFROM, EXTRA_VALUE_STITCHIMAGE_SETTINGS_CALLFROM_ASUSSETTINGS);
+-                mContext.startService(intent);
+-                playScreenshotSound();
+-                return true;
+-            } catch (Exception e) {
+-                Log.e(TAG, "trigger stitchimage failed, Exception :" + e);
+-            }
+-        }
+-        return false;
+-    }
+-
+-    private void playScreenshotSound(){
+-        if (mCameraSound == null){
+-            mCameraSound = new MediaActionSound();
+-            mCameraSound.load(MediaActionSound.SHUTTER_CLICK);
+-        }
+-        if (Settings.System.getIntForUser(mContext.getContentResolver(), Settings.System.SCREENSHOT_SOUND, 1, UserHandle.USER_CURRENT) == 1) {
+-            mCameraSound.play(MediaActionSound.SHUTTER_CLICK);
+-        }
+-    }
+-
+-    private boolean isPackageAllowed(String focusedPackageName){
+-        if (focusedPackageName == null || focusedPackageName.equals("")
+-                || focusedPackageName.equals("com.android.settings")){
+-            return true;
+-        }
+-        if (focusedPackageName.equals("com.android.systemui")){
+-            return false;
+-        }
+-        Intent i = new Intent(Intent.ACTION_MAIN);
+-        i.addCategory(Intent.CATEGORY_HOME);
+-        List<ResolveInfo> homePackages = mPackageManager.queryIntentActivities(i, 0);
+-        for (ResolveInfo resolveInfo : homePackages) {
+-            if (focusedPackageName.equals(resolveInfo.activityInfo.packageName)){
+-                return false;
+-            }
+-        }
+-        return true;
+-    }
+-}
+diff --git a/core/java/com/android/internal/util/ScreenshotHelper.java b/core/java/com/android/internal/util/ScreenshotHelper.java
+index 3ee866c460d8..7ee846e9d8c1 100644
+--- a/core/java/com/android/internal/util/ScreenshotHelper.java
++++ b/core/java/com/android/internal/util/ScreenshotHelper.java
+@@ -26,8 +26,6 @@ import android.os.UserHandle;
+ import android.util.Log;
+ import android.view.WindowManager;
+ 
+-import com.android.internal.custom.screenshot.StitchImageUtility;
+-
+ import java.util.function.Consumer;
+ 
+ public class ScreenshotHelper {
+@@ -165,7 +163,6 @@ public class ScreenshotHelper {
+     private IBinder mScreenshotService = null;
+     private ServiceConnection mScreenshotConnection = null;
+     private final Context mContext;
+-    private final StitchImageUtility mStitchImageUtility;
+ 
+     private final BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
+         @Override
+@@ -182,7 +179,6 @@ public class ScreenshotHelper {
+         mContext = context;
+         IntentFilter filter = new IntentFilter(ACTION_USER_SWITCHED);
+         mContext.registerReceiver(mBroadcastReceiver, filter);
+-        mStitchImageUtility = new StitchImageUtility(mContext);
+     }
+ 
+     /**
+@@ -211,37 +207,7 @@ public class ScreenshotHelper {
+             @Nullable Consumer<Uri> completionConsumer) {
+         ScreenshotRequest screenshotRequest = new ScreenshotRequest(source, hasStatus, hasNav);
+         takeScreenshot(screenshotType, SCREENSHOT_TIMEOUT_MS, handler, screenshotRequest,
+-                completionConsumer, null);
+-    }
+-
+-    /**
+-     * Request a screenshot be taken.
+-     *
+-     * Added to support reducing unit test duration; the method variant without a timeout argument
+-     * is recommended for general use.
+-     *
+-     * @param screenshotType     The type of screenshot, for example either
+-     *                           {@link android.view.WindowManager.TAKE_SCREENSHOT_FULLSCREEN}
+-     *                           or
+-     *                           {@link android.view.WindowManager.TAKE_SCREENSHOT_SELECTED_REGION}
+-     * @param hasStatus          {@code true} if the status bar is currently showing. {@code false}
+-     *                           if
+-     *                           not.
+-     * @param hasNav             {@code true} if the navigation bar is currently showing. {@code
+-     *                           false}
+-     *                           if not.
+-     * @param handler            A handler used in case the screenshot times out
+-     * @param completionConsumer Consumes `null` if a screenshot was not taken, and the URI of the
+-     *                           screenshot if the screenshot was taken.
+-     * @param focusedPackageName The focused package name
+-     */
+-    public void takeScreenshot(final int screenshotType, final boolean hasStatus,
+-            final boolean hasNav, int source, @NonNull Handler handler,
+-            @Nullable Consumer<Uri> completionConsumer,
+-            final String focusedPackageName) {
+-        ScreenshotRequest screenshotRequest = new ScreenshotRequest(source, hasStatus, hasNav);
+-        takeScreenshot(screenshotType, SCREENSHOT_TIMEOUT_MS, handler, screenshotRequest,
+-                completionConsumer, focusedPackageName);
++                completionConsumer);
+     }
+ 
+     /**
+@@ -265,7 +231,7 @@ public class ScreenshotHelper {
+             final boolean hasNav, @NonNull Handler handler,
+             @Nullable Consumer<Uri> completionConsumer) {
+         takeScreenshot(screenshotType, hasStatus, hasNav, SCREENSHOT_TIMEOUT_MS, handler,
+-                completionConsumer, null);
++                completionConsumer);
+     }
+ 
+     /**
+@@ -296,7 +262,7 @@ public class ScreenshotHelper {
+             @Nullable Consumer<Uri> completionConsumer) {
+         ScreenshotRequest screenshotRequest = new ScreenshotRequest(SCREENSHOT_OTHER, hasStatus,
+                 hasNav);
+-        takeScreenshot(screenshotType, timeoutMs, handler, screenshotRequest, completionConsumer, null);
++        takeScreenshot(screenshotType, timeoutMs, handler, screenshotRequest, completionConsumer);
+     }
+ 
+     /**
+@@ -319,17 +285,13 @@ public class ScreenshotHelper {
+                 new ScreenshotRequest(source, screenshotBundle, boundsInScreen, insets, taskId,
+                         userId, topComponent);
+         takeScreenshot(WindowManager.TAKE_SCREENSHOT_PROVIDED_IMAGE, SCREENSHOT_TIMEOUT_MS,
+-                handler, screenshotRequest, completionConsumer, null);
++                handler, screenshotRequest, completionConsumer);
+     }
+ 
+     private void takeScreenshot(final int screenshotType, long timeoutMs, @NonNull Handler handler,
+-            ScreenshotRequest screenshotRequest, @Nullable Consumer<Uri> completionConsumer,
+-            final String focusedPackageName) {
++            ScreenshotRequest screenshotRequest, @Nullable Consumer<Uri> completionConsumer) {
+         synchronized (mScreenshotLock) {
+-            if (screenshotType == WindowManager.TAKE_SCREENSHOT_FULLSCREEN &&
+-                    mStitchImageUtility.takeScreenShot(focusedPackageName)){
+-                return;
+-            }
++
+             final Runnable mScreenshotTimeout = () -> {
+                 synchronized (mScreenshotLock) {
+                     if (mScreenshotConnection != null) {
+diff --git a/packages/SystemUI/AndroidManifest.xml b/packages/SystemUI/AndroidManifest.xml
+index b9c9faeff8b1..423dec646063 100644
+--- a/packages/SystemUI/AndroidManifest.xml
++++ b/packages/SystemUI/AndroidManifest.xml
+@@ -280,9 +280,6 @@
+     <!-- QS Tiles -->
+     <uses-permission android:name="lineageos.permission.MANAGE_LIVEDISPLAY" />
+ 
+-    <!-- Asus Long screenshot -->
+-    <uses-permission android:name="com.asus.stitchimage.permission.EXPORTED_FOR_ASUS_APPS"/>
+-
+     <application
+         android:name=".SystemUIApplication"
+         android:persistent="true"
+diff --git a/packages/SystemUI/res-revengeos/values/config.xml b/packages/SystemUI/res-revengeos/values/config.xml
+index 1ad2a359c958..267b8477148a 100644
+--- a/packages/SystemUI/res-revengeos/values/config.xml
++++ b/packages/SystemUI/res-revengeos/values/config.xml
+@@ -40,7 +40,4 @@
+     <!-- Burn in protection -->
+     <bool name="config_statusBarBurnInProtection">true</bool>
+     <integer name="config_shift_interval">60</integer>
+- 
+- <!-- Asus stitch editor component name -->
+-    <string name="config_stitchEditor">com.asus.stitchimage/com.asus.stitchimage.editor.ScreenshotEditorActivity</string>
+ </resources>
+diff --git a/packages/SystemUI/src/com/android/systemui/globalactions/GlobalActionsDialog.java b/packages/SystemUI/src/com/android/systemui/globalactions/GlobalActionsDialog.java
+index e507ba3c2094..250ab0569db4 100644
+--- a/packages/SystemUI/src/com/android/systemui/globalactions/GlobalActionsDialog.java
++++ b/packages/SystemUI/src/com/android/systemui/globalactions/GlobalActionsDialog.java
+@@ -94,7 +94,6 @@ import android.view.ViewGroup;
+ import android.view.Window;
+ import android.view.WindowInsets;
+ import android.view.WindowManager;
+-import android.view.WindowManagerGlobal;
+ import android.view.accessibility.AccessibilityEvent;
+ import android.widget.BaseAdapter;
+ import android.widget.FrameLayout;
+@@ -1142,11 +1141,8 @@ public class GlobalActionsDialog implements DialogInterface.OnDismissListener,
+             mHandler.postDelayed(new Runnable() {
+                 @Override
+                 public void run() {
+-                    try {
+-                        WindowManagerGlobal.getWindowManagerService().takeAlternativeScreenshot();
+-                    } catch (RemoteException e) {
+-                        Log.e("GlobalActionsDialog", "Error while trying to takeAlternativeScreenshot.", e);
+-                    }
++                    mScreenshotHelper.takeScreenshot(TAKE_SCREENSHOT_FULLSCREEN, true, true,
++                            SCREENSHOT_GLOBAL_ACTIONS, mHandler, null);
+                     mMetricsLogger.action(MetricsEvent.ACTION_SCREENSHOT_POWER_MENU);
+                     mUiEventLogger.log(GlobalActionsEvent.GA_SCREENSHOT_PRESS);
+                 }
+diff --git a/packages/SystemUI/src/com/android/systemui/screenshot/SaveImageInBackgroundTask.java b/packages/SystemUI/src/com/android/systemui/screenshot/SaveImageInBackgroundTask.java
+index ac33581f136b..33d8fc7b7806 100644
+--- a/packages/SystemUI/src/com/android/systemui/screenshot/SaveImageInBackgroundTask.java
++++ b/packages/SystemUI/src/com/android/systemui/screenshot/SaveImageInBackgroundTask.java
+@@ -328,7 +328,7 @@ class SaveImageInBackgroundTask extends AsyncTask<Void, Void, Void> {
+ 
+         // Create an edit intent, if a specific package is provided as the editor, then
+         // launch that directly
+-        String editorPackage = context.getString(R.string.config_stitchEditor);
++        String editorPackage = context.getString(R.string.config_screenshotEditor);
+         Intent editIntent = new Intent(Intent.ACTION_EDIT);
+         if (!TextUtils.isEmpty(editorPackage)) {
+             editIntent.setComponent(ComponentName.unflattenFromString(editorPackage));
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/policy/CastControllerImpl.java b/packages/SystemUI/src/com/android/systemui/statusbar/policy/CastControllerImpl.java
+index ac8655b5ee42..da1ef2f0f650 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/policy/CastControllerImpl.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/policy/CastControllerImpl.java
+@@ -48,8 +48,6 @@ import javax.inject.Inject;
+ import javax.inject.Singleton;
+ 
+ 
+-import com.android.internal.custom.screenshot.StitchImageUtility;
+-
+ /** Platform implementation of the cast controller. **/
+ @Singleton
+ public class CastControllerImpl implements CastController {
+@@ -179,10 +177,6 @@ public class CastControllerImpl implements CastController {
+         }
+ 
+         synchronized (mProjectionLock) {
+-            if (mProjection != null &&  mProjection.getPackageName().equals(
+-                    StitchImageUtility.STITCHIMAGE_APP_PACKAGE_NAME)) {
+-                mProjection = null;
+-            }
+             if (mProjection != null) {
+                 final CastDevice device = new CastDevice();
+                 device.id = mProjection.getPackageName();
+diff --git a/services/core/java/com/android/server/policy/PhoneWindowManager.java b/services/core/java/com/android/server/policy/PhoneWindowManager.java
+index acfece6aa39f..e645e3f4b108 100644
+--- a/services/core/java/com/android/server/policy/PhoneWindowManager.java
++++ b/services/core/java/com/android/server/policy/PhoneWindowManager.java
+@@ -6392,11 +6392,6 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+         }
+     }
+ 
+-     public void takeAlternativeScreenshot() {
+-         mScreenshotRunnable.setScreenshotType(TAKE_SCREENSHOT_FULLSCREEN);
+-         mHandler.post(mScreenshotRunnable);
+-     }
+-
+     /**
+      * @return Whether music is being played right now "locally" (e.g. on the device's speakers
+      *    or wired headphones) or "remotely" (e.g. on a device using the Cast protocol and
+diff --git a/services/core/java/com/android/server/policy/WindowManagerPolicy.java b/services/core/java/com/android/server/policy/WindowManagerPolicy.java
+index 2ce93dda6946..e82c871a0d80 100644
+--- a/services/core/java/com/android/server/policy/WindowManagerPolicy.java
++++ b/services/core/java/com/android/server/policy/WindowManagerPolicy.java
+@@ -1474,10 +1474,4 @@ public interface WindowManagerPolicy extends WindowManagerPolicyConstants {
+      * @return whether the value was changed.
+      */
+     boolean setAodShowing(boolean aodShowing);
+-
+-    /**
+-     * Long screenshot
+-     * @hide
+-     */
+-    void takeAlternativeScreenshot();
+ }
+diff --git a/services/core/java/com/android/server/uri/UriGrantsManagerService.java b/services/core/java/com/android/server/uri/UriGrantsManagerService.java
+index 2a25c4320bfd..e8a0379473da 100644
+--- a/services/core/java/com/android/server/uri/UriGrantsManagerService.java
++++ b/services/core/java/com/android/server/uri/UriGrantsManagerService.java
+@@ -113,8 +113,6 @@ import java.util.Iterator;
+ import java.util.List;
+ import java.util.Objects;
+ 
+-import com.android.internal.custom.screenshot.StitchImageUtility;
+-
+ /** Manages uri grants. */
+ public class UriGrantsManagerService extends IUriGrantsManager.Stub {
+     private static final boolean DEBUG = false;
+@@ -1128,14 +1126,12 @@ public class UriGrantsManagerService extends IUriGrantsManager.Stub {
+         final int callingAppId = UserHandle.getAppId(callingUid);
+         if ((callingAppId == SYSTEM_UID) || (callingAppId == ROOT_UID)) {
+             if ("com.android.settings.files".equals(grantUri.uri.getAuthority())
+-                    || "com.android.settings.module_licenses".equals(grantUri.uri.getAuthority())
+-                    || StitchImageUtility.STITCHIMAGE_FILEPROVIDER_CLASS.equals(grantUri.uri.getAuthority())) {
++                    || "com.android.settings.module_licenses".equals(grantUri.uri.getAuthority())) {
+                 // Exempted authority for
+                 // 1. cropping user photos and sharing a generated license html
+                 //    file in Settings app
+                 // 2. sharing a generated license html file in TvSettings app
+                 // 3. Sharing module license files from Settings app
+-                // 4. Asus Long Screenshot app
+             } else {
+                 Slog.w(TAG, "For security reasons, the system cannot issue a Uri permission"
+                         + " grant to " + grantUri + "; use startActivityAsCaller() instead");
+diff --git a/services/core/java/com/android/server/wm/DisplayPolicy.java b/services/core/java/com/android/server/wm/DisplayPolicy.java
+index 3db9d2076136..29881cc761b2 100644
+--- a/services/core/java/com/android/server/wm/DisplayPolicy.java
++++ b/services/core/java/com/android/server/wm/DisplayPolicy.java
+@@ -4083,12 +4083,10 @@ public class DisplayPolicy {
+      */
+     public void takeScreenshot(int screenshotType, int source) {
+         if (mScreenshotHelper != null) {
+-            String packageName = mFocusedWindow == null ? "" : mFocusedWindow.getAttrs().packageName;
+             mScreenshotHelper.takeScreenshot(screenshotType,
+                     getStatusBar() != null && getStatusBar().isVisibleLw(),
+                     getNavigationBar() != null && getNavigationBar().isVisibleLw(),
+-                    source, mHandler, null, /* completionConsumer */
+-                    packageName);
++                    source, mHandler, null /* completionConsumer */);
+         }
+     }
+ 
+diff --git a/services/core/java/com/android/server/wm/WindowManagerService.java b/services/core/java/com/android/server/wm/WindowManagerService.java
+index e1a9cbb8c8ae..7db8e9ebd27c 100644
+--- a/services/core/java/com/android/server/wm/WindowManagerService.java
++++ b/services/core/java/com/android/server/wm/WindowManagerService.java
+@@ -8306,9 +8306,4 @@ public class WindowManagerService extends IWindowManager.Stub
+             Binder.restoreCallingIdentity(origId);
+         }
+     }
+-
+-    @Override
+-    public void takeAlternativeScreenshot() {
+-        mPolicy.takeAlternativeScreenshot();
+-    }
+ }
+-- 
+2.30.2
+

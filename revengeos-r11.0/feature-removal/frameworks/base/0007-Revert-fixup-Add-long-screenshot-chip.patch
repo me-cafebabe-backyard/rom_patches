@@ -1,0 +1,107 @@
+From 9e657c357daed79fede57e0d601c06dc7556d1d2 Mon Sep 17 00:00:00 2001
+From: me-cafebabe <me_cafebabe@hotmail.com>
+Date: Sat, 4 Jun 2022 19:43:51 +0800
+Subject: [PATCH 7/9] Revert "fixup! Add long screenshot chip"
+
+This reverts commit 3b4e40e48fdcb1779b8f3eb11a6c4904df0f9e95.
+---
+ .../systemui/screenshot/GlobalScreenshot.java | 54 +++++++++----------
+ .../systemui/screenshot/ScreenshotEvent.java  |  2 +
+ 2 files changed, 29 insertions(+), 27 deletions(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/screenshot/GlobalScreenshot.java b/packages/SystemUI/src/com/android/systemui/screenshot/GlobalScreenshot.java
+index 01e87e2d910a..64ed19f89f31 100644
+--- a/packages/SystemUI/src/com/android/systemui/screenshot/GlobalScreenshot.java
++++ b/packages/SystemUI/src/com/android/systemui/screenshot/GlobalScreenshot.java
+@@ -980,30 +980,17 @@ public class GlobalScreenshot implements ViewTreeObserver.OnComputeInternalInset
+             chips.add(actionChip);
+         }
+ 
+-        // Scrolling Screenshot
+-        ScreenshotActionChip scrollChip = (ScreenshotActionChip) inflater.inflate(
+-                R.layout.global_screenshot_action_chip, mActionsView, false);
+-        scrollChip.setText(imageData.scrollAction.title);
+-        scrollChip.setIcon(imageData.scrollAction.getIcon(), true);
+-        scrollChip.setPendingIntent(imageData.scrollAction.actionIntent, () -> {
+-            mUiEventLogger.log(ScreenshotEvent.SCREENSHOT_SCROLL_TAPPED);
+-            dismissScreenshot("chip tapped", false);
+-            mOnCompleteRunnable.run();
+-        });
+-        mActionsView.addView(scrollChip);
+-        chips.add(scrollChip);
+-
+-        ScreenshotActionChip deleteChip = (ScreenshotActionChip) inflater.inflate(
++        ScreenshotActionChip shareChip = (ScreenshotActionChip) inflater.inflate(
+                 R.layout.global_screenshot_action_chip, mActionsView, false);
+-        deleteChip.setText(imageData.deleteAction.title);
+-        deleteChip.setIcon(imageData.deleteAction.getIcon(), true);
+-        deleteChip.setPendingIntent(imageData.deleteAction.actionIntent, () -> {
+-            mUiEventLogger.log(ScreenshotEvent.SCREENSHOT_DELETE_TAPPED);
++        shareChip.setText(imageData.shareAction.title);
++        shareChip.setIcon(imageData.shareAction.getIcon(), true);
++        shareChip.setPendingIntent(imageData.shareAction.actionIntent, () -> {
++            mUiEventLogger.log(ScreenshotEvent.SCREENSHOT_SHARE_TAPPED);
+             dismissScreenshot("chip tapped", false);
+             mOnCompleteRunnable.run();
+         });
+-        mActionsView.addView(deleteChip);
+-        chips.add(deleteChip);
++        mActionsView.addView(shareChip);
++        chips.add(shareChip);
+ 
+         ScreenshotActionChip editChip = (ScreenshotActionChip) inflater.inflate(
+                 R.layout.global_screenshot_action_chip, mActionsView, false);
+@@ -1017,17 +1004,30 @@ public class GlobalScreenshot implements ViewTreeObserver.OnComputeInternalInset
+         mActionsView.addView(editChip);
+         chips.add(editChip);
+ 
+-        ScreenshotActionChip shareChip = (ScreenshotActionChip) inflater.inflate(
++        ScreenshotActionChip deleteChip = (ScreenshotActionChip) inflater.inflate(
+                 R.layout.global_screenshot_action_chip, mActionsView, false);
+-        shareChip.setText(imageData.shareAction.title);
+-        shareChip.setIcon(imageData.shareAction.getIcon(), true);
+-        shareChip.setPendingIntent(imageData.shareAction.actionIntent, () -> {
+-            mUiEventLogger.log(ScreenshotEvent.SCREENSHOT_SHARE_TAPPED);
++        deleteChip.setText(imageData.deleteAction.title);
++        deleteChip.setIcon(imageData.deleteAction.getIcon(), true);
++        deleteChip.setPendingIntent(imageData.deleteAction.actionIntent, () -> {
++            mUiEventLogger.log(ScreenshotEvent.SCREENSHOT_DELETE_TAPPED);
+             dismissScreenshot("chip tapped", false);
+             mOnCompleteRunnable.run();
+         });
+-        mActionsView.addView(shareChip);
+-        chips.add(shareChip);
++        mActionsView.addView(deleteChip);
++        chips.add(deleteChip);
++
++        // Scrolling Screenshot
++        ScreenshotActionChip scrollChip = (ScreenshotActionChip) inflater.inflate(
++                R.layout.global_screenshot_action_chip, mActionsView, false);
++        scrollChip.setText(imageData.scrollAction.title);
++        scrollChip.setIcon(imageData.scrollAction.getIcon(), true);
++        scrollChip.setPendingIntent(imageData.scrollAction.actionIntent, () -> {
++            mUiEventLogger.log(ScreenshotEvent.SCREENSHOT_SCROLL_TAPPED);
++            dismissScreenshot("chip tapped", false);
++            mOnCompleteRunnable.run();
++        });
++        mActionsView.addView(scrollChip);
++        chips.add(scrollChip);
+ 
+         mScreenshotPreview.setOnClickListener(v -> {
+             try {
+diff --git a/packages/SystemUI/src/com/android/systemui/screenshot/ScreenshotEvent.java b/packages/SystemUI/src/com/android/systemui/screenshot/ScreenshotEvent.java
+index e1dd4ef45976..9ada0ebc88dd 100644
+--- a/packages/SystemUI/src/com/android/systemui/screenshot/ScreenshotEvent.java
++++ b/packages/SystemUI/src/com/android/systemui/screenshot/ScreenshotEvent.java
+@@ -51,6 +51,8 @@ public enum ScreenshotEvent implements UiEventLogger.UiEventEnum {
+     SCREENSHOT_SHARE_TAPPED(309),
+     @UiEvent(doc = "screenshot delete button tapped")
+     SCREENSHOT_DELETE_TAPPED(369),
++    @UiEvent(doc = "screenshot long ss button tapped")
++    SCREENSHOT_SCROLLSS_TAPPED(420),
+     @UiEvent(doc = "screenshot smart action chip tapped")
+     SCREENSHOT_SMART_ACTION_TAPPED(374),
+     @UiEvent(doc = "screenshot scroll tapped")
+-- 
+2.30.2
+

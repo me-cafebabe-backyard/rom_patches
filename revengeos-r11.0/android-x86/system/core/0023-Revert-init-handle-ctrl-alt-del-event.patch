@@ -1,0 +1,38 @@
+From ab4e01a12277e67e49db6f74d8b54082a7d5b9e5 Mon Sep 17 00:00:00 2001
+From: Build Server <build@localhost>
+Date: Thu, 30 Jun 2022 11:11:43 +0000
+Subject: [PATCH 23/25] Revert "init: handle ctrl-alt-del event"
+
+This reverts commit f92b862c2ec55c5ee0c18dcb7d24ff1e18be2cb2.
+---
+ init/reboot_utils.cpp | 7 -------
+ 1 file changed, 7 deletions(-)
+
+diff --git a/init/reboot_utils.cpp b/init/reboot_utils.cpp
+index cc17a9590..76460a5df 100644
+--- a/init/reboot_utils.cpp
++++ b/init/reboot_utils.cpp
+@@ -30,7 +30,6 @@
+ 
+ #include "capabilities.h"
+ #include "reboot_utils.h"
+-#include "init.h"
+ 
+ namespace android {
+ namespace init {
+@@ -180,12 +179,6 @@ void InstallRebootSignalHandlers() {
+ #endif
+     sigaction(SIGSYS, &action, nullptr);
+     sigaction(SIGTRAP, &action, nullptr);
+-
+-    action.sa_handler = [](int sig) {
+-        LOG(INFO) << "Got ctrl-alt-del: " << sig;
+-        QueueControlMessage("start", "ctrl-alt-del", getpid(), -1);
+-    };
+-    sigaction(SIGINT, &action, nullptr);
+ }
+ 
+ }  // namespace init
+-- 
+2.30.2
+

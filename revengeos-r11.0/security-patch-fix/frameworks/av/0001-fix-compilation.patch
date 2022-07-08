@@ -1,0 +1,39 @@
+From cfab70778d8d95dbf590a9e82ef4a91c35bc5826 Mon Sep 17 00:00:00 2001
+From: Build Server <build@localhost>
+Date: Sat, 4 Jun 2022 04:40:55 +0000
+Subject: [PATCH] fix compilation
+
+---
+ media/libstagefright/MediaCodec.cpp | 16 ----------------
+ 1 file changed, 16 deletions(-)
+
+diff --git a/media/libstagefright/MediaCodec.cpp b/media/libstagefright/MediaCodec.cpp
+index 369c201df4..553f59a41f 100644
+--- a/media/libstagefright/MediaCodec.cpp
++++ b/media/libstagefright/MediaCodec.cpp
+@@ -279,22 +279,6 @@ void MediaCodec::ResourceManagerServiceProxy::removeCookie(void* cookie) {
+     sCookies.erase(cookie);
+ }
+ 
+-//static
+-Mutex MediaCodec::ResourceManagerServiceProxy::sLockCookies;
+-std::set<void*> MediaCodec::ResourceManagerServiceProxy::sCookies;
+-
+-//static
+-void MediaCodec::ResourceManagerServiceProxy::addCookie(void* cookie) {
+-    Mutex::Autolock _l(sLockCookies);
+-    sCookies.insert(cookie);
+-}
+-
+-//static
+-void MediaCodec::ResourceManagerServiceProxy::removeCookie(void* cookie) {
+-    Mutex::Autolock _l(sLockCookies);
+-    sCookies.erase(cookie);
+-}
+-
+ //static
+ void MediaCodec::ResourceManagerServiceProxy::BinderDiedCallback(void* cookie) {
+     Mutex::Autolock _l(sLockCookies);
+-- 
+2.30.2
+

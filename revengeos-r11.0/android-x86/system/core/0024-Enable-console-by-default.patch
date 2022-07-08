@@ -1,0 +1,29 @@
+From 7df3ba795d9b3404860f3b700b82b20d1785aeb0 Mon Sep 17 00:00:00 2001
+From: Build Server <build@localhost>
+Date: Thu, 30 Jun 2022 11:21:47 +0000
+Subject: [PATCH 24/25] Enable console by default
+
+---
+ rootdir/init.rc | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/rootdir/init.rc b/rootdir/init.rc
+index cb83eaba8..c85a9a1bb 100644
+--- a/rootdir/init.rc
++++ b/rootdir/init.rc
+@@ -1029,10 +1029,10 @@ service ueventd /system/bin/ueventd
+ service console /system/bin/sh
+     class core
+     console
+-    disabled
++#    disabled
+ #   user shell
+     group shell log readproc
+-    seclabel u:r:shell:s0
++    seclabel u:r:su:s0
+     setenv HOSTNAME console
+ 
+ on property:ro.debuggable=1
+-- 
+2.30.2
+

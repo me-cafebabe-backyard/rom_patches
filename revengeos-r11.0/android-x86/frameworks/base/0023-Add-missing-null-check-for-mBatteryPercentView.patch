@@ -1,0 +1,48 @@
+From 76109eaa986966bcdc1767df26506bfb840aeb3a Mon Sep 17 00:00:00 2001
+From: Peter Collingbourne <pcc@google.com>
+Date: Wed, 27 Jan 2021 12:33:39 -0800
+Subject: [PATCH 23/25] Add missing null check for mBatteryPercentView.
+
+On an emulated device without a battery we've observed a
+NullPointerException coming from a call to setText() on a null
+mBatteryPercentView:
+
+FATAL EXCEPTION: main
+Process: com.android.systemui, PID: 4234
+java.lang.NullPointerException: Attempt to invoke virtual method 'void android.widget.TextView.setText(java.lang.CharSequence)' on a null object reference
+        at com.android.systemui.BatteryMeterView.setPercentTextAtCurrentLevel(BatteryMeterView.java:380)
+        at com.android.systemui.BatteryMeterView.lambda$updatePercentText$0(BatteryMeterView.java:366)
+        at com.android.systemui.BatteryMeterView.lambda$updatePercentText$0$BatteryMeterView(Unknown Source:0)
+        at com.android.systemui.-$$Lambda$BatteryMeterView$tE-TUFngFnD6fsDmUpqJf1miV_U.onBatteryRemainingEstimateRetrieved(Unknown Source:2)
+        at com.android.systemui.statusbar.policy.BatteryControllerImpl.notifyEstimateFetchCallbacks(BatteryControllerImpl.java:308)
+        at com.android.systemui.statusbar.policy.BatteryControllerImpl.lambda$0VzGTjPGwGKStizyJuiiH2rMVVk(Unknown Source:0)
+        at com.android.systemui.statusbar.policy.-$$Lambda$BatteryControllerImpl$0VzGTjPGwGKStizyJuiiH2rMVVk.run(Unknown Source:2)
+
+It seems that it's possible for the battery meter to enter the
+hidden percentage state in between the check in updatePercentText()
+and the lambda callback. Guard against that possibility with
+a null check in the lambda.
+
+Bug: 178231152
+Change-Id: Ia805a1a8497d4ad4f99c2864e17a88d46690d471
+---
+ .../SystemUI/src/com/android/systemui/BatteryMeterView.java    | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/BatteryMeterView.java b/packages/SystemUI/src/com/android/systemui/BatteryMeterView.java
+index fad7079939a3..91f56656ad55 100644
+--- a/packages/SystemUI/src/com/android/systemui/BatteryMeterView.java
++++ b/packages/SystemUI/src/com/android/systemui/BatteryMeterView.java
+@@ -388,6 +388,9 @@ public class BatteryMeterView extends LinearLayout implements
+         if (mBatteryPercentView != null) {
+             if (mShowPercentMode == MODE_ESTIMATE && !mCharging) {
+                 mBatteryController.getEstimatedTimeRemainingString((String estimate) -> {
++                    if (mBatteryPercentView == null) {
++                        return;
++                    }
+                     if (estimate != null) {
+                         mBatteryPercentView.setText(estimate);
+                         setContentDescription(getContext().getString(
+-- 
+2.30.2
+

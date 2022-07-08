@@ -1,0 +1,112 @@
+From f3febc64098c8d9f0351e4ceabcd822b2e3f667e Mon Sep 17 00:00:00 2001
+From: Ady Abraham <adyabr@google.com>
+Date: Fri, 18 Jun 2021 12:32:33 -0700
+Subject: [PATCH 14/17] swapchain: increase the minimal buffer count to 3
+
+cherry-pick of Android S commit 148bad076ef46297e516b650007852937a506c8b
+
+On Android, the compositor will latch buffers only if they are completed
+(i.e. the gpu fence is signaled), which means 2 buffers would
+be acquired from the buffer queue. If the client wants mailbox or
+swap_interval=0 behavior, an additional buffer is needed for the app
+to never block on dequeueBuffer.
+
+Test: run Vk cube and observe buffer count
+Test: CtsDeqpTestCases: dEQP-VK.wsi.*
+Bug: 182887411
+Change-Id: I4c6bcb85200c6646dd8c504b2d40471c7d6eeed6
+---
+ vulkan/libvulkan/swapchain.cpp | 49 +++++++++++++++++++++++-----------
+ 1 file changed, 33 insertions(+), 16 deletions(-)
+
+diff --git a/vulkan/libvulkan/swapchain.cpp b/vulkan/libvulkan/swapchain.cpp
+index d3ed88d2e..043b5656e 100644
+--- a/vulkan/libvulkan/swapchain.cpp
++++ b/vulkan/libvulkan/swapchain.cpp
+@@ -511,6 +511,30 @@ android_dataspace GetNativeDataspace(VkColorSpaceKHR colorspace) {
+     }
+ }
+ 
++int get_min_buffer_count(ANativeWindow* window,
++                         uint32_t* out_min_buffer_count) {
++    constexpr int kExtraBuffers = 2;
++
++    int err;
++    int min_undequeued_buffers;
++    err = window->query(window, NATIVE_WINDOW_MIN_UNDEQUEUED_BUFFERS,
++                        &min_undequeued_buffers);
++    if (err != android::OK || min_undequeued_buffers < 0) {
++        ALOGE(
++            "NATIVE_WINDOW_MIN_UNDEQUEUED_BUFFERS query failed: %s (%d) "
++            "value=%d",
++            strerror(-err), err, min_undequeued_buffers);
++        if (err == android::OK) {
++            err = android::UNKNOWN_ERROR;
++        }
++        return err;
++    }
++
++    *out_min_buffer_count =
++        static_cast<uint32_t>(min_undequeued_buffers + kExtraBuffers);
++    return android::OK;
++}
++
+ }  // anonymous namespace
+ 
+ VKAPI_ATTR
+@@ -857,15 +881,13 @@ VkResult GetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice pdev,
+ 
+     int err;
+     int query_value;
++    uint32_t min_buffer_count;
+     ANativeWindow* window = SurfaceFromHandle(surface)->window.get();
+ 
+-    err = window->query(window, NATIVE_WINDOW_MIN_UNDEQUEUED_BUFFERS, &query_value);
+-    if (err != android::OK || query_value < 0) {
+-        ALOGE("NATIVE_WINDOW_MIN_UNDEQUEUED_BUFFERS query failed: %s (%d) value=%d",
+-              strerror(-err), err, query_value);
++    err = get_min_buffer_count(window, &min_buffer_count);
++    if (err != android::OK) {
+         return VK_ERROR_SURFACE_LOST_KHR;
+     }
+-    uint32_t min_undequeued_buffers = static_cast<uint32_t>(query_value);
+ 
+     err = window->query(window, NATIVE_WINDOW_MAX_BUFFER_COUNT, &query_value);
+     if (err != android::OK || query_value < 0) {
+@@ -876,7 +898,7 @@ VkResult GetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice pdev,
+     uint32_t max_buffer_count = static_cast<uint32_t>(query_value);
+ 
+     std::vector<VkPresentModeKHR> present_modes;
+-    if (min_undequeued_buffers + 1 < max_buffer_count)
++    if (min_buffer_count < max_buffer_count)
+         present_modes.push_back(VK_PRESENT_MODE_MAILBOX_KHR);
+     present_modes.push_back(VK_PRESENT_MODE_FIFO_KHR);
+ 
+@@ -1205,19 +1227,14 @@ VkResult CreateSwapchainKHR(VkDevice device,
+         }
+     }
+ 
+-    int query_value;
+-    err = window->query(window, NATIVE_WINDOW_MIN_UNDEQUEUED_BUFFERS,
+-                        &query_value);
+-    if (err != android::OK || query_value < 0) {
+-        ALOGE("window->query failed: %s (%d) value=%d", strerror(-err), err,
+-              query_value);
++    uint32_t min_buffer_count;
++    err = get_min_buffer_count(window, &min_buffer_count);
++    if (err != android::OK) {
+         return VK_ERROR_SURFACE_LOST_KHR;
+     }
+-    uint32_t min_undequeued_buffers = static_cast<uint32_t>(query_value);
++
+     uint32_t num_images =
+-        (swap_interval ? create_info->minImageCount
+-                       : std::max(3u, create_info->minImageCount)) -
+-        1 + min_undequeued_buffers;
++        std::max(min_buffer_count, create_info->minImageCount);
+ 
+     // Lower layer insists that we have at least two buffers. This is wasteful
+     // and we'd like to relax it in the shared case, but not all the pieces are
+-- 
+2.30.2
+

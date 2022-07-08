@@ -1,0 +1,35 @@
+From c54d9e7f544c97573905d45130ff8083c6db44e9 Mon Sep 17 00:00:00 2001
+From: Build Server <build@localhost>
+Date: Thu, 30 Jun 2022 08:35:51 +0000
+Subject: [PATCH 15/15] Move external/stagefright-plugins/include =>
+ external/x86/stagefright-plugins/include
+
+---
+ media/libstagefright/Android.bp | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/media/libstagefright/Android.bp b/media/libstagefright/Android.bp
+index a080fadddb..8fd7fca5b6 100644
+--- a/media/libstagefright/Android.bp
++++ b/media/libstagefright/Android.bp
+@@ -149,7 +149,7 @@ cc_library_static {
+ 
+     include_dirs: [
+         // FFMPEG plugin
+-        "external/stagefright-plugins/include"
++        "external/x86/stagefright-plugins/include"
+     ],
+ 
+     sanitize: {
+@@ -321,7 +321,7 @@ cc_library {
+ 
+     include_dirs: [
+         // FFMPEG plugin
+-        "external/stagefright-plugins/include"
++        "external/x86/stagefright-plugins/include"
+     ],
+ 
+     export_shared_lib_headers: [
+-- 
+2.30.2
+

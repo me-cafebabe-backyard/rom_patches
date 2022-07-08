@@ -1,0 +1,37 @@
+From e63e3d8171ea8e1da6f3bdcdacc55b194c22cb33 Mon Sep 17 00:00:00 2001
+From: Mauro Rossi <issor.oruam@gmail.com>
+Date: Mon, 1 Jun 2020 00:20:42 +0200
+Subject: [PATCH 25/25] ResolverActivity: use hardware rendering for Intent
+ Resolver dialog (r-x86)
+
+Workaround to avoid graphic glitches with gbm_gralloc happening
+when launcher needs to be selected at first boot
+
+Suggested by Franco Catrin for issues affecting software rendering path:
+https://github.com/android-rpi/device_brcm_rpi3/issues/49
+
+(r-x86) Resolved conflict due to changes in Android 11
+
+Change-Id: I03555c839a126a311db5925cf3bc3459ff786c4b
+---
+ core/java/com/android/internal/app/ResolverActivity.java | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/core/java/com/android/internal/app/ResolverActivity.java b/core/java/com/android/internal/app/ResolverActivity.java
+index 24bbe749aaef..1dd49c28d4a8 100644
+--- a/core/java/com/android/internal/app/ResolverActivity.java
++++ b/core/java/com/android/internal/app/ResolverActivity.java
+@@ -343,6 +343,10 @@ public class ResolverActivity extends Activity implements
+     protected void onCreate(Bundle savedInstanceState, Intent intent,
+             CharSequence title, int defaultTitleRes, Intent[] initialIntents,
+             List<ResolveInfo> rList, boolean supportsAlwaysUseOption) {
++
++        getWindow().setFlags(WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
++            WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED);
++
+         setTheme(appliedThemeResId());
+         super.onCreate(savedInstanceState);
+ 
+-- 
+2.30.2
+

@@ -1,0 +1,31 @@
+From 2e148ed3ee2e6789d112f6993a20f8b4675206ed Mon Sep 17 00:00:00 2001
+From: anonymous <anonymous>
+Date: Tue, 16 Nov 2021 02:39:20 +0000
+Subject: [PATCH 4/9] Revert "FaceService: Nuke useless call to
+ getAuthenticatorId"
+
+This reverts commit eddb13dc6c3091f9139d2f46da43ee1023dd5efc.
+---
+ .../com/android/server/biometrics/face/FaceService.java     | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/services/core/java/com/android/server/biometrics/face/FaceService.java b/services/core/java/com/android/server/biometrics/face/FaceService.java
+index 74363751c73a..e43f4f9e3c3b 100644
+--- a/services/core/java/com/android/server/biometrics/face/FaceService.java
++++ b/services/core/java/com/android/server/biometrics/face/FaceService.java
+@@ -1185,7 +1185,11 @@ public class FaceService extends BiometricServiceBase {
+             mCurrentUserId = userId;
+             mCustomFaceService.setCurrentUserId(mCurrentUserId);
+             if (mCustomFaceService.getService(mCurrentUserId) != null) {
+-                mAuthenticatorIds.put(userId, (long) 1);
++                long authId = 0;
++                if (hasEnrolledBiometrics(mCurrentUserId)) {
++                    authId = (long) mCustomFaceService.getAuthenticatorId();
++                }
++                mAuthenticatorIds.put(userId, authId);
+             } else {
+                 mCustomFaceService.callForBind(userId);
+                 Slog.w(TAG, "updateActiveGroup(): Face service not started!");
+-- 
+2.30.2
+

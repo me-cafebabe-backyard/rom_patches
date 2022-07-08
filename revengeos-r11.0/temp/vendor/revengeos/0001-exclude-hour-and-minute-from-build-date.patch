@@ -1,0 +1,26 @@
+From eb421eb3c0f21affb0af076efd305a1639b745b6 Mon Sep 17 00:00:00 2001
+From: Build Server <build@localhost>
+Date: Fri, 8 Jul 2022 14:26:46 +0000
+Subject: [PATCH] exclude hour and minute from build date
+
+this makes it regenerate ninja everytimes
+---
+ config/version.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/config/version.mk b/config/version.mk
+index 5b3d3998..13d0706d 100644
+--- a/config/version.mk
++++ b/config/version.mk
+@@ -17,7 +17,7 @@ REVENGEOS_REVISION := 4
+ REVENGEOS_SUBREVISION := 1
+ 
+ REVENGEOS_VERSION := $(REVENGEOS_REVISION).$(REVENGEOS_SUBREVISION)
+-REVENGEOS_BUILD_DATE := $(shell date -u +%Y%m%d-%H%M)
++REVENGEOS_BUILD_DATE := $(shell date -u +%Y%m%d)
+ 
+ ifndef REVENGEOS_BUILDTYPE
+     REVENGEOS_BUILDTYPE := UNOFFICIAL
+-- 
+2.30.2
+

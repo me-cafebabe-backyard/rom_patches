@@ -1,0 +1,169 @@
+From b0fe85dbf1ad2ef8d3c9f2e83ce2cf2047d9aa62 Mon Sep 17 00:00:00 2001
+From: anonymous <anonymous>
+Date: Tue, 16 Nov 2021 02:36:33 +0000
+Subject: [PATCH 3/9] Revert "SystemUI: Allow listening for face only on
+ pin/pass view"
+
+This reverts commit 89543bdb2c5bae4702b3aa399541cdf560676cf2.
+---
+ core/res/res/values/config.xml                |  3 ---
+ core/res/res/values/symbols.xml               |  4 ---
+ .../keyguard/KeyguardUpdateMonitor.java       | 25 ++-----------------
+ .../phone/StatusBarKeyguardViewManager.java   |  6 -----
+ 4 files changed, 2 insertions(+), 36 deletions(-)
+
+diff --git a/core/res/res/values/config.xml b/core/res/res/values/config.xml
+index 27a3faf916de..ff2aacd61e4a 100644
+--- a/core/res/res/values/config.xml
++++ b/core/res/res/values/config.xml
+@@ -4438,9 +4438,6 @@
+     <!-- Component names of the services which will keep critical code path warm -->
+     <string-array name="config_keep_warming_services" translatable="false" />
+ 
+-    <!-- Enable face auth only when swiping security view -->
+-    <bool name="config_faceAuthOnlyOnSecurityView">false</bool>
+-
+     <!-- Whether device has physical tri state switch -->
+     <bool name="config_hasAlertSlider">false</bool>
+ 
+diff --git a/core/res/res/values/symbols.xml b/core/res/res/values/symbols.xml
+index 83a3d3db0424..0cfa29e75da7 100644
+--- a/core/res/res/values/symbols.xml
++++ b/core/res/res/values/symbols.xml
+@@ -4083,10 +4083,6 @@
+   <java-symbol type="array" name="config_rebootActionsList" />
+   <java-symbol type="array" name="values_globalActionsList" />
+ 
+-  <!-- Enable face auth only when swiping security view -->
+-  <java-symbol type="bool" name="config_faceAuthOnlyOnSecurityView" />
+-
+-
+   <!-- Alert slider. -->
+   <java-symbol type="string" name="alert_slider_state_path" />
+   <java-symbol type="string" name="alert_slider_uevent_match_path" />
+diff --git a/packages/SystemUI/src/com/android/keyguard/KeyguardUpdateMonitor.java b/packages/SystemUI/src/com/android/keyguard/KeyguardUpdateMonitor.java
+index f4541496d276..51f976ef28f2 100644
+--- a/packages/SystemUI/src/com/android/keyguard/KeyguardUpdateMonitor.java
++++ b/packages/SystemUI/src/com/android/keyguard/KeyguardUpdateMonitor.java
+@@ -292,9 +292,6 @@ public class KeyguardUpdateMonitor implements TrustManager.TrustListener, Dumpab
+     private int mActiveMobileDataSubscription = SubscriptionManager.INVALID_SUBSCRIPTION_ID;
+     private final Executor mBackgroundExecutor;
+ 
+-    private final boolean mFaceAuthOnlyOnSecurityView;
+-    private boolean mBouncerFullyShown;
+-
+     // Face unlock
+     private static final boolean mCustomFaceUnlockSupported = FaceUnlockUtils.isFaceUnlockSupported();
+ 
+@@ -943,7 +940,7 @@ public class KeyguardUpdateMonitor implements TrustManager.TrustListener, Dumpab
+     }
+ 
+     private void handleFaceLockoutReset() {
+-        mHandler.postDelayed(this::updateFaceListeningState, 1000);
++        updateFaceListeningState();
+     }
+ 
+     private void setFaceRunningState(int faceRunningState) {
+@@ -1615,8 +1612,6 @@ public class KeyguardUpdateMonitor implements TrustManager.TrustListener, Dumpab
+         mSubscriptionManager = SubscriptionManager.from(context);
+         mDeviceProvisioned = isDeviceProvisionedInSettingsDb();
+         mStrongAuthTracker = new StrongAuthTracker(context, this::notifyStrongAuthStateChanged);
+-        mFaceAuthOnlyOnSecurityView = mContext.getResources().getBoolean(
+-                com.android.internal.R.bool.config_faceAuthOnlyOnSecurityView);
+         mBackgroundExecutor = backgroundExecutor;
+         mBroadcastDispatcher = broadcastDispatcher;
+         mRingerModeTracker = ringerModeTracker;
+@@ -2037,7 +2032,7 @@ public class KeyguardUpdateMonitor implements TrustManager.TrustListener, Dumpab
+ 
+         // Only listen if this KeyguardUpdateMonitor belongs to the primary user. There is an
+         // instance of KeyguardUpdateMonitor for each user but KeyguardUpdateMonitor is user-aware.
+-        boolean shouldListen =
++        final boolean shouldListen =
+                 (mBouncer || mAuthInterruptActive || awakeKeyguard
+                         || shouldListenForFaceAssistant())
+                 && !mSwitchingUser && !isFaceDisabled(user) && becauseCannotSkipBouncer
+@@ -2045,10 +2040,6 @@ public class KeyguardUpdateMonitor implements TrustManager.TrustListener, Dumpab
+                 && strongAuthAllowsScanning && mIsPrimaryUser
+                 && !mSecureCameraLaunched && !mIsDeviceInPocket;
+ 
+-        if (shouldListen && mFaceAuthOnlyOnSecurityView && !mBouncerFullyShown){
+-            shouldListen = false;
+-        }
+-
+         // Aggregate relevant fields for debug logging.
+         if (DEBUG_FACE || DEBUG_SPEW) {
+             final KeyguardFaceListenModel model = new KeyguardFaceListenModel(
+@@ -2074,15 +2065,6 @@ public class KeyguardUpdateMonitor implements TrustManager.TrustListener, Dumpab
+         return shouldListen;
+     }
+ 
+-    public void onKeyguardBouncerFullyShown(boolean fullyShow) {
+-        if (mBouncerFullyShown != fullyShow){
+-            mBouncerFullyShown = fullyShow;
+-            if (mFaceAuthOnlyOnSecurityView){
+-                updateFaceListeningState();
+-            }
+-        }
+-    }
+-
+     private void maybeLogFaceListenerModelData(KeyguardFaceListenModel model) {
+         // Too chatty, but very useful when debugging issues.
+         if (DEBUG_SPEW) {
+@@ -2543,7 +2525,6 @@ public class KeyguardUpdateMonitor implements TrustManager.TrustListener, Dumpab
+         Assert.isMainThread();
+         Log.d(TAG, "onKeyguardVisibilityChanged(" + showing + ")");
+         mKeyguardIsVisible = showing;
+-        mBouncerFullyShown = false;
+ 
+         if (showing) {
+             mSecureCameraLaunched = false;
+@@ -2563,7 +2544,6 @@ public class KeyguardUpdateMonitor implements TrustManager.TrustListener, Dumpab
+      */
+     private void handleKeyguardReset() {
+         if (DEBUG) Log.d(TAG, "handleKeyguardReset");
+-        mBouncerFullyShown = false;
+         updateBiometricListeningState();
+         mNeedsSlowUnlockTransition = resolveNeedsSlowUnlockTransition();
+     }
+@@ -2621,7 +2601,6 @@ public class KeyguardUpdateMonitor implements TrustManager.TrustListener, Dumpab
+      * Handle {@link #MSG_REPORT_EMERGENCY_CALL_ACTION}
+      */
+     private void handleReportEmergencyCallAction() {
+-        mBouncerFullyShown = false;
+         Assert.isMainThread();
+         for (int i = 0; i < mCallbacks.size(); i++) {
+             KeyguardUpdateMonitorCallback cb = mCallbacks.get(i).get();
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBarKeyguardViewManager.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBarKeyguardViewManager.java
+index aae049274482..f6f1a234df1a 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBarKeyguardViewManager.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBarKeyguardViewManager.java
+@@ -107,7 +107,6 @@ public class StatusBarKeyguardViewManager implements RemoteInputController.Callb
+             updateStates();
+             mStatusBar.wakeUpIfDozing(SystemClock.uptimeMillis(), mContainer, "BOUNCER_VISIBLE");
+             updateLockIcon();
+-            onKeyguardBouncerFullyShownChanged(true);
+         }
+ 
+         @Override
+@@ -125,7 +124,6 @@ public class StatusBarKeyguardViewManager implements RemoteInputController.Callb
+         public void onFullyHidden() {
+             updateStates();
+             updateLockIcon();
+-            onKeyguardBouncerFullyShownChanged(false);
+         }
+     };
+     private final DockManager.DockEventListener mDockEventListener =
+@@ -807,10 +805,6 @@ public class StatusBarKeyguardViewManager implements RemoteInputController.Callb
+         }
+     };
+ 
+-    private void onKeyguardBouncerFullyShownChanged(boolean fullyShown){
+-        mKeyguardUpdateManager.onKeyguardBouncerFullyShown(fullyShown);
+-    }
+-
+     protected void updateStates() {
+         int vis = mContainer.getSystemUiVisibility();
+         boolean showing = mShowing;
+-- 
+2.30.2
+

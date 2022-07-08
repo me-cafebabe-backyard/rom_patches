@@ -1,0 +1,83 @@
+From f97df6f23ded115fcaaacee871469c4755ec17ad Mon Sep 17 00:00:00 2001
+From: me-cafebabe <me_cafebabe@hotmail.com>
+Date: Sat, 4 Jun 2022 20:11:32 +0800
+Subject: [PATCH 9/9] Revert "core: Spoof build properties"
+
+This reverts commit 25973c21b1cef1e57ef297c74edef308303787bf.
+---
+ core/java/android/app/Instrumentation.java | 35 ----------------------
+ 1 file changed, 35 deletions(-)
+
+diff --git a/core/java/android/app/Instrumentation.java b/core/java/android/app/Instrumentation.java
+index dae3e59ee274..721525d9af9d 100644
+--- a/core/java/android/app/Instrumentation.java
++++ b/core/java/android/app/Instrumentation.java
+@@ -41,7 +41,6 @@ import android.os.Process;
+ import android.os.RemoteException;
+ import android.os.ServiceManager;
+ import android.os.SystemClock;
+-import android.os.SystemProperties;
+ import android.os.TestLooperManager;
+ import android.os.UserHandle;
+ import android.util.AndroidRuntimeException;
+@@ -61,7 +60,6 @@ import com.android.internal.content.ReferrerIntent;
+ import java.io.File;
+ import java.lang.annotation.Retention;
+ import java.lang.annotation.RetentionPolicy;
+-import java.lang.reflect.Field;
+ import java.util.ArrayList;
+ import java.util.List;
+ 
+@@ -1159,7 +1157,6 @@ public class Instrumentation {
+         Application app = getFactory(context.getPackageName())
+                 .instantiateApplication(cl, className);
+         app.attach(context);
+-        maybeSpoofBuild(app);
+         return app;
+     }
+     
+@@ -1177,41 +1174,9 @@ public class Instrumentation {
+             ClassNotFoundException {
+         Application app = (Application)clazz.newInstance();
+         app.attach(context);
+-        maybeSpoofBuild(app);
+         return app;
+     }
+ 
+- private static void setBuildField(String packageName, String key, String value) {
+-        /*
+-         * This would be much prettier if we just removed "final" from the Build fields,
+-         * but that requires changing the API.
+-         *
+-         * While this an awful hack, it's technically safe because the fields are
+-         * populated at runtime.
+-         */
+-        try {
+-            // Unlock
+-            Field field = Build.class.getDeclaredField(key);
+-            field.setAccessible(true);
+-
+-            // Edit
+-            field.set(null, value);
+-
+-            // Lock
+-            field.setAccessible(false);
+-        } catch (NoSuchFieldException | IllegalAccessException e) {
+-            Log.e(TAG, "Failed to spoof Build." + key + " for " + packageName, e);
+-        }
+-    }
+-
+-    private static void maybeSpoofBuild(Application app) {
+-        String packageName = app.getPackageName();
+-
+-        // Set MODEL to "Pixel 4a (5G)"
+-        if ("com.google.android.gms".equals(packageName)) {
+-            setBuildField(packageName, "MODEL", "Pixel 4a (5G)");
+-        }
+-    }
+     /**
+      * Perform calling of the application's {@link Application#onCreate}
+      * method.  The default implementation simply calls through to that method.
+-- 
+2.30.2
+
