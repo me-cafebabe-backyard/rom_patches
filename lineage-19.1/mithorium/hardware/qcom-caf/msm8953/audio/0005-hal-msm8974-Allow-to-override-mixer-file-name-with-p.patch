@@ -1,0 +1,36 @@
+From 7243942c7b8aa34efd9140e538ee1e350f43ed6a Mon Sep 17 00:00:00 2001
+From: me-cafebabe <me_cafebabe@hotmail.com>
+Date: Mon, 25 Apr 2022 23:44:05 +0800
+Subject: [PATCH 5/6] hal: msm8974: Allow to override mixer file name with prop
+
+---
+ hal/msm8974/platform.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/hal/msm8974/platform.c b/hal/msm8974/platform.c
+index 2adb1100e..57386c511 100755
+--- a/hal/msm8974/platform.c
++++ b/hal/msm8974/platform.c
+@@ -3575,6 +3575,11 @@ void *platform_init(struct audio_device *adev)
+          * done to preserve backward compatibility but not mandatory as
+          * long as the mixer files are named as per above assumption.
+         */
++        char mixer_xml_file_custom[PROPERTY_VALUE_MAX];
++        property_get("vendor.audio.mixer_xml.path", mixer_xml_file_custom, "");
++        if (strlen(mixer_xml_file_custom) > 0)
++            strlcpy(mixer_xml_file, mixer_xml_file_custom, sizeof(mixer_xml_file));
++        else {
+         snprintf(mixer_xml_file, sizeof(mixer_xml_file), "%s_%s_%s.xml",
+                          MIXER_XML_BASE_STRING, snd_split_handle->snd_card,
+                          snd_split_handle->form_factor);
+@@ -3595,6 +3600,7 @@ void *platform_init(struct audio_device *adev)
+                 }
+             }
+         }
++        }
+ 
+         ALOGD("%s: Loading mixer file: %s", __func__, mixer_xml_file);
+         if (audio_extn_read_xml(adev, adev->snd_card, mixer_xml_file,
+-- 
+2.30.2
+

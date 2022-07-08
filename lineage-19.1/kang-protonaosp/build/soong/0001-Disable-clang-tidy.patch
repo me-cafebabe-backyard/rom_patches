@@ -1,0 +1,30 @@
+From 2209c488a41a7426a93f373684aa50a6f2d12e73 Mon Sep 17 00:00:00 2001
+From: Danny Lin <danny@kdrag0n.dev>
+Date: Mon, 1 Mar 2021 23:11:06 -0800
+Subject: [PATCH] Disable clang-tidy
+
+Running clang-tidy on all the AOSP code is of little use for us, but it
+takes a substantial amount of build time. Disable it to reduce build
+times for native code.
+
+Change-Id: Idc3d97bf0a08db31e66ab6ad018749575906ca1e
+---
+ cc/tidy.go | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/cc/tidy.go b/cc/tidy.go
+index 616cf8ab4..16dde3f47 100644
+--- a/cc/tidy.go
++++ b/cc/tidy.go
+@@ -82,7 +82,7 @@ func (tidy *tidyFeature) flags(ctx ModuleContext, flags Flags) Flags {
+ 		return flags
+ 	}
+ 
+-	flags.Tidy = true
++	flags.Tidy = false
+ 
+ 	// Add global WITH_TIDY_FLAGS and local tidy_flags.
+ 	withTidyFlags := ctx.Config().Getenv("WITH_TIDY_FLAGS")
+-- 
+2.30.2
+

@@ -1,0 +1,150 @@
+From bf944871aea7d6108bcd2ebd92ec91ec0533b6dc Mon Sep 17 00:00:00 2001
+From: Danny Lin <danny@kdrag0n.dev>
+Date: Sat, 20 Mar 2021 22:02:38 -0700
+Subject: [PATCH 2/2] Switch to jemalloc memory allocator
+
+Overall, jemalloc performs significantly better than Scudo in Bionic's
+real-world memory_replay traces (all times in milliseconds):
+
++----------------+-------+----------+
+|     Trace      | Scudo | jemalloc |
++----------------+-------+----------+
+|      SQL       |   27  |    21    |
+| Angry Birds 2  |  2236 |   1501   |
+|     Camera     |  4251 |   979    |
+|  Candy Crush   |  2197 |   1325   |
+|     Gmail      |  594  |   463    |
+|      Maps      |  434  |   344    |
+|     Photos     |  1330 |   477    |
+|      PUBG      |  666  |   416    |
+| surfaceflinger |  221  |   192    |
+| system_server  |  1921 |   1416   |
+|    SystemUI    |  102  |    79    |
+|    YouTube     |  363  |   294    |
++----------------+-------+----------+
+
+jemalloc also tends to use slightly less memory than Scudo for most
+traces. These tests were conducted on desktop x86 Linux with glibc and
+the latest stable version of each allocator, but they should still be
+relevant. RSS values in KiB:
+
++----------------+--------+----------+
+|     Trace      | Scudo  | jemalloc |
++----------------+--------+----------+
+| Angry Birds 2  | 793948 |  746992  |
+|     Camera     | 219372 |  251888  |
+|  Candy Crush   | 548288 |  550148  |
+|     Gmail      | 195236 |  193048  |
+|      Maps      | 159860 |  159816  |
+|     Photos     | 175436 |  171872  |
+|      PUBG      | 233752 |  223572  |
+| surfaceflinger | 94736  |  107068  |
+| system_server  | 471048 |  484392  |
+|    SystemUI    | 54432  |  60740   |
+|    YouTube     | 139376 |  142252  |
++----------------+--------+----------+
+
+While not representative of real-world usage, jemalloc also performs
+fairly well in synthetic benchmarks (all times in nanoseconds):
+
++-----------------+---------+----------+
+|    Benchmark    |  Scudo  | jemalloc |
++-----------------+---------+----------+
+|     alloc 8     |   87.9  |   60.1   |
+|     alloc 16    |   87.9  |    60    |
+|     alloc 32    |   88.6  |   60.7   |
+|     alloc 64    |   88.6  |   59.7   |
+|    alloc 512    |   89.2  |    60    |
+|    alloc 1024   |   89.4  |   59.8   |
+|    alloc 8192   |   89.8  |   65.2   |
+|   alloc 16384   |   92.7  |   69.1   |
+|   alloc 32768   |   97.2  |    74    |
+|   alloc 65536   |   109   |   83.8   |
+|   alloc 131072  |  41536  |  42720   |
+|    alloc40x 8   |   2156  |   2556   |
+|   alloc40x 16   |   2155  |   2244   |
+|   alloc40x 32   |   2234  |   2312   |
+|   alloc40x 64   |   2234  |   2289   |
+|   alloc40x 512  |   2274  |   8171   |
+|  alloc40x 1024  |   2397  |   2162   |
+|  alloc40x 8192  |   3550  |  78880   |
+|  alloc40x 16384 |   3732  |  124454  |
+|  alloc40x 32768 |   3849  |  275460  |
+|  alloc40x 65536 |   4987  |  727598  |
+| alloc40x 131072 | 2745207 | 3067980  |
+|   alloc8192 1x  |   464   |   454    |
+|   alloc8192 2x  |   510   |   488    |
+|   alloc8192 3x  |   587   |   523    |
+|   alloc8192 4x  |   665   |   557    |
+|   alloc8192 5x  |   742   |   598    |
+|   alloc8192 6x  |   818   |   633    |
+|   alloc8192 7x  |   884   |   669    |
+|   alloc8192 8x  |   960   |   699    |
+|   alloc8192 9x  |   1045  |   734    |
+|  alloc8192 10x  |   1131  |   770    |
+|  alloc8192 11x  |   1207  |   806    |
+|  alloc8192 12x  |   1282  |   841    |
+|  alloc8192 13x  |   1363  |   877    |
+|  alloc8192 14x  |   1442  |   912    |
+|  alloc8192 15x  |   1512  |   944    |
+|  alloc8192 16x  |   1587  |   978    |
+|  alloc8192 24x  |   2256  |  21195   |
+|  alloc8192 32x  |   2867  |  45446   |
+|  alloc8192 40x  |   3522  |  71618   |
+|  alloc8192 48x  |   4126  |  89740   |
+|  alloc8192 56x  |   4786  |  114990  |
+|  alloc8192 64x  |   5412  |  141082  |
+|  alloc8192 72x  |   6049  |  170742  |
+|  alloc8192 80x  |   6712  |  198480  |
+|  alloc8192 88x  |   7331  |  221557  |
+|  alloc8192 96x  |   7976  |  251462  |
+|  alloc8192 104x |   8581  |  281626  |
+|  alloc8192 112x |   9245  |  313164  |
+|  alloc8192 120x |   9914  |  353147  |
+|  alloc8192 128x |  10514  |  376625  |
+|  alloc8192 136x |  11187  |  408194  |
+|  alloc8192 144x |  11802  |  445694  |
+|  alloc8192 160x |  13083  |  514547  |
+|  alloc8192 176x |  14414  |  582501  |
+|  alloc8192 192x |  15746  |  654346  |
+|  alloc8192 208x |  17044  |  712620  |
+|  alloc8192 224x |  18405  |  769963  |
+|  alloc8192 240x |  19744  |  843969  |
+|  alloc8192 256x |  21160  |  917803  |
++-----------------+---------+----------+
+
+Scudo performs fairly well for a hardened memory allocator, but we're
+optimizing for performance.
+
+Full benchmark data with graphs: https://docs.google.com/spreadsheets/d/1LG_kxaK5cI14gGtnyM-nNNmfpMdV9Vh-LtYoq7H5J4s/edit
+
+Change-Id: Ia4901eedfaa2c9779678c5b6532979de4919ee01
+---
+ libc/Android.bp | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/libc/Android.bp b/libc/Android.bp
+index 1e671f1ec..b5a47f13a 100644
+--- a/libc/Android.bp
++++ b/libc/Android.bp
+@@ -119,9 +119,6 @@ cc_defaults {
+         malloc_pattern_fill_contents: {
+             cflags: ["-DSCUDO_PATTERN_FILL_CONTENTS"],
+         },
+-        malloc_not_svelte: {
+-            cflags: ["-DUSE_SCUDO"],
+-        },
+     },
+ }
+ 
+@@ -150,7 +147,6 @@ cc_defaults {
+         "libc_jemalloc_wrapper",
+     ],
+     header_libs: ["gwp_asan_headers"],
+-    product_variables: libc_scudo_product_variables,
+ }
+ 
+ // Functions not implemented by jemalloc directly, or that need to
+-- 
+2.30.2
+

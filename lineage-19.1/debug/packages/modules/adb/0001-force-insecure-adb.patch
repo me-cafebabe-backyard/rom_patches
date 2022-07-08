@@ -1,0 +1,58 @@
+From 6fd96c6839c72e624ed0466d0ede4bde17f71281 Mon Sep 17 00:00:00 2001
+From: Build Server <build@localhost>
+Date: Fri, 8 Jul 2022 08:23:20 +0000
+Subject: [PATCH] force insecure adb
+
+---
+ daemon/auth.cpp | 2 +-
+ daemon/main.cpp | 7 +++++++
+ 2 files changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/daemon/auth.cpp b/daemon/auth.cpp
+index 2c3844ba..41c8f1e1 100644
+--- a/daemon/auth.cpp
++++ b/daemon/auth.cpp
+@@ -63,7 +63,7 @@ static struct adisconnect adb_disconnect = {adb_disconnected, nullptr};
+ static android::base::NoDestructor<std::map<uint32_t, weak_ptr<atransport>>> transports;
+ static uint32_t transport_auth_id = 0;
+ 
+-bool auth_required = true;
++bool auth_required = false;
+ bool socket_access_allowed = true;
+ 
+ static void* transport_to_callback_arg(atransport* transport) {
+diff --git a/daemon/main.cpp b/daemon/main.cpp
+index e2ecf968..93d0e653 100644
+--- a/daemon/main.cpp
++++ b/daemon/main.cpp
+@@ -63,6 +63,7 @@
+ #if defined(__ANDROID__)
+ static const char* root_seclabel = nullptr;
+ 
++/*
+ static bool should_drop_privileges() {
+     // The properties that affect `adb root` and `adb unroot` are ro.secure and
+     // ro.debuggable. In this context the names don't make the expected behavior
+@@ -94,6 +95,10 @@ static bool should_drop_privileges() {
+ 
+     return drop;
+ }
++*/
++static bool should_drop_privileges() {
++	return false;
++}
+ 
+ static void drop_privileges(int server_port) {
+     ScopedMinijail jail(minijail_new());
+@@ -218,6 +223,8 @@ int adbd_main(int server_port) {
+     }
+ #endif
+ 
++    auth_required = false;
++
+     // Our external storage path may be different than apps, since
+     // we aren't able to bind mount after dropping root.
+     const char* adb_external_storage = getenv("ADB_EXTERNAL_STORAGE");
+-- 
+2.30.2
+

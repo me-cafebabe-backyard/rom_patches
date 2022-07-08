@@ -1,0 +1,38 @@
+From 8682c8ba63c7e2a3a844336e40ec4c17b32ed1d0 Mon Sep 17 00:00:00 2001
+From: LuK1337 <priv.luk@gmail.com>
+Date: Thu, 15 Oct 2020 17:19:52 +0200
+Subject: [PATCH 3/3] linker: Convert lineage product variables to soong config
+ variables
+
+Change-Id: I3b21f8ff0552761cc75a70d4538051d837aa1586
+---
+ linker/Android.bp | 6 +-----
+ 1 file changed, 1 insertion(+), 5 deletions(-)
+
+diff --git a/linker/Android.bp b/linker/Android.bp
+index cbf77da1b..2ac05f768 100644
+--- a/linker/Android.bp
++++ b/linker/Android.bp
+@@ -81,6 +81,7 @@ cc_object {
+ cc_defaults {
+     name: "linker_defaults",
+     defaults: [
++        "process_sdk_version_overrides_defaults",
+         "shim_libs_defaults",
+     ],
+     arch: {
+@@ -117,11 +118,6 @@ cc_defaults {
+         debuggable: {
+             cppflags: ["-DUSE_LD_CONFIG_FILE"],
+         },
+-        lineage: {
+-            target_process_sdk_version_override: {
+-                cppflags: ["-DSDK_VERSION_OVERRIDES=\"%s\""],
+-            },
+-        },
+     },
+ 
+     cppflags: ["-Wold-style-cast"],
+-- 
+2.30.2
+

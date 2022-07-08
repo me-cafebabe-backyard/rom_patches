@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+
+  <remote name="proton" fetch="https://github.com/ProtonAOSP" revision="sc-qpr3" />
+
+  <remove-project name="platform/external/zlib" />
+  <project name="android_external_zlib-ng" path="external/zlib-ng" remote="proton" groups="proton" />
+
+  <remove-project name="platform/external/jemalloc_new" />
+  <project name="android_external_jemalloc_new" path="external/jemalloc_new" remote="proton" groups="proton" />
+
+</manifest>

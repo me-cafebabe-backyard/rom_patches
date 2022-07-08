@@ -1,0 +1,94 @@
+From 620af0ae1ee1a1e1e8ffba09193614dccd684c3f Mon Sep 17 00:00:00 2001
+From: Build Server <build@localhost>
+Date: Thu, 7 Jul 2022 18:39:20 +0000
+Subject: [PATCH 1/2] Revert "Add ability to build scudo-free 32-bit libc
+ variant."
+
+This reverts commit 6e6ed4d6cd4081f0c755d2548a4752d9fcc157a2.
+---
+ libc/Android.bp | 54 +++++++++----------------------------------------
+ 1 file changed, 9 insertions(+), 45 deletions(-)
+
+diff --git a/libc/Android.bp b/libc/Android.bp
+index 98b878151..1e671f1ec 100644
+--- a/libc/Android.bp
++++ b/libc/Android.bp
+@@ -112,32 +112,15 @@ cc_defaults {
+     // warning since this is intended right now.
+     ldflags: ["-Wl,-z,muldefs"],
+ 
+-    multilib: {
+-        lib64: {
+-            product_variables: {
+-                malloc_zero_contents: {
+-                    cflags: ["-DSCUDO_ZERO_CONTENTS"],
+-                },
+-                malloc_pattern_fill_contents: {
+-                    cflags: ["-DSCUDO_PATTERN_FILL_CONTENTS"],
+-                },
+-                malloc_not_svelte: {
+-                    cflags: ["-DUSE_SCUDO"],
+-                },
+-            },
++    product_variables: {
++        malloc_zero_contents: {
++            cflags: ["-DSCUDO_ZERO_CONTENTS"],
+         },
+-        lib32: {
+-            product_variables: {
+-                malloc_zero_contents: {
+-                    cflags: ["-DSCUDO_ZERO_CONTENTS"],
+-                },
+-                malloc_pattern_fill_contents: {
+-                    cflags: ["-DSCUDO_PATTERN_FILL_CONTENTS"],
+-                },
+-                malloc_not_svelte_libc32: {
+-                    cflags: ["-DUSE_SCUDO"],
+-                },
+-            },
++        malloc_pattern_fill_contents: {
++            cflags: ["-DSCUDO_PATTERN_FILL_CONTENTS"],
++        },
++        malloc_not_svelte: {
++            cflags: ["-DUSE_SCUDO"],
+         },
+     },
+ }
+@@ -153,18 +136,6 @@ libc_scudo_product_variables = {
+     },
+ }
+ 
+-libc32_scudo_product_variables = {
+-    malloc_not_svelte_libc32: {
+-        cflags: ["-DUSE_SCUDO"],
+-        whole_static_libs: ["libscudo"],
+-        exclude_static_libs: [
+-            "libjemalloc5",
+-            "libc_jemalloc_wrapper",
+-        ],
+-    },
+-}
+-
+-
+ // Defaults for native allocator libs/includes to make it
+ // easier to change.
+ // To disable scudo for the non-svelte config remove the line:
+@@ -179,14 +150,7 @@ cc_defaults {
+         "libc_jemalloc_wrapper",
+     ],
+     header_libs: ["gwp_asan_headers"],
+-    multilib: {
+-        lib64: {
+-            product_variables: libc_scudo_product_variables,
+-        },
+-        lib32: {
+-            product_variables: libc32_scudo_product_variables,
+-        }
+-    },
++    product_variables: libc_scudo_product_variables,
+ }
+ 
+ // Functions not implemented by jemalloc directly, or that need to
+-- 
+2.30.2
+

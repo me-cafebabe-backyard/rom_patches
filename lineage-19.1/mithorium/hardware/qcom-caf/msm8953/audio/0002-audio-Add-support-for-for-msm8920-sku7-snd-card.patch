@@ -1,0 +1,69 @@
+From 084c842c53758e932d919babad3f9a602902f932 Mon Sep 17 00:00:00 2001
+From: MrArtemSid <artem.sid.key@gmail.com>
+Date: Sun, 21 Nov 2021 22:06:45 +0400
+Subject: [PATCH 2/6] audio: Add support for  for msm8920-sku7-snd-card
+
+Added msm8920-sku7 support into msm8974 hal.
+msm8974 uses dynamic way of finding mixer path name, msm8920-sku7 uses sku1 config, but has sku7 in name, so copy sku1 config for sku7 too
+---
+ configs/msm8937/msm8937.mk |  1 +
+ hal/msm8974/hw_info.c      | 10 ++++++++++
+ hal/msm8974/platform.c     |  2 ++
+ 3 files changed, 13 insertions(+)
+
+diff --git a/configs/msm8937/msm8937.mk b/configs/msm8937/msm8937.mk
+index 9f7c7aa48..d4fec595c 100644
+--- a/configs/msm8937/msm8937.mk
++++ b/configs/msm8937/msm8937.mk
+@@ -124,6 +124,7 @@ $(PRIMARYHAL_PATH)/configs/msm8937/mixer_paths_tasha.xml:$(TARGET_COPY_OUT_VENDO
+ $(PRIMARYHAL_PATH)/configs/msm8937/mixer_paths_tashalite.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_tashalite.xml \
+ $(PRIMARYHAL_PATH)/configs/msm8937/mixer_paths_mtp.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_mtp.xml \
+ $(PRIMARYHAL_PATH)/configs/msm8937/mixer_paths_sku1.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_sku1.xml \
++$(PRIMARYHAL_PATH)/configs/msm8937/mixer_paths_sku1.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_sku7.xml \
+ $(PRIMARYHAL_PATH)/configs/msm8937/mixer_paths_sdm429w.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_wtp.xml \
+ $(PRIMARYHAL_PATH)/configs/msm8937/mixer_paths_sdm429w_dvt2.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_wtp_newport.xml \
+ $(PRIMARYHAL_PATH)/configs/msm8937/sound_trigger_mixer_paths.xml:$(TARGET_COPY_OUT_VENDOR)/etc/sound_trigger_mixer_paths.xml \
+diff --git a/hal/msm8974/hw_info.c b/hal/msm8974/hw_info.c
+index 819ae1d5c..658a2cc41 100644
+--- a/hal/msm8974/hw_info.c
++++ b/hal/msm8974/hw_info.c
+@@ -852,6 +852,13 @@ static void update_hardware_info_sdm439(struct hardware_info *hw_info, const cha
+     }
+ }
+ 
++static void update_hardware_info_msm8920(struct hardware_info *hw_info, const char *snd_card_name)
++{
++	if (!strcmp(snd_card_name, "msm8920-sku7-snd-card")) {
++		strlcpy(hw_info->name, "msm8920", sizeof(hw_info->name));
++	}
++}
++
+ static void update_hardware_info_msm8937(struct hardware_info *hw_info, const char *snd_card_name)
+ {
+     if (!strcmp(snd_card_name, "msm8937-snd-card-mtp")) {
+@@ -979,6 +986,9 @@ void *hw_info_init(const char *snd_card_name)
+     } else if(strstr(snd_card_name, "sdm439") || strstr(snd_card_name, "sdm429w")) {
+         ALOGV("SDM439 - variant soundcard");
+         update_hardware_info_sdm439(hw_info, snd_card_name);
++	} else if (strstr(snd_card_name, "msm8920")) {
++		ALOGV("MSM8920 - variant soundcard");
++		update_hardware_info_msm8920(hw_info, snd_card_name);
+     } else if (strstr(snd_card_name, "msm8937")) {
+         ALOGV("MSM8937 - variant soundcard");
+         update_hardware_info_msm8937(hw_info, snd_card_name);
+diff --git a/hal/msm8974/platform.c b/hal/msm8974/platform.c
+index 43af0d2d5..5c4343131 100755
+--- a/hal/msm8974/platform.c
++++ b/hal/msm8974/platform.c
+@@ -1872,6 +1872,8 @@ static void update_codec_type_and_interface(struct platform_data * my_data,
+                    sizeof("holi-qrd-snd-card")) ||
+          !strncmp(snd_card_name, "holi-qrdsku1-snd-card",
+                    sizeof("holi-qrdsku1-snd-card")) ||
++         !strncmp(snd_card_name, "msm8920-sku7-snd-card",
++                   sizeof("msm8920-sku7-snd-card")) ||
+          !strncmp(snd_card_name, "msm8937-snd-card-mtp",
+                    sizeof("msm8937-snd-card-mtp")) ||
+          !strncmp(snd_card_name, "msm8953-snd-card-mtp",
+-- 
+2.30.2
+

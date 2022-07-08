@@ -1,0 +1,33 @@
+From 44cbdc997058ca33897d5a539c78b4767f2fcfd3 Mon Sep 17 00:00:00 2001
+From: MrArtemSid <artem.sid.key@gmail.com>
+Date: Sun, 28 Nov 2021 15:15:25 +0400
+Subject: [PATCH 4/6] audio: hal: msm8974: msm8952-mtp/sku(m/1/2) switch to
+ internal_codec
+
+In msm8916 hal these soundcards used internal codec
+---
+ hal/msm8974/platform.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/hal/msm8974/platform.c b/hal/msm8974/platform.c
+index 5c4343131..2adb1100e 100755
+--- a/hal/msm8974/platform.c
++++ b/hal/msm8974/platform.c
+@@ -1876,6 +1876,14 @@ static void update_codec_type_and_interface(struct platform_data * my_data,
+                    sizeof("msm8920-sku7-snd-card")) ||
+          !strncmp(snd_card_name, "msm8937-snd-card-mtp",
+                    sizeof("msm8937-snd-card-mtp")) ||
++         !strncmp(snd_card_name, "msm8952-snd-card-mtp",
++                   sizeof("msm8952-snd-card-mtp")) ||
++         !strncmp(snd_card_name, "msm8952-skum-snd-card",
++                   sizeof("msm8952-skum-snd-card")) ||
++         !strncmp(snd_card_name, "msm8952-sku1-snd-card",
++                   sizeof("msm8952-sku1-snd-card")) ||
++         !strncmp(snd_card_name, "msm8952-sku2-snd-card",
++                   sizeof("msm8952-sku2-snd-card")) ||
+          !strncmp(snd_card_name, "msm8953-snd-card-mtp",
+                    sizeof("msm8953-snd-card-mtp")) ||
+          !strncmp(snd_card_name, "msm8953-sku4-snd-card",
+-- 
+2.30.2
+

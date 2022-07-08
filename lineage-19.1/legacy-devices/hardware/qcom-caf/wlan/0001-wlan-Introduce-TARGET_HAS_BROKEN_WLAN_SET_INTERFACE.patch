@@ -1,0 +1,78 @@
+From 9282f39e2b5296e533a8ac7449e3c7e60b86da13 Mon Sep 17 00:00:00 2001
+From: Hamsi2k <Hamsi2k@freenet.de>
+Date: Tue, 20 Oct 2020 12:33:03 +0530
+Subject: [PATCH] wlan: Introduce TARGET_HAS_BROKEN_WLAN_SET_INTERFACE
+
+Certain chipset drivers noteably "prima"
+has broken imp of setting interfaces which
+breaks wlan functions on these.
+
+Co-authored-by: althafvly <althafvly@gmail.com>
+Co-authored-by: Aayush Gupta <aayushgupta219@gmail.com>
+Change-Id: Ib6aa21477a62e3174cbed49e1094937d056b4bdf
+---
+ qcwcn/wifi_hal/Android.mk     | 8 ++++++++
+ qcwcn/wifi_hal/wificonfig.cpp | 6 ++++++
+ 2 files changed, 14 insertions(+)
+
+diff --git a/qcwcn/wifi_hal/Android.mk b/qcwcn/wifi_hal/Android.mk
+index 58f98d8..4cf93d2 100644
+--- a/qcwcn/wifi_hal/Android.mk
++++ b/qcwcn/wifi_hal/Android.mk
+@@ -46,6 +46,10 @@ ifneq ($(TARGET_USES_AOSP_FOR_WLAN), true)
+ LOCAL_CFLAGS += -DWCNSS_QTI_AOSP
+ endif
+ 
++ifeq ($(TARGET_HAS_BROKEN_WLAN_SET_INTERFACE),true)
++LOCAL_CFLAGS += -DBROKEN_SET_INTERFACE
++endif
++
+ # gscan.cpp: address of array 'cached_results[i].results' will always evaluate to 'true'
+ LOCAL_CLANG_CFLAGS := -Wno-pointer-bool-conversion
+ 
+@@ -126,6 +130,10 @@ ifneq ($(TARGET_USES_AOSP_FOR_WLAN), true)
+ LOCAL_CFLAGS += -DWCNSS_QTI_AOSP
+ endif
+ 
++ifeq ($(TARGET_HAS_BROKEN_WLAN_SET_INTERFACE),true)
++LOCAL_CFLAGS += -DBROKEN_SET_INTERFACE
++endif
++
+ # gscan.cpp: address of array 'cached_results[i].results' will always evaluate to 'true'
+ LOCAL_CLANG_CFLAGS := -Wno-pointer-bool-conversion
+ 
+diff --git a/qcwcn/wifi_hal/wificonfig.cpp b/qcwcn/wifi_hal/wificonfig.cpp
+index 0afa1cd..ade6306 100644
+--- a/qcwcn/wifi_hal/wificonfig.cpp
++++ b/qcwcn/wifi_hal/wificonfig.cpp
+@@ -798,6 +798,7 @@ void wifi_cleanup_dynamic_ifaces(wifi_handle handle)
+     added_ifaces.clear(); // could be redundent. But to be on safe side.
+ }
+ 
++#ifndef BROKEN_SET_INTERFACE
+ static wifi_error wifi_set_interface_mode(wifi_handle handle,
+                                    const char* ifname,
+                                    u32 iface_type)
+@@ -848,6 +849,7 @@ done:
+     delete wifiConfigCommand;
+     return ret;
+ }
++#endif
+ 
+ wifi_error wifi_virtual_interface_create(wifi_handle handle,
+                                          const char* ifname,
+@@ -863,7 +865,11 @@ wifi_error wifi_virtual_interface_create(wifi_handle handle,
+ 
+     // Already exists and set interface mode only
+     if (if_nametoindex(ifname) != 0) {
++#ifdef BROKEN_SET_INTERFACE
++        return WIFI_SUCCESS;
++#else
+         return wifi_set_interface_mode(handle, ifname, iface_type);
++#endif
+     }
+ 
+     ALOGD("%s: ifname=%s create", __FUNCTION__, ifname);
+-- 
+2.30.2
+

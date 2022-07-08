@@ -1,0 +1,32 @@
+From 73ddc2b68bb0e9d8176cc0e1c5673f45892a6c4f Mon Sep 17 00:00:00 2001
+From: Build Server <build@localhost>
+Date: Sun, 12 Jun 2022 12:52:57 +0000
+Subject: [PATCH] enable internal fm ant
+
+---
+ qcom/fmradio/FmReceiver.java | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/qcom/fmradio/FmReceiver.java b/qcom/fmradio/FmReceiver.java
+index 4686d26..51da36e 100644
+--- a/qcom/fmradio/FmReceiver.java
++++ b/qcom/fmradio/FmReceiver.java
+@@ -597,6 +597,7 @@ public class FmReceiver extends FmTransceiver
+       }
+ 
+       setFMPowerState(subPwrLevel_FMRx_Starting);
++      SystemProperties.set("vendor.hw.fm.ant.enable","1");
+       Log.v(TAG, "enable: CURRENT-STATE : FMOff ---> NEW-STATE : FMRxStarting");
+       status = super.enable(configSettings, FmTransceiver.FM_RX);
+ 
+@@ -745,6 +746,7 @@ public class FmReceiver extends FmTransceiver
+             return status;
+       }
+ 
++      SystemProperties.set("vendor.hw.fm.ant.enable","0");
+       setFMPowerState(subPwrLevel_FMTurning_Off);
+       Log.v(TAG, "disable: CURRENT-STATE : FMRxOn ---> NEW-STATE : FMTurningOff");
+       super.disable();
+-- 
+2.30.2
+

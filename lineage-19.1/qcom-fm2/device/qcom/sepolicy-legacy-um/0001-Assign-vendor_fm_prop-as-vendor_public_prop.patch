@@ -1,0 +1,25 @@
+From 3f77487cff2d4b9b2f3b8149c82843b00a1dee20 Mon Sep 17 00:00:00 2001
+From: Build Server <build@localhost>
+Date: Fri, 8 Jul 2022 08:14:40 +0000
+Subject: [PATCH] Assign vendor_fm_prop as vendor_public_prop
+
+---
+ legacy/vendor/common/property.te | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/legacy/vendor/common/property.te b/legacy/vendor/common/property.te
+index 33850349..f99ce769 100644
+--- a/legacy/vendor/common/property.te
++++ b/legacy/vendor/common/property.te
+@@ -70,7 +70,7 @@ vendor_restricted_prop(vendor_am_prop);
+ #Needed for  ubwc support
+ vendor_restricted_prop(vendor_gralloc_prop);
+ 
+-vendor_restricted_prop(vendor_fm_prop);
++vendor_public_prop(vendor_fm_prop);
+ vendor_restricted_prop(chgdiabled_prop);
+ 
+ vendor_restricted_prop(vendor_xlat_prop);
+-- 
+2.30.2
+

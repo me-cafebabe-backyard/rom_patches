@@ -1,0 +1,169 @@
+From a0e66a85d11ce9544d1087cca9a81daaa9bfd608 Mon Sep 17 00:00:00 2001
+From: Build Server <build@localhost>
+Date: Fri, 8 Jul 2022 08:00:05 +0000
+Subject: [PATCH] samples: simply fixup some apps
+
+Change-Id: I11b2868516341acf845ab420d18a7a3efcf3468a
+---
+ samples/BackupRestore/AndroidManifest.xml     | 2 +-
+ samples/BluetoothChat/AndroidManifest.xml     | 5 +++--
+ samples/Compass/AndroidManifest.xml           | 2 +-
+ samples/CubeLiveWallpaper/AndroidManifest.xml | 6 ++++--
+ samples/HoneycombGallery/AndroidManifest.xml  | 5 +++--
+ samples/LunarLander/AndroidManifest.xml       | 2 +-
+ samples/NotePad/AndroidManifest.xml           | 6 ++++--
+ 7 files changed, 17 insertions(+), 11 deletions(-)
+
+diff --git a/samples/BackupRestore/AndroidManifest.xml b/samples/BackupRestore/AndroidManifest.xml
+index bccd4f700..21540cead 100644
+--- a/samples/BackupRestore/AndroidManifest.xml
++++ b/samples/BackupRestore/AndroidManifest.xml
+@@ -35,7 +35,7 @@
+         <meta-data android:name="com.google.android.backup.api_key"
+             android:value="INSERT YOUR API KEY HERE" />
+ 
+-        <activity android:name="BackupRestoreActivity">
++        <activity android:name="BackupRestoreActivity" android:exported="true">
+             <intent-filter>
+                 <action android:name="android.intent.action.MAIN" />
+                 <category android:name="android.intent.category.LAUNCHER" />
+diff --git a/samples/BluetoothChat/AndroidManifest.xml b/samples/BluetoothChat/AndroidManifest.xml
+index 472667089..4554b6e1e 100644
+--- a/samples/BluetoothChat/AndroidManifest.xml
++++ b/samples/BluetoothChat/AndroidManifest.xml
+@@ -20,12 +20,13 @@
+     <uses-sdk android:minSdkVersion="11" />
+     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+     <uses-permission android:name="android.permission.BLUETOOTH" />
++    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+ 
+     <application android:label="@string/app_name"
+                  android:icon="@drawable/app_icon" >
+         <activity android:name=".BluetoothChat"
+                   android:label="@string/app_name"
+-                  android:configChanges="orientation|keyboardHidden">
++                  android:configChanges="orientation|keyboardHidden" android:exported="true">
+             <intent-filter>
+                 <action android:name="android.intent.action.MAIN" />
+                 <category android:name="android.intent.category.LAUNCHER" />
+@@ -34,6 +35,6 @@
+         <activity android:name=".DeviceListActivity"
+                   android:label="@string/select_device"
+                   android:theme="@android:style/Theme.Holo.Dialog"
+-                  android:configChanges="orientation|keyboardHidden" />
++                  android:configChanges="orientation|keyboardHidden" android:exported="true"/>
+     </application>
+ </manifest>
+diff --git a/samples/Compass/AndroidManifest.xml b/samples/Compass/AndroidManifest.xml
+index 9aa563656..2d3eb9202 100644
+--- a/samples/Compass/AndroidManifest.xml
++++ b/samples/Compass/AndroidManifest.xml
+@@ -36,7 +36,7 @@
+              can launch and interact with.  The "name" attribute is the
+              name of the class within your package that implements this
+              activity. -->
+-        <activity android:name="CompassActivity">
++        <activity android:name="CompassActivity" android:exported="true">
+ 
+             <!-- An IntentFilter tells the system when it should use your
+                  activity.  This allows the user to get to your activity
+diff --git a/samples/CubeLiveWallpaper/AndroidManifest.xml b/samples/CubeLiveWallpaper/AndroidManifest.xml
+index 8a7d527e8..85577f4e8 100644
+--- a/samples/CubeLiveWallpaper/AndroidManifest.xml
++++ b/samples/CubeLiveWallpaper/AndroidManifest.xml
+@@ -33,7 +33,8 @@
+         <service
+             android:label="@string/wallpaper_cube1"
+             android:name=".cube1.CubeWallpaper1"
+-            android:permission="android.permission.BIND_WALLPAPER">
++            android:permission="android.permission.BIND_WALLPAPER"
++            android:exported="true">
+             <intent-filter>
+                 <action android:name="android.service.wallpaper.WallpaperService" />
+             </intent-filter>
+@@ -43,7 +44,8 @@
+         <service
+             android:label="@string/wallpaper_cube2"
+             android:name=".cube2.CubeWallpaper2"
+-            android:permission="android.permission.BIND_WALLPAPER">
++            android:permission="android.permission.BIND_WALLPAPER"
++            android:exported="true">
+             <intent-filter>
+                 <action android:name="android.service.wallpaper.WallpaperService" />
+             </intent-filter>
+diff --git a/samples/HoneycombGallery/AndroidManifest.xml b/samples/HoneycombGallery/AndroidManifest.xml
+index 2a99856c4..619e4cb7d 100644
+--- a/samples/HoneycombGallery/AndroidManifest.xml
++++ b/samples/HoneycombGallery/AndroidManifest.xml
+@@ -37,6 +37,7 @@
+ 
+         <activity android:name=".MainActivity"
+             android:label="@string/app_name"
++            android:exported="true"
+             android:launchMode="singleTop">
+             <intent-filter>
+                 <action android:name="android.intent.action.MAIN" />
+@@ -49,11 +50,11 @@
+         </activity>
+ 
+         <!-- Holds the ContentFragment for small/normal screens -->
+-        <activity android:name=".ContentActivity" />
++        <activity android:name=".ContentActivity" android:exported="true"/>
+ 
+         <!-- Camera Sample -->
+         <activity android:name=".CameraActivity"
+             android:label="@string/camera_sample"
+-            android:screenOrientation="landscape" />
++            android:screenOrientation="landscape" android:exported="true"/>
+       </application>
+ </manifest>
+diff --git a/samples/LunarLander/AndroidManifest.xml b/samples/LunarLander/AndroidManifest.xml
+index 3ef4a2fcd..7dd8b11a4 100644
+--- a/samples/LunarLander/AndroidManifest.xml
++++ b/samples/LunarLander/AndroidManifest.xml
+@@ -25,7 +25,7 @@
+     <uses-sdk android:targetSdkVersion="11"/>
+ 
+     <application android:icon="@drawable/app_lunar_lander" android:label="@string/app_name">   
+-        <activity android:name="LunarLander" android:theme="@android:style/Theme.NoTitleBar">
++        <activity android:name="LunarLander" android:theme="@android:style/Theme.NoTitleBar" android:exported="true">
+             <intent-filter>
+                 <action android:name="android.intent.action.MAIN" />
+                 <category android:name="android.intent.category.LAUNCHER" />
+diff --git a/samples/NotePad/AndroidManifest.xml b/samples/NotePad/AndroidManifest.xml
+index 51e848d8e..a1a8d8e91 100644
+--- a/samples/NotePad/AndroidManifest.xml
++++ b/samples/NotePad/AndroidManifest.xml
+@@ -29,11 +29,11 @@
+     >
+         <provider android:name="NotePadProvider"
+             android:authorities="com.google.provider.NotePad"
+-            android:exported="false">
++            android:exported="true">
+             <grant-uri-permission android:pathPattern=".*" />
+         </provider>
+ 
+-        <activity android:name="NotesList" android:label="@string/title_notes_list">
++        <activity android:name="NotesList" android:label="@string/title_notes_list" android:exported="true">
+             <intent-filter>
+                 <action android:name="android.intent.action.MAIN" />
+                 <category android:name="android.intent.category.LAUNCHER" />
+@@ -56,6 +56,7 @@
+             android:theme="@android:style/Theme.Holo.Light"
+             android:screenOrientation="sensor"
+             android:configChanges="keyboardHidden|orientation"
++            android:exported="true"
+         >
+             <!-- This filter says that we can view or edit the data of
+                  a single note -->
+@@ -84,6 +85,7 @@
+             android:label="@string/title_edit_title"
+             android:icon="@drawable/ic_menu_edit"
+             android:theme="@android:style/Theme.Holo.Dialog"
++            android:exported="true"
+             android:windowSoftInputMode="stateVisible">
+             <!-- This activity implements an alternative action that can be
+                  performed on notes: editing their title.  It can be used as
+-- 
+2.30.2
+
