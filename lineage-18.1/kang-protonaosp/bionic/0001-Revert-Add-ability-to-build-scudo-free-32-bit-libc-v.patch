@@ -1,0 +1,53 @@
+From d1235a99b469a6e1d7b756cbd5af2edc06b35c9b Mon Sep 17 00:00:00 2001
+From: Build Server <build@localhost>
+Date: Fri, 8 Jul 2022 14:10:30 +0000
+Subject: [PATCH 1/3] Revert "Add ability to build scudo-free 32-bit libc
+ variant."
+
+This reverts commit e3c150e4710b368ae3317496d22b40c012b3e432.
+---
+ libc/Android.bp | 21 +--------------------
+ 1 file changed, 1 insertion(+), 20 deletions(-)
+
+diff --git a/libc/Android.bp b/libc/Android.bp
+index ce714054a..e30a632d8 100644
+--- a/libc/Android.bp
++++ b/libc/Android.bp
+@@ -102,18 +102,6 @@ libc_scudo_product_variables = {
+     },
+ }
+ 
+-libc32_scudo_product_variables = {
+-    malloc_not_svelte_libc32: {
+-        cflags: ["-DUSE_SCUDO"],
+-        whole_static_libs: ["libscudo"],
+-        exclude_static_libs: [
+-            "libjemalloc5",
+-            "libc_jemalloc_wrapper",
+-        ],
+-    },
+-}
+-
+-
+ // Defaults for native allocator libs/includes to make it
+ // easier to change.
+ // To disable scudo for the non-svelte config remove the line:
+@@ -128,14 +116,7 @@ cc_defaults {
+         "libc_jemalloc_wrapper",
+     ],
+     header_libs: ["gwp_asan_headers"],
+-    multilib: {
+-        lib64: {
+-            product_variables: libc_scudo_product_variables,
+-        },
+-        lib32: {
+-            product_variables: libc32_scudo_product_variables,
+-        }
+-    },
++    product_variables: libc_scudo_product_variables,
+ }
+ 
+ // Functions not implemented by jemalloc directly, or that need to
+-- 
+2.30.2
+
