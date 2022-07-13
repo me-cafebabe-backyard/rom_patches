@@ -1,0 +1,26 @@
+From 50e85a1b6ab75b7536a4ab712e6303e02bb2557b Mon Sep 17 00:00:00 2001
+From: Build Server <build@localhost>
+Date: Wed, 13 Jul 2022 19:48:02 +0000
+Subject: [PATCH] fix projectmap
+
+Change-Id: I291d4c3dee48087c6c2a8c72e0633a97fbac7018
+---
+ hal/audio_extn/Android.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/hal/audio_extn/Android.mk b/hal/audio_extn/Android.mk
+index 17c230e0..e06504fd 100644
+--- a/hal/audio_extn/Android.mk
++++ b/hal/audio_extn/Android.mk
+@@ -912,7 +912,7 @@ LOCAL_MODULE := libautohal
+ 
+ LOCAL_VENDOR_MODULE := true
+ 
+-PRIMARY_HAL_PATH := vendor/qcom/opensource/audio-hal/primary-hal/hal
++PRIMARY_HAL_PATH := $(call project-path-for,qcom-audio)/hal
+ AUDIO_PLATFORM := $(TARGET_BOARD_PLATFORM)
+ 
+ ifneq ($(filter sdm845 sdm710 sdmshrike msmnile kona lahaina holi lito atoll bengal sdm660 msm8937 msm8953 msm8998 $(MSMSTEPPE) $(TRINKET),$(TARGET_BOARD_PLATFORM)),)
+-- 
+2.30.2
+
