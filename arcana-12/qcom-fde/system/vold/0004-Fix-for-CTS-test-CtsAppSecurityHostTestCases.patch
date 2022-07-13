@@ -1,0 +1,60 @@
+From 0d5f54f478586d0efdd9b341a94e80e118b9b45e Mon Sep 17 00:00:00 2001
+From: Shivaprasad Hongal <shongal@codeaurora.org>
+Date: Wed, 24 Oct 2018 17:49:39 -0700
+Subject: [PATCH 04/10] Fix for CTS test CtsAppSecurityHostTestCases
+
+Fix random failures while running CtsAppSecurityHostTestCases with
+adoptable storage due to a format failure. The crypto_blkdev node
+might not be immediately available after create sometimes. Adding
+a wait in create to make sure the node is available.
+
+CRs-Fixed: 2324063
+Change-Id: I8a7599a9253ac530b05a97ed34829dad1f7f7a40
+---
+ model/PrivateVolume.cpp | 23 +++++++++++++++++++++++
+ 1 file changed, 23 insertions(+)
+
+diff --git a/model/PrivateVolume.cpp b/model/PrivateVolume.cpp
+index 1875b7b..f3fa877 100644
+--- a/model/PrivateVolume.cpp
++++ b/model/PrivateVolume.cpp
+@@ -38,6 +38,9 @@
+ #include <sys/wait.h>
+ #include <thread>
+ 
++#define RETRY_MOUNT_ATTEMPTS 10
++#define RETRY_MOUNT_DELAY_SECONDS 1
++
+ using android::base::StringPrintf;
+ using android::vold::IsVirtioBlkDevice;
+ 
+@@ -94,6 +97,26 @@ status_t PrivateVolume::doCreate() {
+         return -EIO;
+     }
+ 
++    int fd = 0;
++    int retries = RETRY_MOUNT_ATTEMPTS;
++    while ((fd = open(mDmDevPath.c_str(), O_WRONLY|O_CLOEXEC)) < 0) {
++        if (retries > 0) {
++            retries--;
++            PLOG(ERROR) << "Error opening crypto_blkdev " << mDmDevPath
++                            << " for private volume. err=" << errno
++                            << "(" << strerror(errno) << "), retrying for the "
++                            << RETRY_MOUNT_ATTEMPTS - retries << " time";
++            sleep(RETRY_MOUNT_DELAY_SECONDS);
++        } else {
++            PLOG(ERROR) << "Error opening crypto_blkdev " << mDmDevPath
++                            << " for private volume. err=" << errno
++                            << "(" << strerror(errno) << "), retried "
++                            << RETRY_MOUNT_ATTEMPTS << " times";
++            close(fd);
++            return -EIO;
++        }
++    }
++    close(fd);
+     return OK;
+ }
+ 
+-- 
+2.30.2
+

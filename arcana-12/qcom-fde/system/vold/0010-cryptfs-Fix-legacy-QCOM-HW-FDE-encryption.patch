@@ -1,0 +1,75 @@
+From 9e89755a3fbff040b2ace392c6debf0934498d2e Mon Sep 17 00:00:00 2001
+From: chrmhoffmann <chrmhoffmann@gmail.com>
+Date: Sun, 28 Feb 2021 12:33:51 -0500
+Subject: [PATCH 10/10] cryptfs: Fix legacy QCOM HW FDE encryption
+
+* Commit 740377dda5 added back older create_crypto_blk_dev function
+  renamed as create_crypto_blk_dev_hw for QCOM HW FDE devices,
+  however it only switched to this function for ICE-enabled devices.
+* Using create_crypto_blk_dev_hw in all cases fixes encryption on older
+  devices that do not support ICE.
+* Matches android 10 code, which is working.
+
+Change-Id: Id06dce34120c26fecd48f1328fee7a1b456fc421
+---
+ cryptfs.cpp | 16 ++++++----------
+ 1 file changed, 6 insertions(+), 10 deletions(-)
+
+diff --git a/cryptfs.cpp b/cryptfs.cpp
+index aa18dea..7224c36 100644
+--- a/cryptfs.cpp
++++ b/cryptfs.cpp
+@@ -2192,7 +2192,6 @@ static int test_mount_hw_encrypted_fs(struct crypt_mnt_ftr* crypt_ftr,
+ {
+     /* Allocate enough space for a 256 bit key, but we may use less */
+     unsigned char decrypted_master_key[32];
+-    std::string crypto_blkdev_hw;
+     std::string crypto_blkdev;
+     std::string real_blkdev;
+     unsigned int orig_failed_decrypt_count;
+@@ -2214,14 +2213,14 @@ static int test_mount_hw_encrypted_fs(struct crypt_mnt_ftr* crypt_ftr,
+             if (is_ice_enabled()) {
+ #ifndef CONFIG_HW_DISK_ENCRYPT_PERF
+                 if (create_crypto_blk_dev_hw(crypt_ftr, (unsigned char*)&key_index,
+-                                          real_blkdev.c_str(), &crypto_blkdev_hw, label, 0)) {
++                                          real_blkdev.c_str(), &crypto_blkdev, label, 0)) {
+                     SLOGE("Error creating decrypted block device");
+                     rc = -1;
+                     goto errout;
+                 }
+ #endif
+             } else {
+-                if (create_crypto_blk_dev(crypt_ftr, decrypted_master_key,
++                if (create_crypto_blk_dev_hw(crypt_ftr, decrypted_master_key,
+                                           real_blkdev.c_str(), &crypto_blkdev, label, 0)) {
+                     SLOGE("Error creating decrypted block device");
+                     rc = -1;
+@@ -2239,13 +2238,10 @@ static int test_mount_hw_encrypted_fs(struct crypt_mnt_ftr* crypt_ftr,
+ 
+         /* Save the name of the crypto block device
+          * so we can mount it when restarting the framework. */
+-       if (is_ice_enabled()) {
+-#ifndef CONFIG_HW_DISK_ENCRYPT_PERF
+-            property_set("ro.crypto.fs_crypto_blkdev", crypto_blkdev_hw.c_str());
++#ifdef CONFIG_HW_DISK_ENCRYPT_PERF
++        if (!is_ice_enabled())
+ #endif
+-        } else {
+-            property_set("ro.crypto.fs_crypto_blkdev", crypto_blkdev.c_str());
+-        }
++        property_set("ro.crypto.fs_crypto_blkdev", crypto_blkdev.c_str());
+         master_key_saved = 1;
+     }
+ 
+@@ -2913,7 +2909,7 @@ int cryptfs_enable_internal(int crypt_type, const char* passwd, int no_ui) {
+                                  &crypto_blkdev, CRYPTO_BLOCK_DEVICE, 0);
+ #endif
+     else
+-      rc = create_crypto_blk_dev(&crypt_ftr, decrypted_master_key, real_blkdev.c_str(),
++      rc = create_crypto_blk_dev_hw(&crypt_ftr, decrypted_master_key, real_blkdev.c_str(),
+                                  &crypto_blkdev, CRYPTO_BLOCK_DEVICE, 0);
+ #else
+     rc = create_crypto_blk_dev(&crypt_ftr, decrypted_master_key, real_blkdev.c_str(),
+-- 
+2.30.2
+

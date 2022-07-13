@@ -1,0 +1,72 @@
+From 79b617725a561178ada8607a2f3f31c197ca49f9 Mon Sep 17 00:00:00 2001
+From: LuK1337 <priv.luk@gmail.com>
+Date: Mon, 19 Aug 2019 01:01:45 +0200
+Subject: [PATCH 08/10] Add "changepw" command to vdc.
+
+* Before moving to binder, 'changepw' was
+  supported, and people used it to set
+  different FDE decryption pwd from the
+  lockscreen one. This change adds it back.
+
+Change-Id: Id83ebb8eafe15263d8a694da9a3353866f912e3f
+---
+ vdc.cpp | 29 +++++++++++++++++++++++++++++
+ 1 file changed, 29 insertions(+)
+
+diff --git a/vdc.cpp b/vdc.cpp
+index 313ef55..dec9504 100644
+--- a/vdc.cpp
++++ b/vdc.cpp
+@@ -42,6 +42,18 @@
+ 
+ #include <private/android_filesystem_config.h>
+ 
++/* Allowed values for type in the structure below */
++#define CRYPT_TYPE_PASSWORD                       \
++    0 /* master_key is encrypted with a password  \
++       * Must be zero to be compatible with pre-L \
++       * devices where type is always password.*/
++#define CRYPT_TYPE_DEFAULT                                            \
++    1                         /* master_key is encrypted with default \
++                               * password */
++#define CRYPT_TYPE_PATTERN 2  /* master_key is encrypted with a pattern */
++#define CRYPT_TYPE_PIN 3      /* master_key is encrypted with a pin */
++#define CRYPT_TYPE_MAX_TYPE 3 /* type cannot be larger than this value */
++
+ static void usage(char* progname);
+ 
+ static android::sp<android::IBinder> getServiceAggressive() {
+@@ -86,6 +98,20 @@ static void bindkeys(std::vector<std::string>& args, const android::sp<android::
+     checkStatus(args, vold->setStorageBindingSeed(seed));
+ }
+ 
++static int getType(const std::string &type) {
++    if (type == "default") {
++        return CRYPT_TYPE_DEFAULT;
++    } else if (type == "password") {
++        return CRYPT_TYPE_PASSWORD;
++    } else if (type == "pin") {
++        return CRYPT_TYPE_PIN;
++    } else if (type == "pattern") {
++        return CRYPT_TYPE_PATTERN;
++    } else {
++        return -1;
++    }
++}
++
+ int main(int argc, char** argv) {
+     setenv("ANDROID_LOG_TAGS", "*:v", 1);
+     if (getppid() == 1) {
+@@ -138,6 +164,9 @@ int main(int argc, char** argv) {
+         checkStatus(args, vold->encryptFstab(args[2], args[3],
+                                              shouldFormat == android::base::ParseBoolResult::kTrue,
+                                              args[5]));
++    } else if (args[0] == "cryptfs" && args[1] == "changepw" && args.size() == 5) {
++        int type = getType(args[2]);
++        checkStatus(args, vold->fdeChangePassword(type, args[3], args[4]));
+     } else if (args[0] == "checkpoint" && args[1] == "supportsCheckpoint" && args.size() == 2) {
+         bool supported = false;
+         checkStatus(args, vold->supportsCheckpoint(&supported));
+-- 
+2.30.2
+
