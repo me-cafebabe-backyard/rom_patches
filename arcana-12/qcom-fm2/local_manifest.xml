@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+  <remove-project name="android_vendor_qcom_opensource_fm-commonsys">
+  <project path="vendor/qcom/opensource/fm-commonsys" name="LineageOS/android_vendor_qcom_opensource_fm-commonsys" groups="qcom,qssi" remote="lineage" revision="lineage-19.1"/>
+</manifest>
