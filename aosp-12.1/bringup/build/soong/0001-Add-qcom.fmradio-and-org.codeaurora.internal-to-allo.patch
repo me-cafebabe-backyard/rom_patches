@@ -1,0 +1,34 @@
+From f39967f5889fc761c3d28671017dfa11183e6b93 Mon Sep 17 00:00:00 2001
+From: Scott Lobdell <slobdell@google.com>
+Date: Fri, 2 Jul 2021 21:53:30 +0000
+Subject: [PATCH] Add qcom.fmradio and org.codeaurora.internal to allowlist
+
+B58: Add org.codeaurora.ims to the list.
+
+Bug: 192690464
+Change-Id: I0837873f5bf4e3a8402d70e720d2b55ee4e0a991
+(cherry picked from commit ef25c8777180f88650dad8bd2499e8c8c9d174b7)
+---
+ scripts/check_boot_jars/package_allowed_list.txt | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/scripts/check_boot_jars/package_allowed_list.txt b/scripts/check_boot_jars/package_allowed_list.txt
+index a02c19560..d0abc1484 100644
+--- a/scripts/check_boot_jars/package_allowed_list.txt
++++ b/scripts/check_boot_jars/package_allowed_list.txt
+@@ -251,3 +251,12 @@ com\.google\.i18n\.phonenumbers
+ # Packages used for Android in Chrome OS
+ org\.chromium\.arc
+ org\.chromium\.arc\..*
++
++# QC adds
++com.qualcomm.qti
++com.quicinc.tcmiface
++com.qualcomm.wfd
++com.qualcomm.wfd.service
++org.codeaurora.ims
++org.codeaurora.internal
++qcom.fmradio
+-- 
+2.30.2
+

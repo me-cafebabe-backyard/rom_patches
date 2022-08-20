@@ -1,0 +1,46 @@
+From a53bd21ff647db2013153e9b5fca0f461c888c22 Mon Sep 17 00:00:00 2001
+From: Dileep Marchya <dmarchya@codeaurora.org>
+Date: Fri, 25 May 2018 11:39:56 +0530
+Subject: [PATCH] libhardware: Add new display types.
+
+- Extend display types enums to support multiple displays.
+- Reserve display types 2 to 4 for additional external displays.
+- Reserve display types 5 to 7 for additional builtin displays.
+- Move virtual display type to 8.
+
+CRs-Fixed: 2274419
+Change-Id: I9a0f5167a777a1d903eb98c5aa7ee0b229d08640
+---
+ include/hardware/hwcomposer_defs.h | 15 ++++++++++++---
+ 1 file changed, 12 insertions(+), 3 deletions(-)
+
+diff --git a/include/hardware/hwcomposer_defs.h b/include/hardware/hwcomposer_defs.h
+index 3823765f..c4d8a44c 100644
+--- a/include/hardware/hwcomposer_defs.h
++++ b/include/hardware/hwcomposer_defs.h
+@@ -299,10 +299,19 @@ enum {
+ enum {
+     HWC_DISPLAY_PRIMARY     = 0,
+     HWC_DISPLAY_EXTERNAL    = 1,    // HDMI, DP, etc.
+-    HWC_DISPLAY_VIRTUAL     = 2,
+ 
+-    HWC_NUM_PHYSICAL_DISPLAY_TYPES = 2,
+-    HWC_NUM_DISPLAY_TYPES          = 3,
++    HWC_DISPLAY_EXTERNAL_2  = 2,
++    HWC_DISPLAY_EXTERNAL_3  = 3,
++    HWC_DISPLAY_EXTERNAL_4  = 4,
++
++    HWC_DISPLAY_BUILTIN_2   = 5,
++    HWC_DISPLAY_BUILTIN_3   = 6,
++    HWC_DISPLAY_BUILTIN_4   = 7,
++
++    HWC_DISPLAY_VIRTUAL     = 8,
++
++    HWC_NUM_PHYSICAL_DISPLAY_TYPES = 8,
++    HWC_NUM_DISPLAY_TYPES          = 9,
+ };
+ 
+ enum {
+-- 
+2.30.2
+

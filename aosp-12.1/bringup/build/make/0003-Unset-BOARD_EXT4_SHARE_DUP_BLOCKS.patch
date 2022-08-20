@@ -1,0 +1,39 @@
+From d008ae14eaf1366f0631883dae6572f7edb1c0f1 Mon Sep 17 00:00:00 2001
+From: LuK1337 <priv.luk@gmail.com>
+Date: Fri, 11 Sep 2020 15:34:56 +0200
+Subject: [PATCH 3/4] Unset BOARD_EXT4_SHARE_DUP_BLOCKS
+
+* This allows us to remount ext4 partitions read-write
+  on devices with dynamic partitions.
+
+This reverts the following commits:
+
+Revert "Move BOARD_EXT4_SHARE_DUP_BLOCKS to BoardConfigMainlineCommon.mk"
+
+This reverts commit I0eb035ba6edf44719d5de4f09fd97b5783537597.
+
+Revert "enable BOARD_EXT4_SHARE_DUP_BLOCKS for generic_arm64"
+
+This reverts commit 125b6d6eeab8d9b2a343e9ab892fb0e241958b7a.
+
+Change-Id: I3768374d6da59f969ea44c1965f75c934edf3b57
+---
+ target/board/BoardConfigEmuCommon.mk | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/target/board/BoardConfigEmuCommon.mk b/target/board/BoardConfigEmuCommon.mk
+index 845225da3..c89f7a87a 100644
+--- a/target/board/BoardConfigEmuCommon.mk
++++ b/target/board/BoardConfigEmuCommon.mk
+@@ -33,6 +33,8 @@ ifeq ($(PRODUCT_USE_DYNAMIC_PARTITIONS),true)
+   # emulator needs super.img
+   BOARD_BUILD_SUPER_IMAGE_BY_DEFAULT := true
+ 
++  BOARD_EXT4_SHARE_DUP_BLOCKS := true
++
+   # 4G + 8M
+   BOARD_SUPER_PARTITION_SIZE := 4303355904
+   BOARD_SUPER_PARTITION_GROUPS := emulator_dynamic_partitions
+-- 
+2.30.2
+

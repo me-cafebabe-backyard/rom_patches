@@ -1,0 +1,28 @@
+From 544305cc918306a66bcdf9e4f2f21876438fc1b8 Mon Sep 17 00:00:00 2001
+From: Rashed Abdel-Tawab <rashed@linux.com>
+Date: Sun, 15 Apr 2018 10:18:26 -0700
+Subject: [PATCH] libc: Mark libstdc++ as vendor available
+
+A lot of blobs still link this even on 8.1, so allow
+devices to build a vendor copy of it.
+
+Change-Id: I2349478ec0507e3a5136fe89f15e7dc4bfc1a03e
+---
+ libc/Android.bp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/libc/Android.bp b/libc/Android.bp
+index 97146aa6f..7304aa2a2 100644
+--- a/libc/Android.bp
++++ b/libc/Android.bp
+@@ -1998,6 +1998,7 @@ cc_library {
+     name: "libstdc++",
+     static_ndk_lib: true,
+     static_libs: ["libasync_safe"],
++    vendor_available: true,
+ 
+     static: {
+         system_shared_libs: [],
+-- 
+2.30.2
+

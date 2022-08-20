@@ -1,0 +1,48 @@
+From 4c0f8d6052c29446beed3fd4bf6b7e9ce7506c9d Mon Sep 17 00:00:00 2001
+From: Bruno Martins <bgcngm@gmail.com>
+Date: Mon, 5 Oct 2020 18:22:43 +0100
+Subject: [PATCH 2/3] res: Introduce overlays for biometrics hax
+
+Change-Id: I5037be2fc49680a5092939b5e8b6518a506d7297
+---
+ core/res/res/values/config.xml  | 8 ++++++++
+ core/res/res/values/symbols.xml | 8 ++++++++
+ 2 files changed, 16 insertions(+)
+
+diff --git a/core/res/res/values/config.xml b/core/res/res/values/config.xml
+index 1df4a21cefc0..06ab236257b0 100644
+--- a/core/res/res/values/config.xml
++++ b/core/res/res/values/config.xml
+@@ -5323,4 +5323,12 @@
+     <string-array name="config_serviceStateLocationAllowedPackages">
+         <item>"com.android.phone"</item>
+     </string-array>
++
++    <!-- Whether to cleanup fingerprints upon connection to the daemon and when
++         user switches -->
++    <bool name="config_cleanupUnusedFingerprints">true</bool>
++
++    <!-- Whether to notify fingerprint client of successful cancelled authentication
++         (needed for some older vendor fingerprint HAL implementations) -->
++    <bool name="config_fingerprintPostResetRunnableForAllClients">false</bool>
+ </resources>
+diff --git a/core/res/res/values/symbols.xml b/core/res/res/values/symbols.xml
+index 8a794eb7d46d..9d49624531b5 100644
+--- a/core/res/res/values/symbols.xml
++++ b/core/res/res/values/symbols.xml
+@@ -4495,4 +4495,12 @@
+   <java-symbol type="array" name="config_builtInDisplayIsRoundArray" />
+   <java-symbol type="array" name="config_serviceStateLocationAllowedPackages" />
+   <java-symbol type="dimen" name="status_bar_height_default" />
++
++    <!-- Whether to cleanup fingerprints upon connection to the daemon and when
++         user switches -->
++    <java-symbol type="bool" name="config_cleanupUnusedFingerprints" />
++
++    <!-- Whether to notify fingerprint client of successful cancelled authentication
++         (needed for some older vendor fingerprint HAL implementations) -->
++    <java-symbol type="bool" name="config_fingerprintPostResetRunnableForAllClients" />
+ </resources>
+-- 
+2.30.2
+

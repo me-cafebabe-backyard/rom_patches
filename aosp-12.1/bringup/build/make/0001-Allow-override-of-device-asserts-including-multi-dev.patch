@@ -1,0 +1,84 @@
+From 04f9ab13f30c985129b6a4a133e9835746cf2f2d Mon Sep 17 00:00:00 2001
+From: Steve Kondik <shade@chemlab.org>
+Date: Wed, 21 Apr 2010 11:39:48 -0400
+Subject: [PATCH 1/4] Allow override of device asserts, including multi-device
+ support.
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Set in board file with TARGET_OTA_ASSERT_DEVICE.
+(cherry-picked from commit 0f452f21fc9323b9d1fe746161761cf40aaa5030)
+
+Change-Id: I3d06bdc0e3e26bde0c0e646accd050364f9713b9
+
+ota_from_target_files: Remove device dependent arguments
+
+These device-specific arguments are defined at build time and are
+necessary to generate the zip correctly. Don't use command line
+arguments to specify them, but write all the needed information
+in misc_info.txt when the target-files zip is generated.
+ota_from_target_files will then read misc_info.txt and set
+everything automatically.
+
+Change-Id: Ibdbca575b76eb07b53fccfcea52a351c7e333f91
+Signed-off-by: André Pinela <sheffzor@gmail.com>
+---
+ core/Makefile                         |  3 +++
+ tools/releasetools/common.py          |  2 +-
+ tools/releasetools/edify_generator.py | 12 +++++++-----
+ 3 files changed, 11 insertions(+), 6 deletions(-)
+
+diff --git a/core/Makefile b/core/Makefile
+index a6959fac9..070bbadce 100644
+--- a/core/Makefile
++++ b/core/Makefile
+@@ -4652,6 +4652,9 @@ endif
+ ifneq ($(BOARD_PARTIAL_OTA_UPDATE_PARTITIONS_LIST),)
+ 	$(hide) echo "partial_ota_update_partitions_list=$(BOARD_PARTIAL_OTA_UPDATE_PARTITIONS_LIST)" >> $@
+ endif
++ifneq ($(TARGET_OTA_ASSERT_DEVICE),)
++	$(hide) echo "ota_override_device=$(TARGET_OTA_ASSERT_DEVICE)" >> $@
++endif
+ 
+ .PHONY: misc_info
+ misc_info: $(INSTALLED_MISC_INFO_TARGET)
+diff --git a/tools/releasetools/common.py b/tools/releasetools/common.py
+index 0d25650db..b8b333a20 100644
+--- a/tools/releasetools/common.py
++++ b/tools/releasetools/common.py
+@@ -427,7 +427,7 @@ class BuildInfo(object):
+           "system_other"] = self._partition_fingerprints["system"]
+ 
+     # These two should be computed only after setting self._oem_props.
+-    self._device = self.GetOemProperty("ro.product.device")
++    self._device = info_dict.get("ota_override_device", self.GetOemProperty("ro.product.device"))
+     self._fingerprint = self.CalculateFingerprint()
+     check_fingerprint(self._fingerprint)
+ 
+diff --git a/tools/releasetools/edify_generator.py b/tools/releasetools/edify_generator.py
+index 033c02e60..f8247ee19 100644
+--- a/tools/releasetools/edify_generator.py
++++ b/tools/releasetools/edify_generator.py
+@@ -137,11 +137,13 @@ class EdifyGenerator(object):
+ 
+   def AssertDevice(self, device):
+     """Assert that the device identifier is the given string."""
+-    cmd = ('getprop("ro.product.device") == "%s" || '
+-           'abort("E%d: This package is for \\"%s\\" devices; '
+-           'this is a \\"" + getprop("ro.product.device") + "\\".");') % (
+-               device, common.ErrorCode.DEVICE_MISMATCH, device)
+-    self.script.append(cmd)
++    cmd = ('assert(' +
++           ' || \0'.join(['getprop("ro.product.device") == "%s" || getprop("ro.build.product") == "%s"'
++                         % (i, i) for i in device.split(",")]) +
++           ' || abort("E%d: This package is for device: %s; ' +
++           'this device is " + getprop("ro.product.device") + ".");' +
++           ');') % (common.ErrorCode.DEVICE_MISMATCH, device)
++    self.script.append(self.WordWrap(cmd))
+ 
+   def AssertSomeBootloader(self, *bootloaders):
+     """Asert that the bootloader version is one of *bootloaders."""
+-- 
+2.30.2
+
