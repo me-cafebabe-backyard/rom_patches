@@ -1,0 +1,98 @@
+From c6ee00282900b580938a8cb5c70bf15e19bb6104 Mon Sep 17 00:00:00 2001
+From: Phanindra Babu Pabba <pabba@codeaurora.org>
+Date: Mon, 7 Dec 2020 16:29:26 +0530
+Subject: [PATCH 07/10] vold: Fix the compilation failure for cryptfs
+
+Fixed compilation failures noticed when perf
+flag (HW_DISK_ENCRYPT_PERF) is disabled.
+
+CRs-Fixed: 2832825
+Change-Id: Idbaf34a95ba30618c3a2dd91255f8dfceac81760
+---
+ cryptfs.cpp | 27 ++++++++++++++-------------
+ 1 file changed, 14 insertions(+), 13 deletions(-)
+
+diff --git a/cryptfs.cpp b/cryptfs.cpp
+index 267d11f..aa18dea 100644
+--- a/cryptfs.cpp
++++ b/cryptfs.cpp
+@@ -1390,8 +1390,8 @@ static int load_crypto_mapping_table(struct crypt_mnt_ftr* crypt_ftr,
+ }
+ 
+ static int create_crypto_blk_dev_hw(struct crypt_mnt_ftr* crypt_ftr, const unsigned char* master_key,
+-                                 const char* real_blk_name, char* crypto_blk_name, const char* name,
+-                                 uint32_t flags) {
++                                 const char* real_blk_name, std::string* crypto_blk_name,
++                                 const char* name, uint32_t flags) {
+     char buffer[DM_CRYPT_BUF_SIZE];
+     struct dm_ioctl* io;
+     unsigned int minor;
+@@ -1399,7 +1399,7 @@ static int create_crypto_blk_dev_hw(struct crypt_mnt_ftr* crypt_ftr, const unsig
+     int err;
+     int retval = -1;
+     int version[3];
+-    int load_count;
++    int load_count = 0;
+     char encrypted_state[PROPERTY_VALUE_MAX] = {0};
+     char progress[PROPERTY_VALUE_MAX] = {0};
+     const char *extra_params;
+@@ -1425,7 +1425,7 @@ static int create_crypto_blk_dev_hw(struct crypt_mnt_ftr* crypt_ftr, const unsig
+         goto errout;
+     }
+     minor = (io->dev & 0xff) | ((io->dev >> 12) & 0xfff00);
+-    snprintf(crypto_blk_name, MAXPATHLEN, "/dev/block/dm-%u", minor);
++    snprintf(crypto_blk_name->data(), MAXPATHLEN, "/dev/block/dm-%u", minor);
+ 
+     if(is_hw_disk_encryption((char*)crypt_ftr->crypto_type_name)) {
+       /* Set fde_enabled if either FDE completed or in-progress */
+@@ -1460,7 +1460,7 @@ static int create_crypto_blk_dev_hw(struct crypt_mnt_ftr* crypt_ftr, const unsig
+     }
+ 
+     /* Ensure the dm device has been created before returning. */
+-    if (android::vold::WaitForFile(crypto_blk_name, 1s) < 0) {
++    if (android::vold::WaitForFile(crypto_blk_name->c_str(), 1s) < 0) {
+         // WaitForFile generates a suitable log message
+         goto errout;
+     }
+@@ -2192,8 +2192,8 @@ static int test_mount_hw_encrypted_fs(struct crypt_mnt_ftr* crypt_ftr,
+ {
+     /* Allocate enough space for a 256 bit key, but we may use less */
+     unsigned char decrypted_master_key[32];
+-    char crypto_blkdev_hw[MAXPATHLEN];
+-    char crypto_blkdev[MAXPATHLEN];
++    std::string crypto_blkdev_hw;
++    std::string crypto_blkdev;
+     std::string real_blkdev;
+     unsigned int orig_failed_decrypt_count;
+     int rc = 0;
+@@ -2214,7 +2214,7 @@ static int test_mount_hw_encrypted_fs(struct crypt_mnt_ftr* crypt_ftr,
+             if (is_ice_enabled()) {
+ #ifndef CONFIG_HW_DISK_ENCRYPT_PERF
+                 if (create_crypto_blk_dev_hw(crypt_ftr, (unsigned char*)&key_index,
+-                                          real_blkdev.c_str(), crypto_blkdev_hw, label, 0)) {
++                                          real_blkdev.c_str(), &crypto_blkdev_hw, label, 0)) {
+                     SLOGE("Error creating decrypted block device");
+                     rc = -1;
+                     goto errout;
+@@ -2239,12 +2239,13 @@ static int test_mount_hw_encrypted_fs(struct crypt_mnt_ftr* crypt_ftr,
+ 
+         /* Save the name of the crypto block device
+          * so we can mount it when restarting the framework. */
+-#ifdef CONFIG_HW_DISK_ENCRYPT_PERF
+-        if (!is_ice_enabled())
+-        property_set("ro.crypto.fs_crypto_blkdev", crypto_blkdev_hw);
+-#else
+-        property_set("ro.crypto.fs_crypto_blkdev", crypto_blkdev);
++       if (is_ice_enabled()) {
++#ifndef CONFIG_HW_DISK_ENCRYPT_PERF
++            property_set("ro.crypto.fs_crypto_blkdev", crypto_blkdev_hw.c_str());
+ #endif
++        } else {
++            property_set("ro.crypto.fs_crypto_blkdev", crypto_blkdev.c_str());
++        }
+         master_key_saved = 1;
+     }
+ 
+-- 
+2.30.2
+

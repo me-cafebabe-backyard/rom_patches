@@ -1,0 +1,38 @@
+From 1d7553a3fe661fa11644e3a9016060159a620c11 Mon Sep 17 00:00:00 2001
+From: filiprrs <filiprrs@gmail.com>
+Date: Thu, 20 Jan 2022 23:36:40 +0100
+Subject: [PATCH 2/2] Settings: Migrate encryption settings xml to
+ NestedScrollView
+
+ScrollView doesn't play well with this usecase.
+
+Change-Id: Ib7cb865717fcb75e7effaa07adb638d155dce18c
+---
+ res/layout/crypt_keeper_settings.xml | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/res/layout/crypt_keeper_settings.xml b/res/layout/crypt_keeper_settings.xml
+index 6b33e00e42..c8c0a65d7a 100644
+--- a/res/layout/crypt_keeper_settings.xml
++++ b/res/layout/crypt_keeper_settings.xml
+@@ -21,7 +21,7 @@
+     android:paddingStart="@dimen/preference_no_icon_padding_start"
+     android:paddingEnd="?android:attr/listPreferredItemPaddingEnd"
+     android:orientation="vertical">
+-    <ScrollView
++    <androidx.core.widget.NestedScrollView
+         android:layout_width="match_parent"
+         android:layout_height="0dip"
+         android:layout_marginTop="16dp"
+@@ -56,7 +56,7 @@
+                 android:text="@string/crypt_keeper_unplugged_text"
+                 android:visibility="gone" />
+         </LinearLayout>
+-    </ScrollView>
++    </androidx.core.widget.NestedScrollView>
+     <Button
+         android:id="@+id/initiate_encrypt"
+         style="@style/ActionPrimaryButton"
+-- 
+2.30.2
+
