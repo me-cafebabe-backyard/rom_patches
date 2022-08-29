@@ -1,0 +1,26 @@
+From bd7ad7a6641be79b3ec196e5ffd1d9e9cc5463d0 Mon Sep 17 00:00:00 2001
+From: me-cafebabe <me_cafebabe@hotmail.com>
+Date: Mon, 29 Aug 2022 14:53:54 +0000
+Subject: [PATCH] tinycompress: Use qti_kernel_headers
+
+Change-Id: Ib64d0902b55d648a67ec51d75c205a6c23c67b78
+---
+ Android.bp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Android.bp b/Android.bp
+index a4f8d6d..a1f852d 100644
+--- a/Android.bp
++++ b/Android.bp
+@@ -42,7 +42,7 @@ cc_library_shared {
+         "libutils",
+     ],
+     header_libs: [
+-        "device_kernel_headers",
++        "qti_kernel_headers",
+     ],
+ }
+ 
+-- 
+2.30.2
+
