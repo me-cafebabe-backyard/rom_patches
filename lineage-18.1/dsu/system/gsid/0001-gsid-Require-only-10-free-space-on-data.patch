@@ -1,0 +1,28 @@
+From 7f51787c0bcad8a9fface1895e7d31ba1793a2d5 Mon Sep 17 00:00:00 2001
+From: me-cafebabe <me_cafebabe@hotmail.com>
+Date: Thu, 1 Sep 2022 06:47:03 +0000
+Subject: [PATCH] gsid: Require only 10% free space on /data
+
+Change-Id: I2727015d2f3cdd87a9f4b4a45a5b83fbc41d1ac5
+---
+ partition_installer.cpp | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/partition_installer.cpp b/partition_installer.cpp
+index 357df50..451a546 100644
+--- a/partition_installer.cpp
++++ b/partition_installer.cpp
+@@ -40,8 +40,8 @@ using namespace android::fs_mgr;
+ using android::base::unique_fd;
+ 
+ // The default size of userdata.img for GSI.
+-// We are looking for /data to have atleast 40% free space
+-static constexpr uint32_t kMinimumFreeSpaceThreshold = 40;
++// We are looking for /data to have atleast 10% free space
++static constexpr uint32_t kMinimumFreeSpaceThreshold = 10;
+ 
+ PartitionInstaller::PartitionInstaller(GsiService* service, const std::string& install_dir,
+                                        const std::string& name, const std::string& active_dsu,
+-- 
+2.30.2
+
