@@ -1,0 +1,28 @@
+From 7d14c592130a46bf0939039490e928b602b3206a Mon Sep 17 00:00:00 2001
+From: me-cafebabe <me_cafebabe@hotmail.com>
+Date: Thu, 1 Sep 2022 06:47:03 +0000
+Subject: [PATCH] gsid: Require only 10% free space on /data
+
+Change-Id: I2727015d2f3cdd87a9f4b4a45a5b83fbc41d1ac5
+---
+ libgsi_private.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/libgsi_private.h b/libgsi_private.h
+index 82814a9..ab1969a 100644
+--- a/libgsi_private.h
++++ b/libgsi_private.h
+@@ -28,8 +28,8 @@ static constexpr char kInstallStatusOk[] = "ok";
+ static constexpr char kInstallStatusWipe[] = "wipe";
+ static constexpr char kInstallStatusDisabled[] = "disabled";
+ 
+-// We are looking for /data to have at least 40% free space.
+-static constexpr uint32_t kMinimumFreeSpaceThreshold = 40;
++// We are looking for /data to have at least 10% free space.
++static constexpr uint32_t kMinimumFreeSpaceThreshold = 10;
+ 
+ }  // namespace gsi
+ }  // namespace android
+-- 
+2.30.2
+

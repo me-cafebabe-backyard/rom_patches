@@ -1,0 +1,32 @@
+From d9148db20df7dd5d2eab491ef4a997f865f587bf Mon Sep 17 00:00:00 2001
+From: me-cafebabe <me_cafebabe@hotmail.com>
+Date: Thu, 1 Sep 2022 06:45:55 +0000
+Subject: [PATCH] DSULoader.java: Skip SPL check
+
+---
+ src/com/android/settings/development/DSULoader.java | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/src/com/android/settings/development/DSULoader.java b/src/com/android/settings/development/DSULoader.java
+index d4fa0c6464..84c1427d09 100644
+--- a/src/com/android/settings/development/DSULoader.java
++++ b/src/com/android/settings/development/DSULoader.java
+@@ -324,6 +324,7 @@ public class DSULoader extends ListActivity {
+                     }
+                 }
+             }
++/*
+             if (mSPL != null) {
+                 Date spl = getDeviceSPL();
+                 if (spl == null) {
+@@ -334,6 +335,7 @@ public class DSULoader extends ListActivity {
+                     supported = false;
+                 }
+             }
++*/
+             Slog.i(TAG, mName + " isSupported " + supported);
+             return supported;
+         }
+-- 
+2.30.2
+
