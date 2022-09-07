@@ -1,14 +1,15 @@
-From 26d1155876d368a92d70d955e09c6f72c7dada0d Mon Sep 17 00:00:00 2001
-From: Build Server <build@localhost>
+From 5fc8c0b5bfefc1f1b8c262e1cf577e21abf7c002 Mon Sep 17 00:00:00 2001
+From: me-cafebabe <me_cafebabe@hotmail.com>
 Date: Sat, 16 Jul 2022 20:10:52 +0000
 Subject: [PATCH] liblp: Allow to flash on bigger block device
 
+Change-Id: I2b4c05401569ce5fc301ebafa7d130c3b0d87c64
 ---
  fs_mgr/liblp/writer.cpp | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/fs_mgr/liblp/writer.cpp b/fs_mgr/liblp/writer.cpp
-index 2708efa15..7db0b787e 100644
+index 2708efa156..7db0b787e4 100644
 --- a/fs_mgr/liblp/writer.cpp
 +++ b/fs_mgr/liblp/writer.cpp
 @@ -138,8 +138,8 @@ static bool ValidateAndSerializeMetadata([[maybe_unused]] const IPartitionOpener
