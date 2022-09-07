@@ -1,0 +1,48 @@
+From 57d4b76c6a129d15673a979525489c3ddd5e2ef7 Mon Sep 17 00:00:00 2001
+From: Danny Lin <danny@kdrag0n.dev>
+Date: Sat, 15 May 2021 00:19:18 -0700
+Subject: [PATCH] vendorsetup: Disable ABI checks
+
+ABI compatibility checks fail for several reasons:
+  - The update to Clang 12 causes some changes, but no breakage has been
+    observed in practice.
+  - Switching to zlib-ng changes some internal structs, but not the public
+    API.
+
+We may fix these eventually by updating the ABI specifications, but it's
+likely not worth the effort for us because of how many repos are affected.
+We would need to fork a lot of extra repos (thus increasing maintenance
+overhead) just to update the ABI specs.
+
+For now, just skip the ABI checks to fix build errors.
+
+Change-Id: Id052848f8b305ee227999c09c8f7b889ee09bc3f
+---
+ vendorsetup.sh | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+ create mode 100755 vendorsetup.sh
+
+diff --git a/vendorsetup.sh b/vendorsetup.sh
+new file mode 100755
+index 00000000..2bf5e241
+--- /dev/null
++++ b/vendorsetup.sh
+@@ -0,0 +1,15 @@
++# Shebang is intentionally missing - do not run as a script
++
++# ABI compatibility checks fail for several reasons:
++#   - The update to Clang 12 causes some changes, but no breakage has been
++#     observed in practice.
++#   - Switching to zlib-ng changes some internal structs, but not the public
++#     API.
++#
++# We may fix these eventually by updating the ABI specifications, but it's
++# likely not worth the effort for us because of how many repos are affected.
++# We would need to fork a lot of extra repos (thus increasing maintenance
++# overhead) just to update the ABI specs.
++#
++# For now, just skip the ABI checks to fix build errors.
++export SKIP_ABI_CHECKS=true
+-- 
+2.30.2
+
