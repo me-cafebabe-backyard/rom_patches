@@ -1,7 +1,7 @@
-From 41981a4e11c5cd575cb38efad9354d2e9be64b7a Mon Sep 17 00:00:00 2001
+From 3058e727f7dbad7ed551ba363719cb34a2881d99 Mon Sep 17 00:00:00 2001
 From: David Ng <dave@codeaurora.org>
 Date: Mon, 23 Sep 2013 18:50:24 -0700
-Subject: [PATCH] init: Add vendor-specific initialization hooks.
+Subject: [PATCH 1/2] init: Add vendor-specific initialization hooks.
 
 Allow optional vendor-specific initializations
 within init.  This can be used for runtime
@@ -20,7 +20,7 @@ Change-Id: I7623a0d59b18f9ec8e3623958e2f7ccd72b877bf
  create mode 100644 init/vendor_init.h
 
 diff --git a/init/Android.bp b/init/Android.bp
-index dd67d04c0..3df0e917c 100644
+index a57f3a407..00ac6a752 100644
 --- a/init/Android.bp
 +++ b/init/Android.bp
 @@ -89,6 +89,14 @@ init_host_sources = [
@@ -38,7 +38,7 @@ index dd67d04c0..3df0e917c 100644
  soong_config_module_type {
      name: "libinit_cc_defaults",
      module_type: "cc_defaults",
-@@ -208,6 +216,7 @@ cc_library_static {
+@@ -203,6 +211,7 @@ cc_library_static {
      defaults: [
          "init_defaults",
          "selinux_policy_version",
@@ -81,7 +81,7 @@ index c5b1efa7a..383d0f541 100644
 +OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 +IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 diff --git a/init/property_service.cpp b/init/property_service.cpp
-index 9f7c21543..8db414a97 100644
+index 6711e7d66..4cdd2bcdc 100644
 --- a/init/property_service.cpp
 +++ b/init/property_service.cpp
 @@ -73,6 +73,7 @@
@@ -92,7 +92,7 @@ index 9f7c21543..8db414a97 100644
  
  using namespace std::literals;
  
-@@ -1132,6 +1133,9 @@ void PropertyLoadBootDefaults() {
+@@ -1097,6 +1098,9 @@ void PropertyLoadBootDefaults() {
          }
      }
  

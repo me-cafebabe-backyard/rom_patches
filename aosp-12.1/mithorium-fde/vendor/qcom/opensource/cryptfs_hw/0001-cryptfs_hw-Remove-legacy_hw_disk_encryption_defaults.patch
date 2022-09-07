@@ -1,0 +1,27 @@
+From ab450a8a2aa9746ebbbfb5405b1637a6cbaba3f1 Mon Sep 17 00:00:00 2001
+From: me-cafebabe <me_cafebabe@hotmail.com>
+Date: Wed, 7 Sep 2022 12:49:36 +0000
+Subject: [PATCH] cryptfs_hw: Remove legacy_hw_disk_encryption_defaults
+
+We don't use it anyway
+---
+ Android.bp | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/Android.bp b/Android.bp
+index f263465..ca21e49 100644
+--- a/Android.bp
++++ b/Android.bp
+@@ -13,9 +13,6 @@ commonSharedLibraries = [
+ 
+ cc_library_shared {
+     name: "libcryptfs_hw",
+-    defaults: [
+-      "legacy_hw_disk_encryption_defaults",
+-    ],
+     header_libs: ["libhardware_headers"],
+     srcs: sourceFiles,
+     shared_libs: commonSharedLibraries,
+-- 
+2.30.2
+

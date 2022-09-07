@@ -1,0 +1,25 @@
+From 0aa5e733eec53510c3b039188526d93d99ec8421 Mon Sep 17 00:00:00 2001
+From: me-cafebabe <me_cafebabe@hotmail.com>
+Date: Wed, 7 Sep 2022 12:50:49 +0000
+Subject: [PATCH] rmnetctl: Remove librmnetctl_pre_uplink_defaults
+
+We don't use it anyway
+---
+ rmnetctl/Android.bp | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/rmnetctl/Android.bp b/rmnetctl/Android.bp
+index eff026b..bdf77e7 100644
+--- a/rmnetctl/Android.bp
++++ b/rmnetctl/Android.bp
+@@ -19,7 +19,6 @@ cc_library_shared {
+     header_libs: ["qti_kernel_headers"],
+     defaults: [
+         "librmnetctl_defaults",
+-        "librmnetctl_pre_uplink_defaults",
+     ],
+     srcs: ["src/librmnetctl.c"],
+ }
+-- 
+2.30.2
+

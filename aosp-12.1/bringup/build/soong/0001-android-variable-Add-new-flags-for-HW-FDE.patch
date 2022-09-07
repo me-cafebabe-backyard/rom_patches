@@ -1,0 +1,46 @@
+From b6a638120ed683891db25b7e730a06c9ba0d39c6 Mon Sep 17 00:00:00 2001
+From: AnilKumar Chimata <anilc@codeaurora.org>
+Date: Wed, 20 Jun 2018 20:25:55 +0530
+Subject: [PATCH 1/2] android: variable: Add new flags for HW FDE
+
+Add new flags for HW FDE to pass CFlags to source code.
+
+CRs-Fixed: 2210986
+Change-Id: I70d68f015ee8eb8d123ce863ce8e36d0310bc082
+---
+ android/variable.go | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/android/variable.go b/android/variable.go
+index 741d9aed5..198a10399 100644
+--- a/android/variable.go
++++ b/android/variable.go
+@@ -149,6 +149,16 @@ type variableProperties struct {
+ 			Srcs         []string `android:"arch_variant"`
+ 			Exclude_srcs []string `android:"arch_variant"`
+ 		} `android:"arch_variant"`
++
++		Device_support_hwfde struct {
++			Cflags []string
++			Header_libs  []string
++			Shared_libs  []string
++		}
++
++		Device_support_hwfde_perf struct {
++			Cflags []string
++		}
+ 	} `android:"arch_variant"`
+ }
+ 
+@@ -222,6 +232,8 @@ type productVariables struct {
+ 
+ 	AppsDefaultVersionName *string `json:",omitempty"`
+ 
++	Device_support_hwfde       *bool `json:",omitempty"`
++	Device_support_hwfde_perf  *bool `json:",omitempty"`
+ 	Allow_missing_dependencies   *bool `json:",omitempty"`
+ 	Unbundled_build              *bool `json:",omitempty"`
+ 	Unbundled_build_apps         *bool `json:",omitempty"`
+-- 
+2.30.2
+

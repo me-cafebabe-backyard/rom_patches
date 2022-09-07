@@ -1,0 +1,36 @@
+From 48356a51a2ea98b8996ba08fc7d6748c9d8c485a Mon Sep 17 00:00:00 2001
+From: me-cafebabe <me_cafebabe@hotmail.com>
+Date: Wed, 7 Sep 2022 07:52:27 +0000
+Subject: [PATCH 2/2] Add Target_init_vendor_lib product variable
+
+---
+ android/variable.go | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/android/variable.go b/android/variable.go
+index 198a10399..0cefc812b 100644
+--- a/android/variable.go
++++ b/android/variable.go
+@@ -159,6 +159,10 @@ type variableProperties struct {
+ 		Device_support_hwfde_perf struct {
+ 			Cflags []string
+ 		}
++
++		Target_init_vendor_lib struct {
++			Whole_static_libs []string
++		}
+ 	} `android:"arch_variant"`
+ }
+ 
+@@ -296,6 +300,8 @@ type productVariables struct {
+ 	NativeCoveragePaths        []string `json:",omitempty"`
+ 	NativeCoverageExcludePaths []string `json:",omitempty"`
+ 
++	Target_init_vendor_lib *string `json:",omitempty"`
++
+ 	// Set by NewConfig
+ 	Native_coverage *bool
+ 
+-- 
+2.30.2
+
