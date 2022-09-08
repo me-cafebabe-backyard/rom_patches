@@ -1,0 +1,23 @@
+From b08e771bbcf5e1474c71aeb37e8e36001571b218 Mon Sep 17 00:00:00 2001
+From: me-cafebabe <me_cafebabe@hotmail.com>
+Date: Thu, 8 Sep 2022 05:53:41 +0000
+Subject: [PATCH] vendor/extras => vendor/extra
+
+---
+ config/common.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/config/common.mk b/config/common.mk
+index 40b5db0f..efae0359 100644
+--- a/config/common.mk
++++ b/config/common.mk
+@@ -1,5 +1,5 @@
+ # Allow vendor/extras to override any property by setting it first
+-$(call inherit-product-if-exists, vendor/extras/product.mk)
++$(call inherit-product-if-exists, vendor/extra/product.mk)
+ 
+ PRODUCT_BRAND ?= Fluid
+ 
+-- 
+2.30.2
+
