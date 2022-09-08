@@ -1,0 +1,147 @@
+From 63a692b0fc8399b1204f9fa75d9736f4dc4277a4 Mon Sep 17 00:00:00 2001
+From: SagarMakhar <sagarmakhar@gmail.com>
+Date: Wed, 29 Dec 2021 08:16:18 +0000
+Subject: [PATCH 1/3] BiometricScheduler: Cancel operation if not idle
+
+- some hals fail to report success/failure (for ex. realme fp hals)
+[DarkJoker360 - Switch to overlays]
+
+Change-Id: I442ce063280af36a04c25fcbc3dd45a90f196988
+Signed-off-by: SagarMakhar <sagarmakhar@gmail.com>
+Signed-off-by: DarkJoker360 <simoespo159@gmail.com>
+Signed-off-by: dlwlrma123 <alexfinhart@gmail.com>
+---
+ core/res/res/values/fluid_config.xml            |  3 +++
+ core/res/res/values/fluid_symbols.xml           |  3 +++
+ .../biometrics/sensors/BiometricScheduler.java  | 17 ++++++++++++++---
+ .../biometrics/sensors/face/hidl/Face10.java    |  2 +-
+ .../sensors/fingerprint/hidl/Fingerprint21.java |  2 +-
+ .../hidl/Fingerprint21UdfpsMock.java            |  6 +++---
+ 6 files changed, 25 insertions(+), 8 deletions(-)
+
+diff --git a/core/res/res/values/fluid_config.xml b/core/res/res/values/fluid_config.xml
+index 29ace38082c3..a5be0894d2a3 100644
+--- a/core/res/res/values/fluid_config.xml
++++ b/core/res/res/values/fluid_config.xml
+@@ -49,4 +49,7 @@
+ 
+     <!-- Whether device has dash charging support -->
+     <bool name="config_hasDashCharger">false</bool>
++
++    <!-- Whether to cancel fingerprint operation if not idle -->
++    <bool name="config_fpCancelIfNotIdle">false</bool>
+ </resources>
+diff --git a/core/res/res/values/fluid_symbols.xml b/core/res/res/values/fluid_symbols.xml
+index e01edf503970..0930cdc977bb 100644
+--- a/core/res/res/values/fluid_symbols.xml
++++ b/core/res/res/values/fluid_symbols.xml
+@@ -49,4 +49,7 @@
+     <!-- SystemUI Restart -->
+     <java-symbol type="string" name="systemui_restart_title" />
+     <java-symbol type="string" name="systemui_restart_message" />
++
++    <!-- Whether to cancel fingerprint operation if not idle -->
++    <java-symbol type="bool" name="config_fpCancelIfNotIdle" />
+ </resources>
+diff --git a/services/core/java/com/android/server/biometrics/sensors/BiometricScheduler.java b/services/core/java/com/android/server/biometrics/sensors/BiometricScheduler.java
+index 39c5944d65c7..ca79d87a85be 100644
+--- a/services/core/java/com/android/server/biometrics/sensors/BiometricScheduler.java
++++ b/services/core/java/com/android/server/biometrics/sensors/BiometricScheduler.java
+@@ -59,6 +59,9 @@ import java.util.Locale;
+ public class BiometricScheduler {
+ 
+     private static final String BASE_TAG = "BiometricScheduler";
++
++    private boolean mCancel;
++
+     // Number of recent operations to keep in our logs for dumpsys
+     protected static final int LOG_NUM_RECENT_OPERATIONS = 50;
+ 
+@@ -237,13 +240,16 @@ public class BiometricScheduler {
+      * @param gestureAvailabilityDispatcher may be null if the sensor does not support gestures
+      *                                      (such as fingerprint swipe).
+      */
+-    public BiometricScheduler(@NonNull String tag,
++    public BiometricScheduler(Context context, @NonNull String tag,
+             @SensorType int sensorType,
+             @Nullable GestureAvailabilityDispatcher gestureAvailabilityDispatcher) {
+         this(tag, new Handler(Looper.getMainLooper()), sensorType, gestureAvailabilityDispatcher,
+                 IBiometricService.Stub.asInterface(
+                         ServiceManager.getService(Context.BIOMETRIC_SERVICE)),
+                 LOG_NUM_RECENT_OPERATIONS, CoexCoordinator.getInstance());
++
++        mCancel = context.getResources().getBoolean(
++                com.android.internal.R.bool.config_fpCancelIfNotIdle);
+     }
+ 
+     @VisibleForTesting
+@@ -257,8 +263,13 @@ public class BiometricScheduler {
+ 
+     protected void startNextOperationIfIdle() {
+         if (mCurrentOperation != null) {
+-            Slog.v(getTag(), "Not idle, current operation: " + mCurrentOperation);
+-            return;
++            if(mCancel) {
++               Slog.v(getTag(), "Not idle, cancelling current operation: " + mCurrentOperation);
++               cancelInternal(mCurrentOperation);
++            } else {
++               Slog.v(getTag(), "Not idle, current operation: " + mCurrentOperation);
++               return;
++            }
+         }
+         if (mPendingOperations.isEmpty()) {
+             Slog.d(getTag(), "No operations, returning to idle");
+diff --git a/services/core/java/com/android/server/biometrics/sensors/face/hidl/Face10.java b/services/core/java/com/android/server/biometrics/sensors/face/hidl/Face10.java
+index e957794372aa..90e5daa8c30b 100644
+--- a/services/core/java/com/android/server/biometrics/sensors/face/hidl/Face10.java
++++ b/services/core/java/com/android/server/biometrics/sensors/face/hidl/Face10.java
+@@ -363,7 +363,7 @@ public class Face10 implements IHwBinder.DeathRecipient, ServiceProvider {
+             @NonNull LockoutResetDispatcher lockoutResetDispatcher) {
+         final Handler handler = new Handler(Looper.getMainLooper());
+         return new Face10(context, sensorProps, lockoutResetDispatcher, handler,
+-                new BiometricScheduler(TAG, BiometricScheduler.SENSOR_TYPE_FACE,
++                new BiometricScheduler(context, TAG, BiometricScheduler.SENSOR_TYPE_FACE,
+                         null /* gestureAvailabilityTracker */));
+     }
+ 
+diff --git a/services/core/java/com/android/server/biometrics/sensors/fingerprint/hidl/Fingerprint21.java b/services/core/java/com/android/server/biometrics/sensors/fingerprint/hidl/Fingerprint21.java
+index 3a64acdf18b6..6c49021d6877 100644
+--- a/services/core/java/com/android/server/biometrics/sensors/fingerprint/hidl/Fingerprint21.java
++++ b/services/core/java/com/android/server/biometrics/sensors/fingerprint/hidl/Fingerprint21.java
+@@ -365,7 +365,7 @@ public class Fingerprint21 implements IHwBinder.DeathRecipient, ServiceProvider
+             @NonNull LockoutResetDispatcher lockoutResetDispatcher,
+             @NonNull GestureAvailabilityDispatcher gestureAvailabilityDispatcher) {
+         final BiometricScheduler scheduler =
+-                new BiometricScheduler(TAG,
++                new BiometricScheduler(context, TAG,
+                         BiometricScheduler.sensorTypeFromFingerprintProperties(sensorProps),
+                         gestureAvailabilityDispatcher);
+         final HalResultController controller = new HalResultController(sensorProps.sensorId,
+diff --git a/services/core/java/com/android/server/biometrics/sensors/fingerprint/hidl/Fingerprint21UdfpsMock.java b/services/core/java/com/android/server/biometrics/sensors/fingerprint/hidl/Fingerprint21UdfpsMock.java
+index 273f8a545db5..9710581f70da 100644
+--- a/services/core/java/com/android/server/biometrics/sensors/fingerprint/hidl/Fingerprint21UdfpsMock.java
++++ b/services/core/java/com/android/server/biometrics/sensors/fingerprint/hidl/Fingerprint21UdfpsMock.java
+@@ -136,9 +136,9 @@ public class Fingerprint21UdfpsMock extends Fingerprint21 implements TrustManage
+     private static class TestableBiometricScheduler extends BiometricScheduler {
+         @NonNull private Fingerprint21UdfpsMock mFingerprint21;
+ 
+-        TestableBiometricScheduler(@NonNull String tag, @NonNull Handler handler,
++        TestableBiometricScheduler(Context context, @NonNull String tag, @NonNull Handler handler,
+                 @Nullable GestureAvailabilityDispatcher gestureAvailabilityDispatcher) {
+-            super(tag, BiometricScheduler.SENSOR_TYPE_FP_OTHER, gestureAvailabilityDispatcher);
++            super(context, tag, BiometricScheduler.SENSOR_TYPE_FP_OTHER, gestureAvailabilityDispatcher);
+         }
+ 
+         void init(@NonNull Fingerprint21UdfpsMock fingerprint21) {
+@@ -252,7 +252,7 @@ public class Fingerprint21UdfpsMock extends Fingerprint21 implements TrustManage
+ 
+         final Handler handler = new Handler(Looper.getMainLooper());
+         final TestableBiometricScheduler scheduler =
+-                new TestableBiometricScheduler(TAG, handler, gestureAvailabilityDispatcher);
++                new TestableBiometricScheduler(context, TAG, handler, gestureAvailabilityDispatcher);
+         final MockHalResultController controller =
+                 new MockHalResultController(sensorProps.sensorId, context, handler, scheduler);
+         return new Fingerprint21UdfpsMock(context, fingerprintStateCallback, sensorProps, scheduler,
+-- 
+2.30.2
+

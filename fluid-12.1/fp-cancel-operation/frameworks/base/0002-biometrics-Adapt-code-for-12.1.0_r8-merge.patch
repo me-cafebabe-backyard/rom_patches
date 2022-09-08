@@ -1,0 +1,25 @@
+From 10e56df89f202931f7328b8781e1c5a57f4019f1 Mon Sep 17 00:00:00 2001
+From: timjosten <timjosten@gmail.com>
+Date: Tue, 14 Jun 2022 08:50:59 +0000
+Subject: [PATCH 2/3] biometrics: Adapt code for 12.1.0_r8 merge
+
+---
+ .../android/server/biometrics/sensors/BiometricScheduler.java   | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/services/core/java/com/android/server/biometrics/sensors/BiometricScheduler.java b/services/core/java/com/android/server/biometrics/sensors/BiometricScheduler.java
+index ca79d87a85be..fcc3938f96e6 100644
+--- a/services/core/java/com/android/server/biometrics/sensors/BiometricScheduler.java
++++ b/services/core/java/com/android/server/biometrics/sensors/BiometricScheduler.java
+@@ -265,7 +265,7 @@ public class BiometricScheduler {
+         if (mCurrentOperation != null) {
+             if(mCancel) {
+                Slog.v(getTag(), "Not idle, cancelling current operation: " + mCurrentOperation);
+-               cancelInternal(mCurrentOperation);
++                mCurrentOperation.cancel(mHandler, mInternalCallback);
+             } else {
+                Slog.v(getTag(), "Not idle, current operation: " + mCurrentOperation);
+                return;
+-- 
+2.30.2
+

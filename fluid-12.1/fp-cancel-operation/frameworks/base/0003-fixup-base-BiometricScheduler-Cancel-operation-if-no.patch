@@ -1,0 +1,57 @@
+From 6bdf7b12e36071fba65043c002d74c26e6b14f66 Mon Sep 17 00:00:00 2001
+From: timjosten <timjosten@gmail.com>
+Date: Fri, 10 Jun 2022 13:55:16 +0000
+Subject: [PATCH 3/3] fixup! base: BiometricScheduler: Cancel operation if not
+ idle
+
+ * Avoid IllegalStateException after merge 12.1.0_r8
+
+06-10 06:36:20.380  1124  1124 E AndroidRuntime: *** FATAL EXCEPTION IN SYSTEM PROCESS: main
+06-10 06:36:20.380  1124  1124 E AndroidRuntime: java.lang.IllegalStateException: cancel: illegal state= 5
+06-10 06:36:20.380  1124  1124 E AndroidRuntime: 	at com.android.server.biometrics.sensors.BiometricSchedulerOperation.checkNotInState(BiometricSchedulerOperation.java:403)
+06-10 06:36:20.380  1124  1124 E AndroidRuntime: 	at com.android.server.biometrics.sensors.BiometricSchedulerOperation.cancel(BiometricSchedulerOperation.java:245)
+06-10 06:36:20.380  1124  1124 E AndroidRuntime: 	at com.android.server.biometrics.sensors.BiometricScheduler.startNextOperationIfIdle(BiometricScheduler.java:268)
+06-10 06:36:20.380  1124  1124 E AndroidRuntime: 	at com.android.server.biometrics.sensors.BiometricScheduler.scheduleClientMonitor(BiometricScheduler.java:407)
+06-10 06:36:20.380  1124  1124 E AndroidRuntime: 	at com.android.server.biometrics.sensors.fingerprint.hidl.Fingerprint21.scheduleUpdateActiveUserWithoutHandler(Fingerprint21.java:495)
+06-10 06:36:20.380  1124  1124 E AndroidRuntime: 	at com.android.server.biometrics.sensors.fingerprint.hidl.Fingerprint21.scheduleUpdateActiveUserWithoutHandler(Fingerprint21.java:475)
+06-10 06:36:20.380  1124  1124 E AndroidRuntime: 	at com.android.server.biometrics.sensors.fingerprint.hidl.Fingerprint21.lambda$scheduleInternalCleanup$14$Fingerprint21(Fingerprint21.java:704)
+06-10 06:36:20.380  1124  1124 E AndroidRuntime: 	at com.android.server.biometrics.sensors.fingerprint.hidl.Fingerprint21$$ExternalSyntheticLambda12.run(Unknown Source:6)
+06-10 06:36:20.380  1124  1124 E AndroidRuntime: 	at android.os.Handler.handleCallback(Handler.java:938)
+06-10 06:36:20.380  1124  1124 E AndroidRuntime: 	at android.os.Handler.dispatchMessage(Handler.java:99)
+06-10 06:36:20.380  1124  1124 E AndroidRuntime: 	at android.os.Looper.loopOnce(Looper.java:201)
+06-10 06:36:20.380  1124  1124 E AndroidRuntime: 	at android.os.Looper.loop(Looper.java:288)
+06-10 06:36:20.380  1124  1124 E AndroidRuntime: 	at com.android.server.SystemServer.run(SystemServer.java:904)
+06-10 06:36:20.380  1124  1124 E AndroidRuntime: 	at com.android.server.SystemServer.main(SystemServer.java:611)
+06-10 06:36:20.380  1124  1124 E AndroidRuntime: 	at java.lang.reflect.Method.invoke(Native Method)
+06-10 06:36:20.380  1124  1124 E AndroidRuntime: 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:550)
+06-10 06:36:20.380  1124  1124 E AndroidRuntime: 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:981)
+
+Change-Id: Icb29b4c5aea1fe4882b64b7ba61070e9cce3f63b
+---
+ .../server/biometrics/sensors/BiometricScheduler.java     | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/services/core/java/com/android/server/biometrics/sensors/BiometricScheduler.java b/services/core/java/com/android/server/biometrics/sensors/BiometricScheduler.java
+index fcc3938f96e6..2d82a3b6702c 100644
+--- a/services/core/java/com/android/server/biometrics/sensors/BiometricScheduler.java
++++ b/services/core/java/com/android/server/biometrics/sensors/BiometricScheduler.java
+@@ -263,12 +263,12 @@ public class BiometricScheduler {
+ 
+     protected void startNextOperationIfIdle() {
+         if (mCurrentOperation != null) {
+-            if(mCancel) {
+-               Slog.v(getTag(), "Not idle, cancelling current operation: " + mCurrentOperation);
++            if (mCancel && !mCurrentOperation.isFinished()) {
++                Slog.v(getTag(), "Not idle, cancelling current operation: " + mCurrentOperation);
+                 mCurrentOperation.cancel(mHandler, mInternalCallback);
+             } else {
+-               Slog.v(getTag(), "Not idle, current operation: " + mCurrentOperation);
+-               return;
++                Slog.v(getTag(), "Not idle, current operation: " + mCurrentOperation);
++                return;
+             }
+         }
+         if (mPendingOperations.isEmpty()) {
+-- 
+2.30.2
+
