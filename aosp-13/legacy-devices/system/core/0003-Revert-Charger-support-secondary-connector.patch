@@ -1,0 +1,122 @@
+From 28602230a2bb78de4e0c14b389469fcb9d11ce5f Mon Sep 17 00:00:00 2001
+From: me-cafebabe <me_cafebabe@hotmail.com>
+Date: Wed, 21 Sep 2022 13:46:32 +0000
+Subject: [PATCH 3/3] Revert "Charger: support secondary connector"
+
+This reverts commit c1b171138e4a984b7384611310a8511adecaa5c6.
+
+Change-Id: I13f60a3b1e7198d20d301f655dee182d941ad814
+---
+ healthd/healthd_draw.cpp                               | 6 ++----
+ healthd/healthd_draw.h                                 | 3 +--
+ healthd/healthd_mode_charger.cpp                       | 7 +++----
+ healthd/include_charger/charger/healthd_mode_charger.h | 7 -------
+ 4 files changed, 6 insertions(+), 17 deletions(-)
+
+diff --git a/healthd/healthd_draw.cpp b/healthd/healthd_draw.cpp
+index 0e6fd2783..4484fa61e 100644
+--- a/healthd/healthd_draw.cpp
++++ b/healthd/healthd_draw.cpp
+@@ -94,9 +94,9 @@ void HealthdDraw::redraw_screen(const animation* batt_anim, GRSurface* surf_unkn
+     gr_flip();
+ }
+ 
+-void HealthdDraw::blank_screen(bool blank, int drm) {
++void HealthdDraw::blank_screen(bool blank) {
+     if (!graphics_available) return;
+-    gr_fb_blank(blank, drm);
++    gr_fb_blank(blank);
+ }
+ 
+ void HealthdDraw::clear_screen(void) {
+@@ -139,8 +139,6 @@ int HealthdDraw::draw_text(const GRFont* font, int x, int y, const char* str) {
+ void HealthdDraw::determine_xy(const animation::text_field& field,
+                                const int length, int* x, int* y) {
+   *x = field.pos_x;
+-  screen_width_ = gr_fb_width() / (kSplitScreen ? 2 : 1);
+-  screen_height_ = gr_fb_height();
+ 
+   int str_len_px = length * field.font->char_width;
+   if (field.pos_x == CENTER_VAL) {
+diff --git a/healthd/healthd_draw.h b/healthd/healthd_draw.h
+index 0d7ac7ad0..0b48ce842 100644
+--- a/healthd/healthd_draw.h
++++ b/healthd/healthd_draw.h
+@@ -31,9 +31,8 @@ class HealthdDraw {
+   // Redraws screen.
+   void redraw_screen(const animation* batt_anim, GRSurface* surf_unknown);
+ 
+-  // According to the index of Direct Rendering Manager,
+   // Blanks screen if true, unblanks if false.
+-  virtual void blank_screen(bool blank, int drm);
++  virtual void blank_screen(bool blank);
+ 
+   static std::unique_ptr<HealthdDraw> Create(animation *anim);
+ 
+diff --git a/healthd/healthd_mode_charger.cpp b/healthd/healthd_mode_charger.cpp
+index 821206f06..0f9779c4f 100644
+--- a/healthd/healthd_mode_charger.cpp
++++ b/healthd/healthd_mode_charger.cpp
+@@ -327,7 +327,7 @@ void Charger::UpdateScreenState(int64_t now) {
+ 
+ #if !defined(__ANDROID_VNDK__)
+         if (android::sysprop::ChargerProperties::disable_init_blank().value_or(false)) {
+-            healthd_draw_->blank_screen(true, static_cast<int>(drm_));
++            healthd_draw_->blank_screen(true);
+             screen_blanked_ = true;
+         }
+ #endif
+@@ -337,7 +337,7 @@ void Charger::UpdateScreenState(int64_t now) {
+     if (batt_anim_.num_cycles > 0 && batt_anim_.cur_cycle == batt_anim_.num_cycles) {
+         reset_animation(&batt_anim_);
+         next_screen_transition_ = -1;
+-        healthd_draw_->blank_screen(true, static_cast<int>(drm_));
++        healthd_draw_->blank_screen(true);
+         screen_blanked_ = true;
+         LOGV("[%" PRId64 "] animation done\n", now);
+         if (configuration_->ChargerIsOnline()) {
+@@ -349,7 +349,7 @@ void Charger::UpdateScreenState(int64_t now) {
+     disp_time = batt_anim_.frames[batt_anim_.cur_frame].disp_time;
+ 
+     if (screen_blanked_) {
+-        healthd_draw_->blank_screen(false, static_cast<int>(drm_));
++        healthd_draw_->blank_screen(false);
+         screen_blanked_ = false;
+     }
+ 
+@@ -743,7 +743,6 @@ void Charger::OnInit(struct healthd_config* config) {
+             batt_anim_.frames[i].surface = scale_frames[i];
+         }
+     }
+-    drm_ = DRM_INNER;
+     ev_sync_key_state(std::bind(&Charger::SetKeyCallback, this, std::placeholders::_1,
+                                 std::placeholders::_2));
+ 
+diff --git a/healthd/include_charger/charger/healthd_mode_charger.h b/healthd/include_charger/charger/healthd_mode_charger.h
+index 698719f78..216e5ad3c 100644
+--- a/healthd/include_charger/charger/healthd_mode_charger.h
++++ b/healthd/include_charger/charger/healthd_mode_charger.h
+@@ -44,11 +44,6 @@ struct ChargerHealthInfo {
+     aidl::android::hardware::health::BatteryStatus battery_status;
+ };
+ 
+-enum DirectRenderManager {
+-    DRM_INNER,
+-    DRM_OUTER,
+-};
+-
+ // Configuration interface for charger. This includes:
+ // - HalHealthLoop APIs that interests charger.
+ // - configuration values that used to be provided by sysprops
+@@ -107,8 +102,6 @@ class Charger {
+     int64_t next_pwr_check_ = 0;
+     int64_t wait_batt_level_timestamp_ = 0;
+ 
+-    DirectRenderManager drm_;
+-
+     key_state keys_[KEY_MAX + 1] = {};
+ 
+     animation batt_anim_;
+-- 
+2.30.2
+
