@@ -1,0 +1,32 @@
+From 26dc65efaf2039c094438d253ed3d0a2684363c4 Mon Sep 17 00:00:00 2001
+From: Jiajia Cong <jcong@codeaurora.org>
+Date: Thu, 5 Aug 2021 16:33:35 +0800
+Subject: [PATCH 2/3] codec2: add smoothfactor when checking n-th work
+
+pipeline watcher's queued work counter included smoothfactor, if we
+don't add it in elapsed(), it is easy to cause CCodec queue call timeout
+
+CRs-Fixed: 2984012
+Test: Verified on OnePlus 9 that YouTube video does
+      not unpause itself.
+Change-Id: Ia2dbf3a7cf0da4805398cf44780ad3dacbaf1a1b
+---
+ media/codec2/sfplugin/CCodecBufferChannel.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/media/codec2/sfplugin/CCodecBufferChannel.cpp b/media/codec2/sfplugin/CCodecBufferChannel.cpp
+index 5ecb1307f0..e061da3b55 100644
+--- a/media/codec2/sfplugin/CCodecBufferChannel.cpp
++++ b/media/codec2/sfplugin/CCodecBufferChannel.cpp
+@@ -2150,7 +2150,7 @@ PipelineWatcher::Clock::duration CCodecBufferChannel::elapsed() {
+     size_t outputDelay = mOutput.lock()->outputDelay;
+     {
+         Mutexed<Input>::Locked input(mInput);
+-        n = input->inputDelay + input->pipelineDelay + outputDelay;
++        n = input->inputDelay + input->pipelineDelay + outputDelay + kSmoothnessFactor;
+     }
+     return mPipelineWatcher.lock()->elapsed(PipelineWatcher::Clock::now(), n);
+ }
+-- 
+2.30.2
+
