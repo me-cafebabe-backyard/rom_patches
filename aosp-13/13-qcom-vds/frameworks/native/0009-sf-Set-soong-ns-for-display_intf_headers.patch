@@ -1,0 +1,28 @@
+From 9a2782868041e340ba07187cd3c8097fd668e368 Mon Sep 17 00:00:00 2001
+From: me-cafebabe <me_cafebabe@hotmail.com>
+Date: Tue, 4 Oct 2022 14:22:50 +0000
+Subject: [PATCH 9/9] sf: Set soong ns for display_intf_headers
+
+Again, I'm not going to build for any non-UM device on my AOSP tree
+
+Change-Id: I588c926d8f297f6e9aced29ad5c3a28356726480
+---
+ services/surfaceflinger/Android.bp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/services/surfaceflinger/Android.bp b/services/surfaceflinger/Android.bp
+index aa60177acb..d6d53f823b 100644
+--- a/services/surfaceflinger/Android.bp
++++ b/services/surfaceflinger/Android.bp
+@@ -91,7 +91,7 @@ cc_defaults {
+         "android.hardware.graphics.composer@2.3-command-buffer",
+         "android.hardware.graphics.composer@2.4-command-buffer",
+         "android.hardware.graphics.composer3-command-buffer",
+-        "display_intf_headers",
++        "//vendor/qcom/opensource/commonsys-intf/display:display_intf_headers",
+     ],
+     export_static_lib_headers: [
+         "libcompositionengine",
+-- 
+2.30.2
+

@@ -1,0 +1,58 @@
+From d0011e35806f405417d3382ebcec4424156d8938 Mon Sep 17 00:00:00 2001
+From: Rajat Yadav <rajayada@codeaurora.org>
+Date: Mon, 5 Jul 2021 19:32:01 +0530
+Subject: [PATCH 3/9] SF: Fix HWC based virtual display creation
+
+Allow HWC based virtual display only for wifi display
+
+CRs-Fixed: 2984439
+
+Change-Id: Ifbb094a2a0101171b475bd5a60660a3599dce5ff
+---
+ services/surfaceflinger/SurfaceFlinger.cpp | 8 +++++---
+ services/surfaceflinger/SurfaceFlinger.h   | 3 ++-
+ 2 files changed, 7 insertions(+), 4 deletions(-)
+
+diff --git a/services/surfaceflinger/SurfaceFlinger.cpp b/services/surfaceflinger/SurfaceFlinger.cpp
+index 95c24d8a3e..66798dadc4 100644
+--- a/services/surfaceflinger/SurfaceFlinger.cpp
++++ b/services/surfaceflinger/SurfaceFlinger.cpp
+@@ -556,8 +556,10 @@ void SurfaceFlinger::enableHalVirtualDisplays(bool enable) {
+ }
+ 
+ VirtualDisplayId SurfaceFlinger::acquireVirtualDisplay(ui::Size resolution,
+-                                                       ui::PixelFormat format) {
+-    if (auto& generator = mVirtualDisplayIdGenerators.hal) {
++                                                       ui::PixelFormat format,
++                                                       bool canAllocateHwcForVDS) {
++    auto& generator = mVirtualDisplayIdGenerators.hal;
++    if (canAllocateHwcForVDS && generator) {
+         if (const auto id = generator->generateId()) {
+             if (getHwComposer().allocateVirtualDisplay(*id, resolution, &format)) {
+                 return *id;
+@@ -2946,7 +2948,7 @@ void SurfaceFlinger::processDisplayAdded(const wp<IBinder>& displayToken,
+     if (const auto& physical = state.physical) {
+         builder.setId(physical->id);
+     } else {
+-        builder.setId(acquireVirtualDisplay(resolution, pixelFormat));
++        builder.setId(acquireVirtualDisplay(resolution, pixelFormat, canAllocateHwcForVDS));
+     }
+ 
+     builder.setPixels(resolution);
+diff --git a/services/surfaceflinger/SurfaceFlinger.h b/services/surfaceflinger/SurfaceFlinger.h
+index e5739f8eae..6fb1ccb572 100644
+--- a/services/surfaceflinger/SurfaceFlinger.h
++++ b/services/surfaceflinger/SurfaceFlinger.h
+@@ -1077,7 +1077,8 @@ private:
+     void enableHalVirtualDisplays(bool);
+ 
+     // Virtual display lifecycle for ID generation and HAL allocation.
+-    VirtualDisplayId acquireVirtualDisplay(ui::Size, ui::PixelFormat) REQUIRES(mStateLock);
++    VirtualDisplayId acquireVirtualDisplay(ui::Size, ui::PixelFormat, bool canAllocateHwcForVDS)
++            REQUIRES(mStateLock);
+     void releaseVirtualDisplay(VirtualDisplayId);
+ 
+     void onActiveDisplayChangedLocked(const sp<DisplayDevice>& activeDisplay) REQUIRES(mStateLock);
+-- 
+2.30.2
+

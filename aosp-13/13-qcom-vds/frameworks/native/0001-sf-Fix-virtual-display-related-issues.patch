@@ -1,0 +1,319 @@
+From d8a4f57ad45f3bfdbf6039f48c981dba8f235ffc Mon Sep 17 00:00:00 2001
+From: Ramakant Singh <ramakant@codeaurora.org>
+Date: Sat, 11 Apr 2020 16:02:43 +0530
+Subject: [PATCH 1/9] sf: Fix virtual display related issues.
+
+1. SurfaceFlinger: Fix virtual display related issues. 1) Validate
+output
+buffer usage bit appropriately Validate output buffer usage bit only
+against GRALLOC_USAGE_HW_COMPOSER to differentiate GLES only
+conposition
+and HWC/MIXED composition. 2) Exclude video encoder usage for
+scratch
+buffer Sink and Scratch buffers in VDS are using same usage
+flags. This
+causes video encoder flag to be set for scratch buffers
+Also. Exclude
+video encoder flag from scratch buffer usage flags as
+scratch buffers
+are used only as write back input and not video
+encoder input.
+
+2. sf: Allow VDS to use HWC -- Preserve VDS layer
+pixel format based on
+GRALLOC flags. -- skip color layer for vds
+
+3. sf: Add secure content support for VDS
+
+4. sf: Enable GPU comp. for non-primary displays
+Ensure that "Return
+status" of dequeueBuffer() complies with API
+	requirements. Client relies
+on this status to call requestBuffer()
+	upon reallocation.
+
+5. sf: Enable UBWC on virtual display scratch buffer Set
+	GRALLOC_USAGE_HW_FB usage flag on virtual display Scratch
+	buffer to
+	enable UBWC.
+
+Change-Id: Ia49a175372ca187a295531e18f8e84dc22a19486
+CRs-Fixed: 2656027
+---
+ services/surfaceflinger/Android.bp            |  1 +
+ .../DisplayHardware/VirtualDisplaySurface.cpp | 51 +++++++++++++++----
+ .../DisplayHardware/VirtualDisplaySurface.h   |  6 ++-
+ services/surfaceflinger/SurfaceFlinger.cpp    | 38 +++++++++++++-
+ services/surfaceflinger/SurfaceFlinger.h      |  2 +
+ 5 files changed, 86 insertions(+), 12 deletions(-)
+
+diff --git a/services/surfaceflinger/Android.bp b/services/surfaceflinger/Android.bp
+index 000a2cb0d3..aa60177acb 100644
+--- a/services/surfaceflinger/Android.bp
++++ b/services/surfaceflinger/Android.bp
+@@ -91,6 +91,7 @@ cc_defaults {
+         "android.hardware.graphics.composer@2.3-command-buffer",
+         "android.hardware.graphics.composer@2.4-command-buffer",
+         "android.hardware.graphics.composer3-command-buffer",
++        "display_intf_headers",
+     ],
+     export_static_lib_headers: [
+         "libcompositionengine",
+diff --git a/services/surfaceflinger/DisplayHardware/VirtualDisplaySurface.cpp b/services/surfaceflinger/DisplayHardware/VirtualDisplaySurface.cpp
+index 3803a78670..dbd88c0bec 100644
+--- a/services/surfaceflinger/DisplayHardware/VirtualDisplaySurface.cpp
++++ b/services/surfaceflinger/DisplayHardware/VirtualDisplaySurface.cpp
+@@ -50,7 +50,7 @@ VirtualDisplaySurface::VirtualDisplaySurface(HWComposer& hwc, VirtualDisplayId d
+                                              const sp<IGraphicBufferProducer>& sink,
+                                              const sp<IGraphicBufferProducer>& bqProducer,
+                                              const sp<IGraphicBufferConsumer>& bqConsumer,
+-                                             const std::string& name)
++                                             const std::string& name, bool secure)
+       : ConsumerBase(bqConsumer),
+         mHwc(hwc),
+         mDisplayId(displayId),
+@@ -69,7 +69,9 @@ VirtualDisplaySurface::VirtualDisplaySurface(HWComposer& hwc, VirtualDisplayId d
+         mOutputFence(Fence::NO_FENCE),
+         mFbProducerSlot(BufferQueue::INVALID_BUFFER_SLOT),
+         mOutputProducerSlot(BufferQueue::INVALID_BUFFER_SLOT),
+-        mForceHwcCopy(SurfaceFlinger::useHwcForRgbToYuv) {
++        mForceHwcCopy(SurfaceFlinger::useHwcForRgbToYuv),
++        mSecure(secure),
++        mSinkUsage(0) {
+     mSource[SOURCE_SINK] = sink;
+     mSource[SOURCE_SCRATCH] = bqProducer;
+ 
+@@ -87,6 +89,8 @@ VirtualDisplaySurface::VirtualDisplaySurface(HWComposer& hwc, VirtualDisplayId d
+     // on usage bits.
+     int sinkUsage;
+     sink->query(NATIVE_WINDOW_CONSUMER_USAGE_BITS, &sinkUsage);
++    mSinkUsage |= (GRALLOC_USAGE_HW_COMPOSER | sinkUsage);
++    setOutputUsage(mSinkUsage);
+     if (sinkUsage & (GRALLOC_USAGE_SW_READ_MASK | GRALLOC_USAGE_SW_WRITE_MASK)) {
+         int sinkFormat;
+         sink->query(NATIVE_WINDOW_FORMAT, &sinkFormat);
+@@ -115,7 +119,11 @@ status_t VirtualDisplaySurface::beginFrame(bool mustRecompose) {
+     }
+ 
+     mMustRecompose = mustRecompose;
+-
++    //For WFD use cases we must always set the recompose flag in order
++    //to support pause/resume functionality
++    if (mOutputUsage & GRALLOC_USAGE_HW_VIDEO_ENCODER) {
++        mMustRecompose = true;
++    }
+     VDS_LOGW_IF(mDebugState != DebugState::Idle, "Unexpected %s in %s state", __func__,
+                 ftl::enum_string(mDebugState).c_str());
+     mDebugState = DebugState::Begun;
+@@ -152,7 +160,7 @@ status_t VirtualDisplaySurface::prepareFrame(CompositionType compositionType) {
+     }
+ 
+     if (mCompositionType != CompositionType::Gpu &&
+-        (mOutputFormat != mDefaultOutputFormat || mOutputUsage != GRALLOC_USAGE_HW_COMPOSER)) {
++        (mOutputFormat != mDefaultOutputFormat || !(mOutputUsage & GRALLOC_USAGE_HW_COMPOSER))) {
+         // We must have just switched from GPU-only to MIXED or HWC
+         // composition. Stop using the format and usage requested by the GPU
+         // driver; they may be suboptimal when HWC is writing to the output
+@@ -164,7 +172,7 @@ status_t VirtualDisplaySurface::prepareFrame(CompositionType compositionType) {
+         // format/usage and get a new buffer when the GPU driver calls
+         // dequeueBuffer().
+         mOutputFormat = mDefaultOutputFormat;
+-        mOutputUsage = GRALLOC_USAGE_HW_COMPOSER;
++        setOutputUsage(GRALLOC_USAGE_HW_COMPOSER);
+         refreshOutputBuffer();
+     }
+ 
+@@ -248,7 +256,7 @@ void VirtualDisplaySurface::onFrameCommitted() {
+         int sslot = mapProducer2SourceSlot(SOURCE_SINK, mOutputProducerSlot);
+         QueueBufferOutput qbo;
+         VDS_LOGV("%s: queue sink sslot=%d", __func__, sslot);
+-        if (mMustRecompose) {
++        if (retireFence->isValid() && mMustRecompose) {
+             status_t result = mSource[SOURCE_SINK]->queueBuffer(sslot,
+                     QueueBufferInput(
+                         systemTime(), false /* isAutoTimestamp */,
+@@ -312,6 +320,14 @@ status_t VirtualDisplaySurface::dequeueBuffer(Source source,
+         PixelFormat format, uint64_t usage, int* sslot, sp<Fence>* fence) {
+     LOG_ALWAYS_FATAL_IF(GpuVirtualDisplayId::tryCast(mDisplayId).has_value());
+ 
++    // Exclude video encoder usage flag from scratch buffer usage flags.
++    if (source == SOURCE_SCRATCH) {
++        usage |= GRALLOC_USAGE_HW_FB;
++        usage &= ~(GRALLOC_USAGE_HW_VIDEO_ENCODER);
++        VDS_LOGV("dequeueBuffer(%s): updated scratch buffer usage flags=%#" PRIx64,
++                dbgSourceStr(source), usage);
++    }
++
+     status_t result =
+             mSource[source]->dequeueBuffer(sslot, fence, mSinkBufferWidth, mSinkBufferHeight,
+                                            format, usage, nullptr, nullptr);
+@@ -341,11 +357,11 @@ status_t VirtualDisplaySurface::dequeueBuffer(Source source,
+         }
+     }
+     if (result & BUFFER_NEEDS_REALLOCATION) {
+-        result = mSource[source]->requestBuffer(*sslot, &mProducerBuffers[pslot]);
+-        if (result < 0) {
++        auto status  = mSource[source]->requestBuffer(*sslot, &mProducerBuffers[pslot]);
++        if (status < 0) {
+             mProducerBuffers[pslot].clear();
+             mSource[source]->cancelBuffer(*sslot, *fence);
+-            return result;
++            return status;
+         }
+         VDS_LOGV("%s(%s): buffers[%d]=%p fmt=%d usage=%#" PRIx64, __func__,
+                  ftl::enum_string(source).c_str(), pslot, mProducerBuffers[pslot].get(),
+@@ -406,7 +422,7 @@ status_t VirtualDisplaySurface::dequeueBuffer(int* pslot, sp<Fence>* fence, uint
+                      __func__, w, h, format, usage, mSinkBufferWidth, mSinkBufferHeight,
+                      buf->getPixelFormat(), buf->getUsage());
+             mOutputFormat = format;
+-            mOutputUsage = usage;
++            setOutputUsage(usage);
+             result = refreshOutputBuffer();
+             if (result < 0)
+                 return result;
+@@ -660,6 +676,21 @@ std::string VirtualDisplaySurface::toString(CompositionType type) {
+     return type == CompositionType::Unknown ? "Unknown"s : ftl::Flags(type).string();
+ }
+ 
++/* Helper to update the output usage when the display is secure */
++
++void VirtualDisplaySurface::setOutputUsage(uint64_t /*flag*/) {
++
++    mOutputUsage = mSinkUsage;
++    if (mSecure && (mOutputUsage & GRALLOC_USAGE_HW_VIDEO_ENCODER)) {
++        /*TODO: Currently, the framework can only say whether the display
++         * and its subsequent session are secure or not. However, there is
++         * no mechanism to distinguish the different levels of security.
++         * The current solution assumes WV L3 protection.
++         */
++        mOutputUsage |= GRALLOC_USAGE_PROTECTED;
++    }
++}
++
+ } // namespace android
+ 
+ // TODO(b/129481165): remove the #pragma below and fix conversion issues
+diff --git a/services/surfaceflinger/DisplayHardware/VirtualDisplaySurface.h b/services/surfaceflinger/DisplayHardware/VirtualDisplaySurface.h
+index e21095aa88..851d91f355 100644
+--- a/services/surfaceflinger/DisplayHardware/VirtualDisplaySurface.h
++++ b/services/surfaceflinger/DisplayHardware/VirtualDisplaySurface.h
+@@ -77,7 +77,8 @@ class VirtualDisplaySurface : public compositionengine::DisplaySurface,
+ public:
+     VirtualDisplaySurface(HWComposer&, VirtualDisplayId, const sp<IGraphicBufferProducer>& sink,
+                           const sp<IGraphicBufferProducer>& bqProducer,
+-                          const sp<IGraphicBufferConsumer>& bqConsumer, const std::string& name);
++                          const sp<IGraphicBufferConsumer>& bqConsumer,
++                          const std::string& name, bool secure);
+ 
+     //
+     // DisplaySurface interface
+@@ -134,6 +135,7 @@ private:
+             sp<Fence>* outFence, float outTransformMatrix[16]) override;
+     virtual status_t getUniqueId(uint64_t* outId) const override;
+     virtual status_t getConsumerUsage(uint64_t* outUsage) const override;
++    virtual void setOutputUsage(uint64_t flag);
+ 
+     //
+     // Utility methods
+@@ -263,6 +265,8 @@ private:
+     compositionengine::impl::HwcBufferCache mHwcBufferCache;
+ 
+     bool mForceHwcCopy;
++    bool mSecure;
++    int mSinkUsage;
+ };
+ 
+ } // namespace android
+diff --git a/services/surfaceflinger/SurfaceFlinger.cpp b/services/surfaceflinger/SurfaceFlinger.cpp
+index 6a17cd8881..72944ead38 100644
+--- a/services/surfaceflinger/SurfaceFlinger.cpp
++++ b/services/surfaceflinger/SurfaceFlinger.cpp
+@@ -146,6 +146,12 @@
+ #include "TunnelModeEnabledReporter.h"
+ #include "WindowInfosListenerInvoker.h"
+ 
++#if __has_include("QtiGralloc.h")
++#include "QtiGralloc.h"
++#else
++#include "gralloc_priv.h"
++#endif
++
+ #include <aidl/android/hardware/graphics/common/DisplayDecorationSupport.h>
+ #include <aidl/android/hardware/graphics/composer3/DisplayCapability.h>
+ #include <aidl/android/hardware/graphics/composer3/RenderIntent.h>
+@@ -2900,6 +2906,7 @@ sp<DisplayDevice> SurfaceFlinger::setupNewDisplayDeviceInternal(
+ 
+ void SurfaceFlinger::processDisplayAdded(const wp<IBinder>& displayToken,
+                                          const DisplayDeviceState& state) {
++    bool canAllocateHwcForVDS = false;
+     ui::Size resolution(0, 0);
+     ui::PixelFormat pixelFormat = static_cast<ui::PixelFormat>(PIXEL_FORMAT_UNKNOWN);
+     if (state.physical) {
+@@ -2914,6 +2921,20 @@ void SurfaceFlinger::processDisplayAdded(const wp<IBinder>& displayToken,
+         status = state.surface->query(NATIVE_WINDOW_FORMAT, &format);
+         ALOGE_IF(status != NO_ERROR, "Unable to query format (%d)", status);
+         pixelFormat = static_cast<ui::PixelFormat>(format);
++        if (mUseHwcVirtualDisplays || getHwComposer().isUsingVrComposer()) {
++            if (maxVirtualDisplaySize == 0 ||
++                ((uint64_t)width <= maxVirtualDisplaySize &&
++                (uint64_t)height <= maxVirtualDisplaySize)) {
++                uint64_t usage = 0;
++                // Replace with native_window_get_consumer_usage ?
++                status = state .surface->getConsumerUsage(&usage);
++                ALOGW_IF(status != NO_ERROR, "Unable to query usage (%d)", status);
++                if ((status == NO_ERROR) && canAllocateHwcDisplayIdForVDS(usage)) {
++                   canAllocateHwcForVDS = true;
++               }
++            }
++        }
++
+     } else {
+         // Virtual displays without a surface are dormant:
+         // they have external state (layer stack, projection,
+@@ -2945,7 +2966,8 @@ void SurfaceFlinger::processDisplayAdded(const wp<IBinder>& displayToken,
+         const auto displayId = VirtualDisplayId::tryCast(compositionDisplay->getId());
+         LOG_FATAL_IF(!displayId);
+         auto surface = sp<VirtualDisplaySurface>::make(getHwComposer(), *displayId, state.surface,
+-                                                       bqProducer, bqConsumer, state.displayName);
++                                                       bqProducer, bqConsumer, state.displayName,
++                                                       state.isSecure);
+         displaySurface = surface;
+         producer = std::move(surface);
+     } else {
+@@ -6944,6 +6966,20 @@ status_t SurfaceFlinger::setDesiredDisplayModeSpecsInternal(
+     return NO_ERROR;
+ }
+ 
++bool SurfaceFlinger::canAllocateHwcDisplayIdForVDS(uint64_t usage) {
++    uint64_t flag_mask_pvt_wfd = ~0;
++    uint64_t flag_mask_hw_video = ~0;
++    char value[PROPERTY_VALUE_MAX] = {};
++    property_get("vendor.display.vds_allow_hwc", value, "0");
++    int allowHwcForVDS = atoi(value);
++    // Reserve hardware acceleration for WFD use-case
++    // GRALLOC_USAGE_PRIVATE_WFD + GRALLOC_USAGE_HW_VIDEO_ENCODER = WFD using HW composer.
++    flag_mask_pvt_wfd = GRALLOC_USAGE_PRIVATE_WFD;
++    flag_mask_hw_video = GRALLOC_USAGE_HW_VIDEO_ENCODER;
++    return (allowHwcForVDS || ((usage & flag_mask_pvt_wfd) &&
++            (usage & flag_mask_hw_video)));
++}
++
+ status_t SurfaceFlinger::setDesiredDisplayModeSpecs(
+         const sp<IBinder>& displayToken, ui::DisplayModeId defaultMode, bool allowGroupSwitching,
+         float primaryRefreshRateMin, float primaryRefreshRateMax, float appRequestRefreshRateMin,
+diff --git a/services/surfaceflinger/SurfaceFlinger.h b/services/surfaceflinger/SurfaceFlinger.h
+index f14c755c2b..e5739f8eae 100644
+--- a/services/surfaceflinger/SurfaceFlinger.h
++++ b/services/surfaceflinger/SurfaceFlinger.h
+@@ -878,6 +878,8 @@ private:
+             const std::shared_ptr<renderengine::ExternalTexture>&, bool canCaptureBlackoutContent,
+             bool regionSampling, bool grayscale, ScreenCaptureResults&) EXCLUDES(mStateLock);
+ 
++    bool canAllocateHwcDisplayIdForVDS(uint64_t usage);
++
+     // If the uid provided is not UNSET_UID, the traverse will skip any layers that don't have a
+     // matching ownerUid
+     void traverseLayersInLayerStack(ui::LayerStack, const int32_t uid, const LayerVector::Visitor&);
+-- 
+2.30.2
+

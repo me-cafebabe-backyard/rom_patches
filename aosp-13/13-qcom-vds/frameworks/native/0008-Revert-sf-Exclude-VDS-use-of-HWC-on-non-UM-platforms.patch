@@ -1,0 +1,104 @@
+From d8dfe129c450c633000aa30049eda3e3fef685eb Mon Sep 17 00:00:00 2001
+From: me-cafebabe <me_cafebabe@hotmail.com>
+Date: Tue, 4 Oct 2022 14:09:40 +0000
+Subject: [PATCH 8/9] Revert "sf: Exclude VDS use of HWC on non-UM platforms"
+
+I'm not going to build for any non-UM device on my AOSP tree
+
+This reverts commit dc27cad96479a3602a7feb643d9785501d2242d3.
+
+Change-Id: I43dce6378d40648d79d1bcee9419e5bf7e836b94
+---
+ services/surfaceflinger/Android.bp         |  2 +-
+ services/surfaceflinger/SurfaceFlinger.cpp | 14 --------------
+ 2 files changed, 1 insertion(+), 15 deletions(-)
+
+diff --git a/services/surfaceflinger/Android.bp b/services/surfaceflinger/Android.bp
+index 7548380a58..aa60177acb 100644
+--- a/services/surfaceflinger/Android.bp
++++ b/services/surfaceflinger/Android.bp
+@@ -26,7 +26,6 @@ cc_defaults {
+     defaults: [
+         "surfaceflinger_defaults",
+         "skia_renderengine_deps",
+-        "surfaceflinger_qcom_ext_defaults",
+     ],
+     cflags: [
+         "-DLOG_TAG=\"SurfaceFlinger\"",
+@@ -92,6 +91,7 @@ cc_defaults {
+         "android.hardware.graphics.composer@2.3-command-buffer",
+         "android.hardware.graphics.composer@2.4-command-buffer",
+         "android.hardware.graphics.composer3-command-buffer",
++        "display_intf_headers",
+     ],
+     export_static_lib_headers: [
+         "libcompositionengine",
+diff --git a/services/surfaceflinger/SurfaceFlinger.cpp b/services/surfaceflinger/SurfaceFlinger.cpp
+index 5dea27fb96..7ae07af29f 100644
+--- a/services/surfaceflinger/SurfaceFlinger.cpp
++++ b/services/surfaceflinger/SurfaceFlinger.cpp
+@@ -146,13 +146,11 @@
+ #include "TunnelModeEnabledReporter.h"
+ #include "WindowInfosListenerInvoker.h"
+ 
+-#ifdef QCOM_UM_FAMILY
+ #if __has_include("QtiGralloc.h")
+ #include "QtiGralloc.h"
+ #else
+ #include "gralloc_priv.h"
+ #endif
+-#endif
+ 
+ #include <aidl/android/hardware/graphics/common/DisplayDecorationSupport.h>
+ #include <aidl/android/hardware/graphics/composer3/DisplayCapability.h>
+@@ -2910,11 +2908,7 @@ sp<DisplayDevice> SurfaceFlinger::setupNewDisplayDeviceInternal(
+ 
+ void SurfaceFlinger::processDisplayAdded(const wp<IBinder>& displayToken,
+                                          const DisplayDeviceState& state) {
+-#ifdef QCOM_UM_FAMILY
+     bool canAllocateHwcForVDS = false;
+-#else
+-    bool canAllocateHwcForVDS = true;
+-#endif
+     ui::Size resolution(0, 0);
+     ui::PixelFormat pixelFormat = static_cast<ui::PixelFormat>(PIXEL_FORMAT_UNKNOWN);
+     if (state.physical) {
+@@ -2929,7 +2923,6 @@ void SurfaceFlinger::processDisplayAdded(const wp<IBinder>& displayToken,
+         status = state.surface->query(NATIVE_WINDOW_FORMAT, &format);
+         ALOGE_IF(status != NO_ERROR, "Unable to query format (%d)", status);
+         pixelFormat = static_cast<ui::PixelFormat>(format);
+-#ifdef QCOM_UM_FAMILY
+         // Check if VDS is allowed to use HWC
+         size_t maxVirtualDisplaySize = getHwComposer().getMaxVirtualDisplayDimension();
+         if (maxVirtualDisplaySize == 0 || ((uint64_t)resolution.width <= maxVirtualDisplaySize &&
+@@ -2942,7 +2935,6 @@ void SurfaceFlinger::processDisplayAdded(const wp<IBinder>& displayToken,
+                 canAllocateHwcForVDS = true;
+             }
+         }
+-#endif
+     } else {
+         // Virtual displays without a surface are dormant:
+         // they have external state (layer stack, projection,
+@@ -6974,7 +6966,6 @@ status_t SurfaceFlinger::setDesiredDisplayModeSpecsInternal(
+     return NO_ERROR;
+ }
+ 
+-#ifdef QCOM_UM_FAMILY
+ bool SurfaceFlinger::canAllocateHwcDisplayIdForVDS(uint64_t usage) {
+     uint64_t flag_mask_pvt_wfd = ~0;
+     uint64_t flag_mask_hw_video = ~0;
+@@ -6997,11 +6988,6 @@ bool SurfaceFlinger::canAllocateHwcDisplayIdForVDS(uint64_t usage) {
+     return canAllocate;
+ 
+ }
+-#else
+-bool SurfaceFlinger::canAllocateHwcDisplayIdForVDS(uint64_t) {
+-    return true;
+-}
+-#endif
+ 
+ status_t SurfaceFlinger::setDesiredDisplayModeSpecs(
+         const sp<IBinder>& displayToken, ui::DisplayModeId defaultMode, bool allowGroupSwitching,
+-- 
+2.30.2
+

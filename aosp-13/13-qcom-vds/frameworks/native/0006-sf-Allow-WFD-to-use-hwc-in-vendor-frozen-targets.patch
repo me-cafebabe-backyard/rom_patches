@@ -1,0 +1,55 @@
+From ef05a13b4a55acc2d0cab3d134c496d093f87721 Mon Sep 17 00:00:00 2001
+From: Rheygine Medel <quic_rmedel@quicinc.com>
+Date: Thu, 30 Jun 2022 11:21:55 -0700
+Subject: [PATCH 6/9] sf: Allow WFD to use hwc in vendor frozen targets
+
+Change-Id: Iecd2be3eb8775855d82763f069a38bb70fe53d4e
+CRs-Fixed: 3229968
+---
+ services/surfaceflinger/SurfaceFlinger.cpp | 7 +++++--
+ services/surfaceflinger/SurfaceFlinger.h   | 1 +
+ 2 files changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/services/surfaceflinger/SurfaceFlinger.cpp b/services/surfaceflinger/SurfaceFlinger.cpp
+index 1bebe25631..7ae07af29f 100644
+--- a/services/surfaceflinger/SurfaceFlinger.cpp
++++ b/services/surfaceflinger/SurfaceFlinger.cpp
+@@ -808,6 +808,7 @@ void SurfaceFlinger::init() {
+ 
+     mAllowHwcForWFD = base::GetBoolProperty("vendor.display.vds_allow_hwc"s, false);
+     mAllowHwcForVDS = mAllowHwcForWFD && base::GetBoolProperty("debug.sf.enable_hwc_vds"s, false);
++    mFirstApiLevel = android::base::GetIntProperty("ro.product.first_api_level", 0);
+ 
+     // Process any initial hotplug and resulting display changes.
+     processDisplayHotplugEventsLocked();
+@@ -6972,11 +6973,13 @@ bool SurfaceFlinger::canAllocateHwcDisplayIdForVDS(uint64_t usage) {
+     // GRALLOC_USAGE_PRIVATE_WFD + GRALLOC_USAGE_HW_VIDEO_ENCODER = WFD using HW composer.
+     flag_mask_pvt_wfd = GRALLOC_USAGE_PRIVATE_WFD;
+     flag_mask_hw_video = GRALLOC_USAGE_HW_VIDEO_ENCODER;
++    bool isWfd = (usage & flag_mask_pvt_wfd) && (usage & flag_mask_hw_video);
+     // Enabling only the vendor property would allow WFD to use HWC
+     // Enabling both the aosp and vendor properties would allow all other VDS to use HWC
+     // Disabling both would set all virtual displays to fall back to GPU
+-    bool canAllocate = mAllowHwcForVDS || (mAllowHwcForWFD && (usage & flag_mask_pvt_wfd) &&
+-                       (usage & flag_mask_hw_video));
++    // In vendor frozen targets, allow WFD to use HWC without any property settings.
++    bool canAllocate = mAllowHwcForVDS || (isWfd && mAllowHwcForWFD) || (isWfd &&
++                       mFirstApiLevel < __ANDROID_API_T__);
+ 
+     if (canAllocate) {
+         enableHalVirtualDisplays(true);
+diff --git a/services/surfaceflinger/SurfaceFlinger.h b/services/surfaceflinger/SurfaceFlinger.h
+index b7e494dfc2..578311fa05 100644
+--- a/services/surfaceflinger/SurfaceFlinger.h
++++ b/services/surfaceflinger/SurfaceFlinger.h
+@@ -1434,6 +1434,7 @@ private:
+     FlagManager mFlagManager;
+     bool mAllowHwcForVDS = false;
+     bool mAllowHwcForWFD = false;
++    int mFirstApiLevel = 0;
+ 
+     // returns the framerate of the layer with the given sequence ID
+     float getLayerFramerate(nsecs_t now, int32_t id) const {
+-- 
+2.30.2
+

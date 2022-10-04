@@ -1,0 +1,27 @@
+From 2f02dc0b70fedf24a57832faa5a4447f48648a3b Mon Sep 17 00:00:00 2001
+From: Chris Gross <chrisgross@google.com>
+Date: Wed, 30 Sep 2020 14:03:07 -0700
+Subject: [PATCH 2/9] Remove use of VrFlinger from value-adds.
+
+Bug: 169788930
+Change-Id: Ic50f5675d0cd48f84fb9ff14221355741dc52129
+---
+ services/surfaceflinger/SurfaceFlinger.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/services/surfaceflinger/SurfaceFlinger.cpp b/services/surfaceflinger/SurfaceFlinger.cpp
+index 72944ead38..95c24d8a3e 100644
+--- a/services/surfaceflinger/SurfaceFlinger.cpp
++++ b/services/surfaceflinger/SurfaceFlinger.cpp
+@@ -2921,7 +2921,7 @@ void SurfaceFlinger::processDisplayAdded(const wp<IBinder>& displayToken,
+         status = state.surface->query(NATIVE_WINDOW_FORMAT, &format);
+         ALOGE_IF(status != NO_ERROR, "Unable to query format (%d)", status);
+         pixelFormat = static_cast<ui::PixelFormat>(format);
+-        if (mUseHwcVirtualDisplays || getHwComposer().isUsingVrComposer()) {
++        if (mUseHwcVirtualDisplays) {
+             if (maxVirtualDisplaySize == 0 ||
+                 ((uint64_t)width <= maxVirtualDisplaySize &&
+                 (uint64_t)height <= maxVirtualDisplaySize)) {
+-- 
+2.30.2
+

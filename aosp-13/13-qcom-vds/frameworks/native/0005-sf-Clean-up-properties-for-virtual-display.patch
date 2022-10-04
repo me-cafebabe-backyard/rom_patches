@@ -1,0 +1,112 @@
+From f69ddf5e7afaa54f66f386aa8591a28ada26a7ab Mon Sep 17 00:00:00 2001
+From: Rheygine Medel <quic_rmedel@quicinc.com>
+Date: Wed, 25 May 2022 19:20:55 -0700
+Subject: [PATCH 5/9] sf: Clean up properties for virtual display
+
+Currently, the properties are used as follows:
+1. debug.sf.enable_hwc_vds - allows IDs to be generated for VDs
+2. vendor.display.vds_allow_hwc - allows WFD to use HWC path
+
+With this change, HWC path is enabled for WFD with only the vendor
+property set. All other virtual displays require both of the
+properties enabled.
+
+Change-Id: Iab2c8d15d2c1cf24be0d371af8892c346634507f
+CRs-Fixed: 3204941
+---
+ services/surfaceflinger/SurfaceFlinger.cpp | 45 ++++++++++++----------
+ services/surfaceflinger/SurfaceFlinger.h   |  2 +
+ 2 files changed, 26 insertions(+), 21 deletions(-)
+
+diff --git a/services/surfaceflinger/SurfaceFlinger.cpp b/services/surfaceflinger/SurfaceFlinger.cpp
+index 409ce41f21..1bebe25631 100644
+--- a/services/surfaceflinger/SurfaceFlinger.cpp
++++ b/services/surfaceflinger/SurfaceFlinger.cpp
+@@ -806,9 +806,8 @@ void SurfaceFlinger::init() {
+ 
+     enableLatchUnsignaledConfig = getLatchUnsignaledConfig();
+ 
+-    if (base::GetBoolProperty("debug.sf.enable_hwc_vds"s, false)) {
+-        enableHalVirtualDisplays(true);
+-    }
++    mAllowHwcForWFD = base::GetBoolProperty("vendor.display.vds_allow_hwc"s, false);
++    mAllowHwcForVDS = mAllowHwcForWFD && base::GetBoolProperty("debug.sf.enable_hwc_vds"s, false);
+ 
+     // Process any initial hotplug and resulting display changes.
+     processDisplayHotplugEventsLocked();
+@@ -2923,21 +2922,18 @@ void SurfaceFlinger::processDisplayAdded(const wp<IBinder>& displayToken,
+         status = state.surface->query(NATIVE_WINDOW_FORMAT, &format);
+         ALOGE_IF(status != NO_ERROR, "Unable to query format (%d)", status);
+         pixelFormat = static_cast<ui::PixelFormat>(format);
+-        if (mVirtualDisplayIdGenerators.hal) {
+-            size_t maxVirtualDisplaySize = getHwComposer().getMaxVirtualDisplayDimension();
+-            if (maxVirtualDisplaySize == 0 ||
+-                ((uint64_t)resolution.width <= maxVirtualDisplaySize &&
+-                (uint64_t)resolution.height <= maxVirtualDisplaySize)) {
+-                uint64_t usage = 0;
+-                // Replace with native_window_get_consumer_usage ?
+-                status = state .surface->getConsumerUsage(&usage);
+-                ALOGW_IF(status != NO_ERROR, "Unable to query usage (%d)", status);
+-                if ((status == NO_ERROR) && canAllocateHwcDisplayIdForVDS(usage)) {
+-                   canAllocateHwcForVDS = true;
+-               }
++        // Check if VDS is allowed to use HWC
++        size_t maxVirtualDisplaySize = getHwComposer().getMaxVirtualDisplayDimension();
++        if (maxVirtualDisplaySize == 0 || ((uint64_t)resolution.width <= maxVirtualDisplaySize &&
++            (uint64_t)resolution.height <= maxVirtualDisplaySize)) {
++            uint64_t usage = 0;
++            // Replace with native_window_get_consumer_usage ?
++            status = state .surface->getConsumerUsage(&usage);
++            ALOGW_IF(status != NO_ERROR, "Unable to query usage (%d)", status);
++            if ((status == NO_ERROR) && canAllocateHwcDisplayIdForVDS(usage)) {
++                canAllocateHwcForVDS = true;
+             }
+         }
+-
+     } else {
+         // Virtual displays without a surface are dormant:
+         // they have external state (layer stack, projection,
+@@ -6972,15 +6968,22 @@ status_t SurfaceFlinger::setDesiredDisplayModeSpecsInternal(
+ bool SurfaceFlinger::canAllocateHwcDisplayIdForVDS(uint64_t usage) {
+     uint64_t flag_mask_pvt_wfd = ~0;
+     uint64_t flag_mask_hw_video = ~0;
+-    char value[PROPERTY_VALUE_MAX] = {};
+-    property_get("vendor.display.vds_allow_hwc", value, "0");
+-    int allowHwcForVDS = atoi(value);
+     // Reserve hardware acceleration for WFD use-case
+     // GRALLOC_USAGE_PRIVATE_WFD + GRALLOC_USAGE_HW_VIDEO_ENCODER = WFD using HW composer.
+     flag_mask_pvt_wfd = GRALLOC_USAGE_PRIVATE_WFD;
+     flag_mask_hw_video = GRALLOC_USAGE_HW_VIDEO_ENCODER;
+-    return (allowHwcForVDS || ((usage & flag_mask_pvt_wfd) &&
+-            (usage & flag_mask_hw_video)));
++    // Enabling only the vendor property would allow WFD to use HWC
++    // Enabling both the aosp and vendor properties would allow all other VDS to use HWC
++    // Disabling both would set all virtual displays to fall back to GPU
++    bool canAllocate = mAllowHwcForVDS || (mAllowHwcForWFD && (usage & flag_mask_pvt_wfd) &&
++                       (usage & flag_mask_hw_video));
++
++    if (canAllocate) {
++        enableHalVirtualDisplays(true);
++    }
++
++    return canAllocate;
++
+ }
+ 
+ status_t SurfaceFlinger::setDesiredDisplayModeSpecs(
+diff --git a/services/surfaceflinger/SurfaceFlinger.h b/services/surfaceflinger/SurfaceFlinger.h
+index 6fb1ccb572..b7e494dfc2 100644
+--- a/services/surfaceflinger/SurfaceFlinger.h
++++ b/services/surfaceflinger/SurfaceFlinger.h
+@@ -1432,6 +1432,8 @@ private:
+     const sp<WindowInfosListenerInvoker> mWindowInfosListenerInvoker;
+ 
+     FlagManager mFlagManager;
++    bool mAllowHwcForVDS = false;
++    bool mAllowHwcForWFD = false;
+ 
+     // returns the framerate of the layer with the given sequence ID
+     float getLayerFramerate(nsecs_t now, int32_t id) const {
+-- 
+2.30.2
+
