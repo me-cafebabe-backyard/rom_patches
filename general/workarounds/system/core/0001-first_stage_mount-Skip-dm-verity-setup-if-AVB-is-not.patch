@@ -1,0 +1,29 @@
+From c670e99f15d4c34ae773232a4ea75085777abead Mon Sep 17 00:00:00 2001
+From: me-cafebabe <me_cafebabe@hotmail.com>
+Date: Tue, 4 Oct 2022 12:41:16 +0000
+Subject: [PATCH] first_stage_mount: Skip dm-verity setup if AVB is not enabled
+
+Change-Id: Ia06e94e91cf5fdce14ce37eb85fdd95df1d059bc
+---
+ init/first_stage_mount.cpp | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/init/first_stage_mount.cpp b/init/first_stage_mount.cpp
+index 042988eff..b61df7f7b 100644
+--- a/init/first_stage_mount.cpp
++++ b/init/first_stage_mount.cpp
+@@ -734,6 +734,11 @@ bool FirstStageMountVBootV2::GetDmVerityDevices(std::set<std::string>* devices)
+ bool FirstStageMountVBootV2::SetUpDmVerity(FstabEntry* fstab_entry) {
+     AvbHashtreeResult hashtree_result;
+ 
++    if (!fstab_entry->fs_mgr_flags.avb) {
++        LOG(INFO) << "AVB is not enabled, skip dm-verity setup for " << fstab_entry->mount_point;
++        return true;
++    }
++
+     // It's possible for a fstab_entry to have both avb_keys and avb flag.
+     // In this case, try avb_keys first, then fallback to avb flag.
+     if (!fstab_entry->avb_keys.empty()) {
+-- 
+2.30.2
+
