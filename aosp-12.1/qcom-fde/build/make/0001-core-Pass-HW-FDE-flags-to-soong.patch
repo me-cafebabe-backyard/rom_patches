@@ -1,0 +1,29 @@
+From 8014c1ec1a895a02ec676ba1a8f182347a80e989 Mon Sep 17 00:00:00 2001
+From: AnilKumar Chimata <anilc@codeaurora.org>
+Date: Wed, 20 Jun 2018 20:29:20 +0530
+Subject: [PATCH] core: Pass HW FDE flags to soong
+
+Pass target specific HW FDE flags to soong.
+
+CRs-Fixed: 2210986
+Change-Id: I425b05883cf7d73cd7906caae469d7346a572892
+---
+ core/soong_config.mk | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/core/soong_config.mk b/core/soong_config.mk
+index b397538a6..8e6c6a3f2 100644
+--- a/core/soong_config.mk
++++ b/core/soong_config.mk
+@@ -125,6 +125,8 @@ $(call add_json_bool, ArtUseReadBarrier,                 $(call invert_bool,$(fi
+ $(call add_json_bool, Binder32bit,                       $(BINDER32BIT))
+ $(call add_json_str,  BtConfigIncludeDir,                $(BOARD_BLUETOOTH_BDROID_BUILDCFG_INCLUDE_DIR))
+ $(call add_json_list, DeviceKernelHeaders,               $(TARGET_DEVICE_KERNEL_HEADERS) $(TARGET_BOARD_KERNEL_HEADERS) $(TARGET_PRODUCT_KERNEL_HEADERS))
++$(call add_json_bool, Device_support_hwfde,              $(filter true,$(TARGET_HW_DISK_ENCRYPTION)))
++$(call add_json_bool, Device_support_hwfde_perf,         $(filter true,$(TARGET_HW_DISK_ENCRYPTION_PERF)))
+ $(call add_json_str,  DeviceVndkVersion,                 $(BOARD_VNDK_VERSION))
+ $(call add_json_str,  Platform_vndk_version,             $(PLATFORM_VNDK_VERSION))
+ $(call add_json_str,  ProductVndkVersion,                $(PRODUCT_PRODUCT_VNDK_VERSION))
+-- 
+2.30.2
+
