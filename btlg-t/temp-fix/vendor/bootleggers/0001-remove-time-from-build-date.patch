@@ -1,0 +1,26 @@
+From 6357e98cc54ce4fba3fa4dfea361bd00887bc838 Mon Sep 17 00:00:00 2001
+From: me-cafebabe <me_cafebabe@hotmail.com>
+Date: Fri, 29 Apr 2022 16:46:55 +0000
+Subject: [PATCH 1/2] remove time from build date
+
+---
+ config/btlg_branding.mk | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/config/btlg_branding.mk b/config/btlg_branding.mk
+index 7daaa9ec..8951302d 100644
+--- a/config/btlg_branding.mk
++++ b/config/btlg_branding.mk
+@@ -6,8 +6,7 @@ PRODUCT_VERSION_MAJOR = Tirimbino
+ PRODUCT_VERSION_MINOR = niceparse.Nice
+ BOOTLEGGERS_VERSION_NUMBER := 6.9-Alpha
+ BOOTLEGGERS_SONGCODEURL = https://cutt.ly/AVfICef
+-BOOTLEGGERS_EPOCH := $(shell date +%s)
+-BOOTLEGGERS_POSTFIX := -$(shell date -d @$(BOOTLEGGERS_EPOCH) +"%Y%m%d-%H%M%S")
++BOOTLEGGERS_POSTFIX := -$(shell date +"%Y%m%d")
+ 
+ ifndef BOOTLEGGERS_RELEASE_STATUS
+     BOOTLEGGERS_RELEASE_STATUS := Testing
+-- 
+2.30.2
+
