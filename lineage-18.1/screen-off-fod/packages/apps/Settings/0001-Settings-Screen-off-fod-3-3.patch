@@ -1,4 +1,4 @@
-From d31076020c17b6c472cb79f49a42bfbddf556dab Mon Sep 17 00:00:00 2001
+From b3da652e42b7622b7d115a0df3303907f597d722 Mon Sep 17 00:00:00 2001
 From: TheScarastic <warabhishek@gmail.com>
 Date: Thu, 9 Jul 2020 12:28:51 +0000
 Subject: [PATCH] Settings: Screen off fod [3/3]
@@ -14,13 +14,13 @@ Change-Id: I7d443192a1929630d9dbe409f23c9aaff0e4c542
  create mode 100644 src/com/android/settings/security/screenlock/ScreenOffFodPreferenceController.java
 
 diff --git a/res/values/cm_strings.xml b/res/values/cm_strings.xml
-index ab38dec706..4837c85de2 100644
+index d13d4d4fe8..a2f38570dd 100644
 --- a/res/values/cm_strings.xml
 +++ b/res/values/cm_strings.xml
-@@ -175,4 +175,8 @@
+@@ -178,4 +178,8 @@
  
-     <!-- Display settings screen, peak refresh rate settings summary [CHAR LIMIT=NONE] -->
-     <string name="peak_refresh_rate_summary_custom">Automatically raises the refresh rate from 60 to %1$d Hz for some content. Increases battery usage.</string>
+     <!-- Warning message for the sd card setup -->
+     <string name="storage_warning_internal">Warning: This option may not work properly or lead to data loss and is therefore not recommended!</string>
 +
 +    <!-- Screen off fod -->
 +    <string name="fod_gesture_title">Screen off fingerprint</string>
