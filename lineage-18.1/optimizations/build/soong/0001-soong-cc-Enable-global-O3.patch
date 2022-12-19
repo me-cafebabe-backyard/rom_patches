@@ -1,0 +1,31 @@
+From 76ef11c4c0caaaec88904b43634c256c9a4a80b7 Mon Sep 17 00:00:00 2001
+From: Andrzej Perczak <linux@andrzejperczak.com>
+Date: Thu, 23 Jun 2022 17:23:43 +0200
+Subject: [PATCH] soong: cc: Enable global O3
+
+At level 3 optimization loop vectorization gets enabled which can lead
+to significant speedups when processing big chunks of data. Rather than
+enabling O3 one by one let's enable it globally as this flag is
+completely safe nowadays.
+
+Signed-off-by: Andrzej Perczak <linux@andrzejperczak.com>
+---
+ cc/config/global.go | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/cc/config/global.go b/cc/config/global.go
+index 473c8067d..27437f61f 100644
+--- a/cc/config/global.go
++++ b/cc/config/global.go
+@@ -43,7 +43,7 @@ var (
+ 		"-fno-exceptions",
+ 		"-Wno-multichar",
+ 
+-		"-O2",
++		"-O3",
+ 		"-g",
+ 
+ 		"-fno-strict-aliasing",
+-- 
+2.30.2
+
