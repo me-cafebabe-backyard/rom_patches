@@ -1,0 +1,149 @@
+From 8b022e3c6ed3956bb96b2798a0a5550665e5b350 Mon Sep 17 00:00:00 2001
+From: MrArtemSid <artem.sid.key@gmail.com>
+Date: Sat, 27 Nov 2021 00:34:37 +0400
+Subject: [PATCH 3/6] audio: configs: msm8937: STEREO_DMIC -> DMIC_STEREO
+
+---
+ configs/msm8937/audio_platform_info.xml           | 8 ++++----
+ configs/msm8937/audio_platform_info_intcodec.xml  | 8 ++++----
+ configs/msm8937/audio_platform_info_mtp.xml       | 8 ++++----
+ configs/msm8937/audio_platform_info_tasha.xml     | 4 ++--
+ configs/msm8937/audio_platform_info_tashalite.xml | 4 ++--
+ 5 files changed, 16 insertions(+), 16 deletions(-)
+
+diff --git a/configs/msm8937/audio_platform_info.xml b/configs/msm8937/audio_platform_info.xml
+index 317274c5e..46dacc73f 100644
+--- a/configs/msm8937/audio_platform_info.xml
++++ b/configs/msm8937/audio_platform_info.xml
+@@ -147,8 +147,8 @@
+         <device name="SND_DEVICE_IN_VOICE_REC_DMIC_FLUENCE" interface="TERT_MI2S_TX"/>
+         <device name="SND_DEVICE_IN_AANC_HANDSET_MIC" interface="TERT_MI2S_TX"/>
+         <device name="SND_DEVICE_IN_QUAD_MIC" interface="TERT_MI2S_TX"/>
+-        <device name="SND_DEVICE_IN_HANDSET_STEREO_DMIC" interface="TERT_MI2S_TX"/>
+-        <device name="SND_DEVICE_IN_SPEAKER_STEREO_DMIC" interface="TERT_MI2S_TX"/>
++        <device name="SND_DEVICE_IN_HANDSET_DMIC_STEREO" interface="TERT_MI2S_TX"/>
++        <device name="SND_DEVICE_IN_SPEAKER_DMIC_STEREO" interface="TERT_MI2S_TX"/>
+         <device name="SND_DEVICE_IN_CAPTURE_VI_FEEDBACK" interface="SENARY_MI2S_TX"/>
+         <device name="SND_DEVICE_IN_CAPTURE_VI_FEEDBACK_MONO_1" interface="SENARY_MI2S_TX"/>
+         <device name="SND_DEVICE_IN_CAPTURE_VI_FEEDBACK_MONO_2" interface="SENARY_MI2S_TX"/>
+@@ -365,13 +365,13 @@
+                         <mic_info mic_device_id="builtin_mic_4"
+                             channel_mapping="AUDIO_MICROPHONE_CHANNEL_MAPPING_PROCESSED"/>
+                     </snd_dev>
+-                    <snd_dev in_snd_device="SND_DEVICE_IN_HANDSET_STEREO_DMIC">
++                    <snd_dev in_snd_device="SND_DEVICE_IN_HANDSET_DMIC_STEREO">
+                         <mic_info mic_device_id="builtin_mic_1"
+                             channel_mapping="AUDIO_MICROPHONE_CHANNEL_MAPPING_PROCESSED"/>
+                         <mic_info mic_device_id="builtin_mic_2"
+                             channel_mapping="AUDIO_MICROPHONE_CHANNEL_MAPPING_PROCESSED"/>
+                     </snd_dev>
+-                    <snd_dev in_snd_device="SND_DEVICE_IN_SPEAKER_STEREO_DMIC">
++                    <snd_dev in_snd_device="SND_DEVICE_IN_SPEAKER_DMIC_STEREO">
+                         <mic_info mic_device_id="builtin_mic_1"
+                             channel_mapping="AUDIO_MICROPHONE_CHANNEL_MAPPING_PROCESSED"/>
+                         <mic_info mic_device_id="builtin_mic_2"
+diff --git a/configs/msm8937/audio_platform_info_intcodec.xml b/configs/msm8937/audio_platform_info_intcodec.xml
+index 8fa7ae96b..7ac77c52d 100644
+--- a/configs/msm8937/audio_platform_info_intcodec.xml
++++ b/configs/msm8937/audio_platform_info_intcodec.xml
+@@ -149,8 +149,8 @@
+         <device name="SND_DEVICE_IN_VOICE_REC_DMIC_FLUENCE" interface="TERT_MI2S_TX"/>
+         <device name="SND_DEVICE_IN_AANC_HANDSET_MIC" interface="TERT_MI2S_TX"/>
+         <device name="SND_DEVICE_IN_QUAD_MIC" interface="TERT_MI2S_TX"/>
+-        <device name="SND_DEVICE_IN_HANDSET_STEREO_DMIC" interface="TERT_MI2S_TX"/>
+-        <device name="SND_DEVICE_IN_SPEAKER_STEREO_DMIC" interface="TERT_MI2S_TX"/>
++        <device name="SND_DEVICE_IN_HANDSET_DMIC_STEREO" interface="TERT_MI2S_TX"/>
++        <device name="SND_DEVICE_IN_SPEAKER_DMIC_STEREO" interface="TERT_MI2S_TX"/>
+         <device name="SND_DEVICE_IN_CAPTURE_VI_FEEDBACK" interface="SENARY_MI2S_TX"/>
+         <device name="SND_DEVICE_IN_CAPTURE_VI_FEEDBACK_MONO_1" interface="SENARY_MI2S_TX"/>
+         <device name="SND_DEVICE_IN_CAPTURE_VI_FEEDBACK_MONO_2" interface="SENARY_MI2S_TX"/>
+@@ -367,13 +367,13 @@
+                         <mic_info mic_device_id="builtin_mic_4"
+                             channel_mapping="AUDIO_MICROPHONE_CHANNEL_MAPPING_PROCESSED"/>
+                     </snd_dev>
+-                    <snd_dev in_snd_device="SND_DEVICE_IN_HANDSET_STEREO_DMIC">
++                    <snd_dev in_snd_device="SND_DEVICE_IN_HANDSET_DMIC_STEREO">
+                         <mic_info mic_device_id="builtin_mic_1"
+                             channel_mapping="AUDIO_MICROPHONE_CHANNEL_MAPPING_PROCESSED"/>
+                         <mic_info mic_device_id="builtin_mic_2"
+                             channel_mapping="AUDIO_MICROPHONE_CHANNEL_MAPPING_PROCESSED"/>
+                     </snd_dev>
+-                    <snd_dev in_snd_device="SND_DEVICE_IN_SPEAKER_STEREO_DMIC">
++                    <snd_dev in_snd_device="SND_DEVICE_IN_SPEAKER_DMIC_STEREO">
+                         <mic_info mic_device_id="builtin_mic_1"
+                             channel_mapping="AUDIO_MICROPHONE_CHANNEL_MAPPING_PROCESSED"/>
+                         <mic_info mic_device_id="builtin_mic_2"
+diff --git a/configs/msm8937/audio_platform_info_mtp.xml b/configs/msm8937/audio_platform_info_mtp.xml
+index 06fe8d7be..851fb513a 100644
+--- a/configs/msm8937/audio_platform_info_mtp.xml
++++ b/configs/msm8937/audio_platform_info_mtp.xml
+@@ -148,8 +148,8 @@
+         <device name="SND_DEVICE_IN_VOICE_REC_DMIC_FLUENCE" interface="TERT_MI2S_TX"/>
+         <device name="SND_DEVICE_IN_AANC_HANDSET_MIC" interface="TERT_MI2S_TX"/>
+         <device name="SND_DEVICE_IN_QUAD_MIC" interface="TERT_MI2S_TX"/>
+-        <device name="SND_DEVICE_IN_HANDSET_STEREO_DMIC" interface="TERT_MI2S_TX"/>
+-        <device name="SND_DEVICE_IN_SPEAKER_STEREO_DMIC" interface="TERT_MI2S_TX"/>
++        <device name="SND_DEVICE_IN_HANDSET_DMIC_STEREO" interface="TERT_MI2S_TX"/>
++        <device name="SND_DEVICE_IN_SPEAKER_DMIC_STEREO" interface="TERT_MI2S_TX"/>
+         <device name="SND_DEVICE_IN_CAPTURE_VI_FEEDBACK" interface="SENARY_MI2S_TX"/>
+         <device name="SND_DEVICE_IN_CAPTURE_VI_FEEDBACK_MONO_1" interface="SENARY_MI2S_TX"/>
+         <device name="SND_DEVICE_IN_CAPTURE_VI_FEEDBACK_MONO_2" interface="SENARY_MI2S_TX"/>
+@@ -366,13 +366,13 @@
+                         <mic_info mic_device_id="builtin_mic_4"
+                             channel_mapping="AUDIO_MICROPHONE_CHANNEL_MAPPING_PROCESSED"/>
+                     </snd_dev>
+-                    <snd_dev in_snd_device="SND_DEVICE_IN_HANDSET_STEREO_DMIC">
++                    <snd_dev in_snd_device="SND_DEVICE_IN_HANDSET_DMIC_STEREO">
+                         <mic_info mic_device_id="builtin_mic_1"
+                             channel_mapping="AUDIO_MICROPHONE_CHANNEL_MAPPING_PROCESSED"/>
+                         <mic_info mic_device_id="builtin_mic_2"
+                             channel_mapping="AUDIO_MICROPHONE_CHANNEL_MAPPING_PROCESSED"/>
+                     </snd_dev>
+-                    <snd_dev in_snd_device="SND_DEVICE_IN_SPEAKER_STEREO_DMIC">
++                    <snd_dev in_snd_device="SND_DEVICE_IN_SPEAKER_DMIC_STEREO">
+                         <mic_info mic_device_id="builtin_mic_1"
+                             channel_mapping="AUDIO_MICROPHONE_CHANNEL_MAPPING_PROCESSED"/>
+                         <mic_info mic_device_id="builtin_mic_2"
+diff --git a/configs/msm8937/audio_platform_info_tasha.xml b/configs/msm8937/audio_platform_info_tasha.xml
+index 2516965c6..447301ead 100644
+--- a/configs/msm8937/audio_platform_info_tasha.xml
++++ b/configs/msm8937/audio_platform_info_tasha.xml
+@@ -288,13 +288,13 @@
+                         <mic_info mic_device_id="builtin_mic_4"
+                             channel_mapping="AUDIO_MICROPHONE_CHANNEL_MAPPING_PROCESSED"/>
+                     </snd_dev>
+-                    <snd_dev in_snd_device="SND_DEVICE_IN_HANDSET_STEREO_DMIC">
++                    <snd_dev in_snd_device="SND_DEVICE_IN_HANDSET_DMIC_STEREO">
+                         <mic_info mic_device_id="builtin_mic_1"
+                             channel_mapping="AUDIO_MICROPHONE_CHANNEL_MAPPING_PROCESSED"/>
+                         <mic_info mic_device_id="builtin_mic_2"
+                             channel_mapping="AUDIO_MICROPHONE_CHANNEL_MAPPING_PROCESSED"/>
+                     </snd_dev>
+-                    <snd_dev in_snd_device="SND_DEVICE_IN_SPEAKER_STEREO_DMIC">
++                    <snd_dev in_snd_device="SND_DEVICE_IN_SPEAKER_DMIC_STEREO">
+                         <mic_info mic_device_id="builtin_mic_1"
+                             channel_mapping="AUDIO_MICROPHONE_CHANNEL_MAPPING_PROCESSED"/>
+                         <mic_info mic_device_id="builtin_mic_2"
+diff --git a/configs/msm8937/audio_platform_info_tashalite.xml b/configs/msm8937/audio_platform_info_tashalite.xml
+index 2516965c6..447301ead 100644
+--- a/configs/msm8937/audio_platform_info_tashalite.xml
++++ b/configs/msm8937/audio_platform_info_tashalite.xml
+@@ -288,13 +288,13 @@
+                         <mic_info mic_device_id="builtin_mic_4"
+                             channel_mapping="AUDIO_MICROPHONE_CHANNEL_MAPPING_PROCESSED"/>
+                     </snd_dev>
+-                    <snd_dev in_snd_device="SND_DEVICE_IN_HANDSET_STEREO_DMIC">
++                    <snd_dev in_snd_device="SND_DEVICE_IN_HANDSET_DMIC_STEREO">
+                         <mic_info mic_device_id="builtin_mic_1"
+                             channel_mapping="AUDIO_MICROPHONE_CHANNEL_MAPPING_PROCESSED"/>
+                         <mic_info mic_device_id="builtin_mic_2"
+                             channel_mapping="AUDIO_MICROPHONE_CHANNEL_MAPPING_PROCESSED"/>
+                     </snd_dev>
+-                    <snd_dev in_snd_device="SND_DEVICE_IN_SPEAKER_STEREO_DMIC">
++                    <snd_dev in_snd_device="SND_DEVICE_IN_SPEAKER_DMIC_STEREO">
+                         <mic_info mic_device_id="builtin_mic_1"
+                             channel_mapping="AUDIO_MICROPHONE_CHANNEL_MAPPING_PROCESSED"/>
+                         <mic_info mic_device_id="builtin_mic_2"
+-- 
+2.30.2
+

@@ -1,0 +1,71 @@
+From 266b6ec8127a7f8c8e7b8378e8f2a692c7d84c57 Mon Sep 17 00:00:00 2001
+From: me-cafebabe <87921983+me-cafebabe@users.noreply.github.com>
+Date: Thu, 15 Jul 2021 11:34:52 +0000
+Subject: [PATCH] [DNM] Dirty hacks for ignoring the existence of antenna
+
+---
+ src/com/android/fmradio/FmFavoriteActivity.java | 2 +-
+ src/com/android/fmradio/FmMainActivity.java     | 4 ++--
+ src/com/android/fmradio/FmService.java          | 4 ++--
+ 3 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/src/com/android/fmradio/FmFavoriteActivity.java b/src/com/android/fmradio/FmFavoriteActivity.java
+index 07c8515..d235e3d 100644
+--- a/src/com/android/fmradio/FmFavoriteActivity.java
++++ b/src/com/android/fmradio/FmFavoriteActivity.java
+@@ -511,7 +511,7 @@ public class FmFavoriteActivity extends Activity {
+                     break;
+                 case FmListener.MSGID_SWITCH_ANTENNA:
+                     bundle = msg.getData();
+-                    boolean isHeadset = bundle.getBoolean(FmListener.KEY_IS_SWITCH_ANTENNA);
++                    boolean isHeadset = true;
+                     // if receive headset plugout, need set headset mode on ui
+                     if (!isHeadset) {
+                         finish();
+diff --git a/src/com/android/fmradio/FmMainActivity.java b/src/com/android/fmradio/FmMainActivity.java
+index 82db51b..48c31a0 100644
+--- a/src/com/android/fmradio/FmMainActivity.java
++++ b/src/com/android/fmradio/FmMainActivity.java
+@@ -242,7 +242,7 @@ public class FmMainActivity extends Activity implements FmFavoriteEditDialog.Edi
+ 
+                 case FmListener.MSGID_SWITCH_ANTENNA:
+                     bundle = msg.getData();
+-                    boolean hasAntenna = bundle.getBoolean(FmListener.KEY_IS_SWITCH_ANTENNA);
++                    boolean hasAntenna = true;
+                     // if receive headset plug out, need set headset mode on ui
+                     if (hasAntenna) {
+                         if (mIsActivityForeground) {
+@@ -852,7 +852,7 @@ public class FmMainActivity extends Activity implements FmFavoriteEditDialog.Edi
+      * @return true or false indicate antenna available or not
+      */
+     private boolean isAntennaAvailable() {
+-        return mAudioManager.isWiredHeadsetOn();
++        return true;
+     }
+ 
+     /**
+diff --git a/src/com/android/fmradio/FmService.java b/src/com/android/fmradio/FmService.java
+index 3323fb0..a19efec 100644
+--- a/src/com/android/fmradio/FmService.java
++++ b/src/com/android/fmradio/FmService.java
+@@ -363,7 +363,7 @@ public class FmService extends Service implements FmRecorder.OnRecorderStateChan
+      * @return true, antenna available; false, antenna not available
+      */
+     public boolean isAntennaAvailable() {
+-        return mAudioManager.isWiredHeadsetOn();
++        return true;
+     }
+ 
+     private void setForceUse(boolean isSpeaker) {
+@@ -2440,7 +2440,7 @@ public class FmService extends Service implements FmRecorder.OnRecorderStateChan
+                 // switch antenna
+                 case FmListener.MSGID_SWITCH_ANTENNA:
+                     bundle = msg.getData();
+-                    int value = bundle.getInt(FmListener.SWITCH_ANTENNA_VALUE);
++                    int value = 0;
+ 
+                     // if ear phone insert, need dismiss plugin earphone
+                     // dialog
+-- 
+2.30.2
+
