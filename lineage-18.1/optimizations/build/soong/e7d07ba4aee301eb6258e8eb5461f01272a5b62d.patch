@@ -1,0 +1,34 @@
+From e7d07ba4aee301eb6258e8eb5461f01272a5b62d Mon Sep 17 00:00:00 2001
+From: Jake Weinstein <jake@aospa.co>
+Date: Wed, 31 Jul 2019 10:53:24 -0500
+Subject: [PATCH] Define AArch32 soong variable
+
+Change-Id: I1a52a8e8e436eec827022413270d8b7c76808a69
+---
+ android/arch.go | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/android/arch.go b/android/arch.go
+index ad91c7e369..28a996ce19 100644
+--- a/android/arch.go
++++ b/android/arch.go
+@@ -194,6 +194,7 @@ var archVariants = map[ArchType][]string{
+ var archFeatures = map[ArchType][]string{
+ 	Arm: {
+ 		"neon",
++		"aarch32",
+ 	},
+ 	Mips: {
+ 		"dspr2",
+@@ -236,9 +237,11 @@ var archFeatureMap = map[ArchType]map[string][]string{
+ 		},
+ 		"armv8-a": {
+ 			"neon",
++			"aarch32",
+ 		},
+ 		"armv8-2a": {
+ 			"neon",
++			"aarch32",
+ 		},
+ 	},
+ 	Mips: {
