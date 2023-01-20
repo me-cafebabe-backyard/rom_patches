@@ -1,0 +1,81 @@
+From 809d26d6e96171e7217087a68b932a2e20d10a79 Mon Sep 17 00:00:00 2001
+From: Abhishek Pandit-Subedi <abhishekpandit@google.com>
+Date: Mon, 24 Oct 2022 13:40:14 -0700
+Subject: [PATCH] BACKPORT: floss: Disable enhanced sco connection via sysprop
+
+Commit 7279b5633c63acf2a30b10b9743ff90df88a4d61 upstream.
+
+Add a new sysprop, "bluetooth.sco.disable_enhanced_connection", so that
+we can disable it on controllers where we know this is broken but can't
+fix the firmware.
+
+Bug: 255202220
+Tag: #floss
+Test: Ran HFP tests with value set to true and false.
+Change-Id: Ib12f09d80c26b65e66fe14de9181230520a90ffc
+---
+ system/stack/btm/btm_sco.cc | 20 +++++++++++++++++---
+ 1 file changed, 17 insertions(+), 3 deletions(-)
+
+diff --git a/system/stack/btm/btm_sco.cc b/system/stack/btm/btm_sco.cc
+index 9c5c41fb13..99701d6bfa 100644
+--- a/system/stack/btm/btm_sco.cc
++++ b/system/stack/btm/btm_sco.cc
+@@ -33,6 +33,7 @@
+ #include "osi/include/allocator.h"
+ #include "osi/include/log.h"
+ #include "osi/include/osi.h"
++#include "osi/include/properties.h"
+ #include "stack/btm/btm_sec.h"
+ #include "stack/btm/security_device_record.h"
+ #include "stack/include/acl_api.h"
+@@ -45,6 +46,13 @@
+ 
+ extern tBTM_CB btm_cb;
+ 
++/* Default to allow enhanced connections where supported. */
++constexpr bool kDefaultDisableEnhancedConnection = false;
++
++/* Sysprops for SCO connection. */
++static const char kPropertyDisableEnhancedConnection[] =
++    "bluetooth.sco.disable_enhanced_connection";
++
+ namespace {
+ constexpr char kBtmLogTag[] = "SCO";
+ 
+@@ -140,7 +148,9 @@ static void btm_esco_conn_rsp(uint16_t sco_inx, uint8_t hci_status,
+     }
+     /* Use Enhanced Synchronous commands if supported */
+     if (controller_get_interface()
+-            ->supports_enhanced_setup_synchronous_connection()) {
++            ->supports_enhanced_setup_synchronous_connection() &&
++        !osi_property_get_bool(kPropertyDisableEnhancedConnection,
++                               kDefaultDisableEnhancedConnection)) {
+       /* Use the saved SCO routing */
+       p_setup->input_data_path = p_setup->output_data_path = ESCO_DATA_PATH;
+ 
+@@ -341,7 +351,9 @@ static tBTM_STATUS btm_send_connect_request(uint16_t acl_handle,
+ 
+     /* Use Enhanced Synchronous commands if supported */
+     if (controller_get_interface()
+-            ->supports_enhanced_setup_synchronous_connection()) {
++            ->supports_enhanced_setup_synchronous_connection() &&
++        !osi_property_get_bool(kPropertyDisableEnhancedConnection,
++                               kDefaultDisableEnhancedConnection)) {
+       LOG_INFO("Sending enhanced SCO connect request over handle:0x%04x",
+                acl_handle);
+       /* Use the saved SCO routing */
+@@ -1174,7 +1186,9 @@ static tBTM_STATUS BTM_ChangeEScoLinkParms(uint16_t sco_inx,
+ 
+     /* Use Enhanced Synchronous commands if supported */
+     if (controller_get_interface()
+-            ->supports_enhanced_setup_synchronous_connection()) {
++            ->supports_enhanced_setup_synchronous_connection() &&
++        !osi_property_get_bool(kPropertyDisableEnhancedConnection,
++                               kDefaultDisableEnhancedConnection)) {
+       /* Use the saved SCO routing */
+       p_setup->input_data_path = p_setup->output_data_path = ESCO_DATA_PATH;
+ 
+-- 
+2.30.2
+
