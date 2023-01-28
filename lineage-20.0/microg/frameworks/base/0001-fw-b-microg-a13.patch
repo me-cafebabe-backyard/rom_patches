@@ -1,4 +1,18 @@
+From 1e58d9e150f4a5fbbb7f304e01fcf807d36c0da5 Mon Sep 17 00:00:00 2001
+From: Android Build Server <build@AndroidBuild>
+Date: Sat, 28 Jan 2023 14:22:18 +0000
+Subject: [PATCH] fw/b: microg a13
+
+Change-Id: I9712bc1335efafdbf48fbf3aec615d91fd6732e1
+---
+ core/api/current.txt                          |  2 ++
+ core/res/AndroidManifest.xml                  | 15 +++++++++
+ core/res/res/values/strings.xml               | 12 +++++++
+ .../com/android/server/pm/ComputerEngine.java | 31 +++++++++++++++++--
+ 4 files changed, 57 insertions(+), 3 deletions(-)
+
 diff --git a/core/api/current.txt b/core/api/current.txt
+index c8a43db2f9c2..277183036c60 100644
 --- a/core/api/current.txt
 +++ b/core/api/current.txt
 @@ -87,6 +87,7 @@ package android {
@@ -18,6 +32,7 @@ diff --git a/core/api/current.txt b/core/api/current.txt
      field public static final String MICROPHONE = "android.permission-group.MICROPHONE";
      field public static final String NEARBY_DEVICES = "android.permission-group.NEARBY_DEVICES";
 diff --git a/core/res/AndroidManifest.xml b/core/res/AndroidManifest.xml
+index 1b90803404f7..c04ddb86c60b 100644
 --- a/core/res/AndroidManifest.xml
 +++ b/core/res/AndroidManifest.xml
 @@ -3542,6 +3542,21 @@
@@ -43,6 +58,7 @@ diff --git a/core/res/AndroidManifest.xml b/core/res/AndroidManifest.xml
           {@link android.content.pm.PackageManager#addPackageToPreferred}
           for details. -->
 diff --git a/core/res/res/values/strings.xml b/core/res/res/values/strings.xml
+index 5763345aba4d..8ffdbdd6f15b 100644
 --- a/core/res/res/values/strings.xml
 +++ b/core/res/res/values/strings.xml
 @@ -974,6 +974,18 @@
@@ -65,6 +81,7 @@ diff --git a/core/res/res/values/strings.xml b/core/res/res/values/strings.xml
      <string name="permlab_statusBar">disable or modify status bar</string>
      <!-- Description of an application permission, listed so the user can choose whether they want to allow the application to do this. -->
 diff --git a/services/core/java/com/android/server/pm/ComputerEngine.java b/services/core/java/com/android/server/pm/ComputerEngine.java
+index 46b7460dff1b..90f75dedef59 100644
 --- a/services/core/java/com/android/server/pm/ComputerEngine.java
 +++ b/services/core/java/com/android/server/pm/ComputerEngine.java
 @@ -1603,6 +1603,29 @@ public class ComputerEngine implements Computer {
@@ -116,3 +133,6 @@ diff --git a/services/core/java/com/android/server/pm/ComputerEngine.java b/serv
  
              if (packageInfo == null) {
                  return null;
+-- 
+2.30.2
+
