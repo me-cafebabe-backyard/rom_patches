@@ -1,0 +1,27 @@
+From 7ea94ec7c44a82b6912526b264ea8a1095030247 Mon Sep 17 00:00:00 2001
+From: me-cafebabe <me_cafebabe@hotmail.com>
+Date: Sat, 20 Aug 2022 14:53:35 +0000
+Subject: [PATCH 3/3] Biometrics: Load fingerprint cleanup overlay from
+ framework-res
+
+Change-Id: I320c63ac9050738b19fb20b3f387c73e4bb016e3
+---
+ .../biometrics/sensors/fingerprint/hidl/Fingerprint21.java      | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/services/core/java/com/android/server/biometrics/sensors/fingerprint/hidl/Fingerprint21.java b/services/core/java/com/android/server/biometrics/sensors/fingerprint/hidl/Fingerprint21.java
+index 72095d9cceb7..7021293c30ff 100644
+--- a/services/core/java/com/android/server/biometrics/sensors/fingerprint/hidl/Fingerprint21.java
++++ b/services/core/java/com/android/server/biometrics/sensors/fingerprint/hidl/Fingerprint21.java
+@@ -352,7 +352,7 @@ public class Fingerprint21 implements IHwBinder.DeathRecipient, ServiceProvider
+         });
+ 
+         mCleanup = context.getResources().getBoolean(
+-                org.lineageos.platform.internal.R.bool.config_cleanupUnusedFingerprints);
++                com.android.internal.R.bool.config_cleanupUnusedFingerprints);
+ 
+         try {
+             ActivityManager.getService().registerUserSwitchObserver(mUserSwitchObserver, TAG);
+-- 
+2.30.2
+
