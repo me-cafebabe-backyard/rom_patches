@@ -1,0 +1,25 @@
+From dde3f7f119f715f5b41b947a22a9abfcbc2e23c5 Mon Sep 17 00:00:00 2001
+From: Android Build Server <build@AndroidBuild>
+Date: Sun, 29 Jan 2023 07:53:18 +0000
+Subject: [PATCH] remove hour and minutes from date
+
+---
+ config/common.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/config/common.mk b/config/common.mk
+index 42cc127f..e0655b0d 100644
+--- a/config/common.mk
++++ b/config/common.mk
+@@ -316,7 +316,7 @@ endif
+ #endif
+ 
+ # Add CipherOS Stuff 
+-CIPHER_VERSION := CipherOS-$(PRODUCT_VERSION_MAJOR)-$(PRODUCT_VERSION_MINOR)-$(TARGET_PRODUCT)-$(shell date +%Y%m%d-%H%M)-BETA-$(CIPHER_BUILD)-$(CIPHER_BUILD_ZIP_TYPE)
++CIPHER_VERSION := CipherOS-$(PRODUCT_VERSION_MAJOR)-$(PRODUCT_VERSION_MINOR)-$(TARGET_PRODUCT)-$(shell date +%Y%m%d)-BETA-$(CIPHER_BUILD)-$(CIPHER_BUILD_ZIP_TYPE)
+ CIPHER_DISPLAY_VERSION := CipherOS-$(PRODUCT_VERSION_MAJOR)-$(PRODUCT_VERSION_MINOR)-$(TARGET_PRODUCT)-BETA-$(CIPHER_BUILD)-$(CIPHER_BUILD_ZIP_TYPE)
+ LINEAGE_VERSION := $(CIPHER_VERSION)
+ 
+-- 
+2.30.2
+
