@@ -1,0 +1,28 @@
+From 0b45f2ccc120030c105bd0c5fb1341d53019e5d3 Mon Sep 17 00:00:00 2001
+From: Nolen Johnson <johnsonnolen@gmail.com>
+Date: Thu, 9 Dec 2021 18:29:31 -0500
+Subject: [PATCH 2/2] Replace qti_kernel_headers with generated_kernel_headers
+
+* Further avoids edits in CAF repos.
+
+Change-Id: I99f9773e3132de7816c921c9d6b09e3e62b68265
+---
+ cc/cc.go | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/cc/cc.go b/cc/cc.go
+index 8b82db678..d17369c70 100644
+--- a/cc/cc.go
++++ b/cc/cc.go
+@@ -2228,7 +2228,7 @@ func (c *Module) DepsMutator(actx android.BottomUpMutatorContext) {
+ 			for _, entry := range list {
+ 				// Replace device_kernel_headers with generated_kernel_headers
+ 				// for inline kernel building
+-				if entry == "device_kernel_headers" {
++				if entry == "device_kernel_headers" || entry == "qti_kernel_headers" {
+ 					newHeaderLibs = append(newHeaderLibs, "generated_kernel_headers")
+ 					continue
+ 				}
+-- 
+2.30.2
+

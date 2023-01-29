@@ -1,0 +1,45 @@
+From 59ab7ea6d1a8d5f000a05d20665de6c9231ab238 Mon Sep 17 00:00:00 2001
+From: Chirayu Desai <chirayudesai1@gmail.com>
+Date: Sat, 30 Jan 2021 20:08:32 +0530
+Subject: [PATCH 1/2] Replace device_kernel_headers with
+ generated_kernel_headers
+
+* For inline kernel building
+* Avoids having to make edits to multiple repos, even
+  if it's a quick replacement
+
+Change-Id: I01d4a9b3e24315731efbc8d16882818d20e38e89
+---
+ cc/cc.go | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/cc/cc.go b/cc/cc.go
+index 456b73628..8b82db678 100644
+--- a/cc/cc.go
++++ b/cc/cc.go
+@@ -2223,6 +2223,22 @@ func (c *Module) DepsMutator(actx android.BottomUpMutatorContext) {
+ 	variantNdkLibs := []string{}
+ 	variantLateNdkLibs := []string{}
+ 	if ctx.Os() == android.Android {
++		rewriteHeaderLibs := func(list []string) (newHeaderLibs []string) {
++			newHeaderLibs = []string{}
++			for _, entry := range list {
++				// Replace device_kernel_headers with generated_kernel_headers
++				// for inline kernel building
++				if entry == "device_kernel_headers" {
++					newHeaderLibs = append(newHeaderLibs, "generated_kernel_headers")
++					continue
++				}
++				newHeaderLibs = append(newHeaderLibs, entry)
++			}
++			return newHeaderLibs
++		}
++
++		deps.HeaderLibs = rewriteHeaderLibs(deps.HeaderLibs)
++
+ 		deps.SharedLibs, variantNdkLibs = RewriteLibs(c, &snapshotInfo, actx, ctx.Config(), deps.SharedLibs)
+ 		deps.LateSharedLibs, variantLateNdkLibs = RewriteLibs(c, &snapshotInfo, actx, ctx.Config(), deps.LateSharedLibs)
+ 		deps.ReexportSharedLibHeaders, _ = RewriteLibs(c, &snapshotInfo, actx, ctx.Config(), deps.ReexportSharedLibHeaders)
+-- 
+2.30.2
+
