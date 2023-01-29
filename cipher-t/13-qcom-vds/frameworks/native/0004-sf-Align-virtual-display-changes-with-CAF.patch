@@ -1,0 +1,50 @@
+From c3063fc6cbb69303d60562acb4932191bf9e40ee Mon Sep 17 00:00:00 2001
+From: Michael Bestas <mkbestas@lineageos.org>
+Date: Fri, 18 Feb 2022 17:19:02 +0200
+Subject: [PATCH 4/7] sf: Align virtual display changes with CAF
+
+* These changes are part of CAF AOSP merge commits
+
+Change-Id: I390f874347d259fca4429c19711be6c85b104090
+---
+ .../DisplayHardware/VirtualDisplaySurface.cpp              | 4 ++--
+ services/surfaceflinger/SurfaceFlinger.cpp                 | 7 ++++---
+ 2 files changed, 6 insertions(+), 5 deletions(-)
+
+diff --git a/services/surfaceflinger/DisplayHardware/VirtualDisplaySurface.cpp b/services/surfaceflinger/DisplayHardware/VirtualDisplaySurface.cpp
+index dbd88c0bec..7c7200a314 100644
+--- a/services/surfaceflinger/DisplayHardware/VirtualDisplaySurface.cpp
++++ b/services/surfaceflinger/DisplayHardware/VirtualDisplaySurface.cpp
+@@ -324,8 +324,8 @@ status_t VirtualDisplaySurface::dequeueBuffer(Source source,
+     if (source == SOURCE_SCRATCH) {
+         usage |= GRALLOC_USAGE_HW_FB;
+         usage &= ~(GRALLOC_USAGE_HW_VIDEO_ENCODER);
+-        VDS_LOGV("dequeueBuffer(%s): updated scratch buffer usage flags=%#" PRIx64,
+-                dbgSourceStr(source), usage);
++        VDS_LOGV("%s(%s): updated scratch buffer usage flags=%#" PRIx64,
++                __func__, ftl::enum_string(source).c_str(), usage);
+     }
+ 
+     status_t result =
+diff --git a/services/surfaceflinger/SurfaceFlinger.cpp b/services/surfaceflinger/SurfaceFlinger.cpp
+index 8ec384f17f..04964d141b 100644
+--- a/services/surfaceflinger/SurfaceFlinger.cpp
++++ b/services/surfaceflinger/SurfaceFlinger.cpp
+@@ -2946,10 +2946,11 @@ void SurfaceFlinger::processDisplayAdded(const wp<IBinder>& displayToken,
+         status = state.surface->query(NATIVE_WINDOW_FORMAT, &format);
+         ALOGE_IF(status != NO_ERROR, "Unable to query format (%d)", status);
+         pixelFormat = static_cast<ui::PixelFormat>(format);
+-        if (mUseHwcVirtualDisplays) {
++        if (mVirtualDisplayIdGenerators.hal) {
++            size_t maxVirtualDisplaySize = getHwComposer().getMaxVirtualDisplayDimension();
+             if (maxVirtualDisplaySize == 0 ||
+-                ((uint64_t)width <= maxVirtualDisplaySize &&
+-                (uint64_t)height <= maxVirtualDisplaySize)) {
++                ((uint64_t)resolution.width <= maxVirtualDisplaySize &&
++                (uint64_t)resolution.height <= maxVirtualDisplaySize)) {
+                 uint64_t usage = 0;
+                 // Replace with native_window_get_consumer_usage ?
+                 status = state .surface->getConsumerUsage(&usage);
+-- 
+2.30.2
+
