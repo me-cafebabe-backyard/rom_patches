@@ -1,0 +1,15 @@
+frameworks/base/native/android/surface_control.cpp:302:26: error: type 'const android::SurfaceControlStats' decomposes into 8 elements, but only 7 names were provided
+        for (const auto& [surfaceControl, latchTime, acquireTimeOrFence, presentFence,
+                         ^
+external/libcxx/include/vector:625:54: note: selected 'begin' function with iterator type 'std::vector<android::SurfaceControlStats>::const_iterator' (aka '__wrap_iter<const android::SurfaceControlStats *>')
+    _LIBCPP_INLINE_VISIBILITY const_iterator         begin()   const _NOEXCEPT;
+                                                     ^
+frameworks/base/native/android/surface_control.cpp:652:34: error: type 'const android::SurfaceControlStats' decomposes into 8 elements, but only 7 names were provided
+                for (const auto& [surfaceControl, latchTime, acquireTimeOrFence, presentFence,
+                                 ^
+external/libcxx/include/vector:625:54: note: selected 'begin' function with iterator type 'std::vector<android::SurfaceControlStats>::const_iterator' (aka '__wrap_iter<const android::SurfaceControlStats *>')
+    _LIBCPP_INLINE_VISIBILITY const_iterator         begin()   const _NOEXCEPT;
+                                                     ^
+2 errors generated.
+
+git cherry-pick 7c70373e2549ec1065dac07062e34dda8ff99291
