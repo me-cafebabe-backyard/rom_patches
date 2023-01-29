@@ -1,0 +1,5 @@
+vendor/cipher/build/tasks/bacon.mk:42: error: missing separator.
+platform_testing/build/tasks/tests/instrumentation_metric_test_list.mk: error: continuous_instrumentation_metric_tests: Unknown installed file for module 'SurfaceFlingerPerfTests' 
+
+cp system/sepolicy/public/domain.te system/sepolicy/prebuilts/api/33.0/public/domain.te
+cp system/sepolicy/private/platform_app.te system/sepolicy/prebuilts/api/33.0/private/platform_app.te
