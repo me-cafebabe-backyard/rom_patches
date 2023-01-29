@@ -1,0 +1,43 @@
+From dd644659a87ac1441e1c2011ce01d8f0a39888a7 Mon Sep 17 00:00:00 2001
+From: Android Build Server <build@AndroidBuild>
+Date: Sun, 29 Jan 2023 10:14:21 +0000
+Subject: [PATCH] remove hour from date
+
+---
+ config/versioning.mk | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/config/versioning.mk b/config/versioning.mk
+index f0136b2..f5b4dd4 100644
+--- a/config/versioning.mk
++++ b/config/versioning.mk
+@@ -18,7 +18,7 @@
+ #
+ 
+ PLATFORM_MIKU_RELEASE := TDA
+-PLATFORM_MIKU_VERSION := $(PLATFORM_MIKU_RELEASE).$(shell date +%y%m%d%H)
++PLATFORM_MIKU_VERSION := $(PLATFORM_MIKU_RELEASE).$(shell date +%y%m%d)
+ 
+ MIKU_ROM_VERSION := TDA_0.9.0
+ 
+@@ -31,14 +31,14 @@ endif
+ 
+ ifeq ($(TARGET_MIKU_BUILD_VARIANT),OFFICIAL)
+     PLATFORM_MIKU_VERSION := $(PLATFORM_MIKU_RELEASE)
+-    PROD_VERSION += MikuUI-$(PLATFORM_MIKU_VERSION)-$(TARGET_DEVICE)-$(shell date +%y%m%d%H)-$(MIKU_TYPE)OFFICIAL
++    PROD_VERSION += MikuUI-$(PLATFORM_MIKU_VERSION)-$(TARGET_DEVICE)-$(shell date +%y%m%d)-$(MIKU_TYPE)OFFICIAL
+ else ifeq ($(TARGET_MIKU_BUILD_VARIANT),COMMUNITY)
+     PLATFORM_MIKU_VERSION := $(PLATFORM_MIKU_RELEASE)
+-    PROD_VERSION += MikuUI-$(PLATFORM_MIKU_VERSION)-$(TARGET_DEVICE)-$(shell date +%y%m%d%H)-$(MIKU_TYPE)COMMUNITY
++    PROD_VERSION += MikuUI-$(PLATFORM_MIKU_VERSION)-$(TARGET_DEVICE)-$(shell date +%y%m%d)-$(MIKU_TYPE)COMMUNITY
+ else
+     PLATFORM_MIKU_VERSION := $(PLATFORM_MIKU_RELEASE)
+     TARGET_MIKU_BUILD_VARIANT := UNOFFICIAL
+-    PROD_VERSION += MikuUI-$(PLATFORM_MIKU_VERSION)-$(TARGET_DEVICE)-$(shell date +%y%m%d%H)-$(MIKU_TYPE)UNOFFICIAL
++    PROD_VERSION += MikuUI-$(PLATFORM_MIKU_VERSION)-$(TARGET_DEVICE)-$(shell date +%y%m%d)-$(MIKU_TYPE)UNOFFICIAL
+ endif
+ 
+ ifeq ($(MIKU_MASTER),)
+-- 
+2.30.2
+
