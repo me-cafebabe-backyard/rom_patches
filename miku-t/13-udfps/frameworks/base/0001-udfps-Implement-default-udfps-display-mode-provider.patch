@@ -1,0 +1,184 @@
+From 7fcbcda3895e5c27b81044e9c176219a6a2a84c4 Mon Sep 17 00:00:00 2001
+From: LuK1337 <priv.luk@gmail.com>
+Date: Mon, 21 Feb 2022 23:33:58 +0100
+Subject: [PATCH 1/4] udfps: Implement default udfps display mode provider
+
+This should let us choose between multiple UdfpsDisplayModeProvider
+implementations.
+
+Original-Change-Id: I9b93e32644feaf1398cdac69e9696d8ec195f246
+Change-Id: I676bcb660860b6463ecc43239bb15119e33932dd
+---
+ packages/SystemUI/proguard.flags              |  3 ++
+ .../SystemUI/res/values/lineage_config.xml    | 36 +++++++++++++++++++
+ packages/SystemUI/res/values/miku_config.xml  |  3 ++
+ .../DummyUdfpsDisplayModeProvider.kt          | 32 +++++++++++++++++
+ .../systemui/biometrics/UdfpsController.java  |  4 +--
+ .../systemui/dagger/SystemUIModule.java       | 14 ++++++--
+ 6 files changed, 88 insertions(+), 4 deletions(-)
+ create mode 100644 packages/SystemUI/res/values/lineage_config.xml
+ create mode 100644 packages/SystemUI/src/com/android/systemui/biometrics/DummyUdfpsDisplayModeProvider.kt
+
+diff --git a/packages/SystemUI/proguard.flags b/packages/SystemUI/proguard.flags
+index 7538555e1bcd..b41952b7306b 100644
+--- a/packages/SystemUI/proguard.flags
++++ b/packages/SystemUI/proguard.flags
+@@ -10,6 +10,9 @@
+ }
+ -keep class * extends com.android.systemui.CoreStartable
+ -keep class * implements com.android.systemui.CoreStartable$Injector
++-keep class * implements com.android.systemui.biometrics.UdfpsDisplayModeProvider {
++    public <init>(...);
++}
+ 
+ # Needed for builds to properly initialize KeyFrames from xml scene
+ -keepclassmembers class * extends androidx.constraintlayout.motion.widget.Key {
+diff --git a/packages/SystemUI/res/values/lineage_config.xml b/packages/SystemUI/res/values/lineage_config.xml
+new file mode 100644
+index 000000000000..e2aa3f7905eb
+--- /dev/null
++++ b/packages/SystemUI/res/values/lineage_config.xml
+@@ -0,0 +1,36 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!--
++     Copyright (C) 2018-2022 The LineageOS Project
++
++     Licensed under the Apache License, Version 2.0 (the "License");
++     you may not use this file except in compliance with the License.
++     You may obtain a copy of the License at
++
++          http://www.apache.org/licenses/LICENSE-2.0
++
++     Unless required by applicable law or agreed to in writing, software
++     distributed under the License is distributed on an "AS IS" BASIS,
++     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++     See the License for the specific language governing permissions and
++     limitations under the License.
++-->
++<resources>
++    <!-- Max visible notification icons -->
++    <integer name="config_maxVisibleNotificationIcons">4</integer>
++    <integer name="config_maxVisibleNotificationIconsOnLock">3</integer>
++
++    <!-- Should we listen for fingerprints when the screen is off?  Devices
++         with a rear-mounted sensor want this, but certain devices have
++         the sensor embedded in the power key and listening all the time
++         causes a poor experience. -->
++    <bool name="config_fingerprintWakeAndUnlock">true</bool>
++
++    <!-- Udfps display mode provider class name -->
++    <string name="config_udfpsDisplayModeProviderComponent">com.android.systemui.biometrics.DummyUdfpsDisplayModeProvider</string>
++
++    <!-- Doze: does the double tap sensor need a proximity check? -->
++    <bool name="doze_double_tap_proximity_check">false</bool>
++
++    <!-- Doze: does the long press sensor need a proximity check? -->
++    <bool name="doze_long_press_proximity_check">false</bool>
++</resources>
+diff --git a/packages/SystemUI/res/values/miku_config.xml b/packages/SystemUI/res/values/miku_config.xml
+index 59c191154a85..659cefc193ee 100644
+--- a/packages/SystemUI/res/values/miku_config.xml
++++ b/packages/SystemUI/res/values/miku_config.xml
+@@ -4,4 +4,7 @@
+     <integer name="config_maxVisibleNotificationIconsOnLock">3</integer>
+     <!-- Udfps vendor code -->
+     <integer name="config_udfps_vendor_code">0</integer>
++
++    <!-- Udfps display mode provider class name -->
++    <string name="config_udfpsDisplayModeProviderComponent">com.android.systemui.biometrics.DummyUdfpsDisplayModeProvider</string>
+ </resources>
+diff --git a/packages/SystemUI/src/com/android/systemui/biometrics/DummyUdfpsDisplayModeProvider.kt b/packages/SystemUI/src/com/android/systemui/biometrics/DummyUdfpsDisplayModeProvider.kt
+new file mode 100644
+index 000000000000..380200983114
+--- /dev/null
++++ b/packages/SystemUI/src/com/android/systemui/biometrics/DummyUdfpsDisplayModeProvider.kt
+@@ -0,0 +1,32 @@
++/*
++ * Copyright (C) 2022 The LineageOS Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package com.android.systemui.biometrics
++
++import android.content.Context
++import android.view.Surface
++
++class DummyUdfpsDisplayModeProvider constructor(
++    private val context: Context
++): UdfpsDisplayModeProvider {
++    override fun enable(onEnabled: Runnable?) {
++        onEnabled?.run()
++    }
++
++    override fun disable(onDisabled: Runnable?) {
++        onDisabled?.run()
++    }
++}
+diff --git a/packages/SystemUI/src/com/android/systemui/biometrics/UdfpsController.java b/packages/SystemUI/src/com/android/systemui/biometrics/UdfpsController.java
+index c1de0f6752af..ee1fde904637 100644
+--- a/packages/SystemUI/src/com/android/systemui/biometrics/UdfpsController.java
++++ b/packages/SystemUI/src/com/android/systemui/biometrics/UdfpsController.java
+@@ -608,7 +608,7 @@ public class UdfpsController implements DozeReceiver {
+             @NonNull VibratorHelper vibrator,
+             @NonNull UdfpsHapticsSimulator udfpsHapticsSimulator,
+             @NonNull UdfpsShell udfpsShell,
+-            @NonNull Optional<UdfpsDisplayModeProvider> udfpsDisplayMode,
++            @NonNull UdfpsDisplayModeProvider udfpsDisplayMode,
+             @NonNull KeyguardStateController keyguardStateController,
+             @NonNull DisplayManager displayManager,
+             @Main Handler mainHandler,
+@@ -640,7 +640,7 @@ public class UdfpsController implements DozeReceiver {
+         mPowerManager = powerManager;
+         mAccessibilityManager = accessibilityManager;
+         mLockscreenShadeTransitionController = lockscreenShadeTransitionController;
+-        mUdfpsDisplayMode = udfpsDisplayMode.orElse(null);
++        mUdfpsDisplayMode = udfpsDisplayMode;
+         screenLifecycle.addObserver(mScreenObserver);
+         mScreenOn = screenLifecycle.getScreenState() == ScreenLifecycle.SCREEN_ON;
+         mConfigurationController = configurationController;
+diff --git a/packages/SystemUI/src/com/android/systemui/dagger/SystemUIModule.java b/packages/SystemUI/src/com/android/systemui/dagger/SystemUIModule.java
+index 443d2774f0e0..bc130894ced1 100644
+--- a/packages/SystemUI/src/com/android/systemui/dagger/SystemUIModule.java
++++ b/packages/SystemUI/src/com/android/systemui/dagger/SystemUIModule.java
+@@ -93,6 +93,7 @@ import com.android.systemui.util.time.SystemClock;
+ import com.android.systemui.util.time.SystemClockImpl;
+ import com.android.systemui.wallet.dagger.WalletModule;
+ import com.android.systemui.wmshell.BubblesManager;
++import com.android.systemui.R;
+ import com.android.wm.shell.bubbles.Bubbles;
+ 
+ import java.util.Optional;
+@@ -198,8 +199,17 @@ public abstract class SystemUIModule {
+     @BindsOptionalOf
+     abstract CentralSurfaces optionalCentralSurfaces();
+ 
+-    @BindsOptionalOf
+-    abstract UdfpsDisplayModeProvider optionalUdfpsDisplayModeProvider();
++    @Provides
++    static UdfpsDisplayModeProvider getUdfpsDisplayModeProvider(Context context) {
++        String className = context.getString(R.string.config_udfpsDisplayModeProviderComponent);
++        try {
++            Class<?> clazz = context.getClassLoader().loadClass(className);
++            return (UdfpsDisplayModeProvider) clazz.getDeclaredConstructor(
++                    new Class[] { Context.class }).newInstance(context);
++        } catch (Throwable t) {
++            throw new RuntimeException("Error loading UdfpsDisplayModeProvider " + className, t);
++        }
++    }
+ 
+     @BindsOptionalOf
+     abstract AlternateUdfpsTouchProvider optionalUdfpsTouchProvider();
+-- 
+2.30.2
+

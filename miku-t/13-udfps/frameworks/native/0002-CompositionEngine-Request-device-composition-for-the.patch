@@ -1,0 +1,72 @@
+From f2cdde17568dd388d087d89bfbab8898a26e4cb9 Mon Sep 17 00:00:00 2001
+From: daniml3 <danimoral1001@gmail.com>
+Date: Wed, 19 May 2021 15:56:21 +0200
+Subject: [PATCH 2/2] CompositionEngine: Request device composition for the
+ Udfps touched layer
+
+The FOD layers should be always composed by the device to set the
+custom zpos bits to the kernel. By default all layers are set to
+device composition and the proprietary libsdmextension.so moves
+some to client composition. Unfortunately that also affects the
+Udfps touched layer. After this commit the layer below the Udfps
+touched layer is forced to be client composition. For unknown
+reasons libsdmextension will not change the Udfps touched layer
+to client composition anymore.
+
+tests:
+- Run 'adb shell dumpsys SurfaceFlinger' and ensure that the Udfps
+  touched layer is composed by the device
+- Ensure that the Udfps touched layer correctly sets the zpos bits
+  on the kernel while / after using WFD
+
+Signed-off-by: daniml3 <danimoral1001@gmail.com>
+Signed-off-by: Arian <arian.kulmer@web.de>
+Change-Id: I8aeb98d18557ad4e971eaba74700ceb3058273ab
+---
+ .../CompositionEngine/src/Output.cpp             | 16 +++++++++++++++-
+ 1 file changed, 15 insertions(+), 1 deletion(-)
+
+diff --git a/services/surfaceflinger/CompositionEngine/src/Output.cpp b/services/surfaceflinger/CompositionEngine/src/Output.cpp
+index b724daa8ce..d17ddd9df6 100644
+--- a/services/surfaceflinger/CompositionEngine/src/Output.cpp
++++ b/services/surfaceflinger/CompositionEngine/src/Output.cpp
+@@ -22,6 +22,7 @@
+ #include <compositionengine/LayerFE.h>
+ #include <compositionengine/LayerFECompositionState.h>
+ #include <compositionengine/RenderSurface.h>
++#include <compositionengine/UdfpsExtension.h>
+ #include <compositionengine/impl/HwcAsyncWorker.h>
+ #include <compositionengine/impl/Output.h>
+ #include <compositionengine/impl/OutputCompositionState.h>
+@@ -835,7 +836,10 @@ void Output::writeCompositionState(const compositionengine::CompositionRefreshAr
+ 
+ compositionengine::OutputLayer* Output::findLayerRequestingBackgroundComposition() const {
+     compositionengine::OutputLayer* layerRequestingBgComposition = nullptr;
+-    for (auto* layer : getOutputLayersOrderedByZ()) {
++    for (size_t i = 0; i < getOutputLayerCount(); i++) {
++        compositionengine::OutputLayer* layer = getOutputLayerOrderedByZByIndex(i);
++        compositionengine::OutputLayer* nextLayer = getOutputLayerOrderedByZByIndex(i + 1);
++
+         auto* compState = layer->getLayerFE().getCompositionState();
+ 
+         // If any layer has a sideband stream, we will disable blurs. In that case, we don't
+@@ -849,6 +853,16 @@ compositionengine::OutputLayer* Output::findLayerRequestingBackgroundComposition
+         if (compState->backgroundBlurRadius > 0 || compState->blurRegions.size() > 0) {
+             layerRequestingBgComposition = layer;
+         }
++
++        // If the next layer is the Udfps touched layer, enable client composition for it
++        // because that somehow leads to the Udfps touched layer getting device composition
++        // consistently.
++        if ((nextLayer != nullptr && layerRequestingBgComposition == nullptr) &&
++            (strncmp(nextLayer->getLayerFE().getDebugName(), UDFPS_TOUCHED_LAYER_NAME,
++                     strlen(UDFPS_TOUCHED_LAYER_NAME)) == 0)) {
++            layerRequestingBgComposition = layer;
++            break;
++        }
+     }
+     return layerRequestingBgComposition;
+ }
+-- 
+2.30.2
+
