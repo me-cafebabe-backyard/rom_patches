@@ -1,0 +1,32 @@
+From 954668280da51dc8c639ea5a267d6209694a90f0 Mon Sep 17 00:00:00 2001
+From: me-cafebabe <me.cafebabe@gmail.com>
+Date: Tue, 31 Jan 2023 17:06:06 +0800
+Subject: [PATCH 5/8] Revert "PropsUtils: Switch to bluejay fingerprint"
+
+This reverts commit 9451f627e97a528ede4bbbed52086056c08b1605.
+---
+ core/java/com/android/internal/util/miku/PropsUtils.java | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/core/java/com/android/internal/util/miku/PropsUtils.java b/core/java/com/android/internal/util/miku/PropsUtils.java
+index 2dfe1164f93b..46525dae7712 100644
+--- a/core/java/com/android/internal/util/miku/PropsUtils.java
++++ b/core/java/com/android/internal/util/miku/PropsUtils.java
+@@ -56,10 +56,10 @@ public class PropsUtils {
+         propsToChange = new HashMap<>();
+         propsToChange.put("BRAND", "google");
+         propsToChange.put("MANUFACTURER", "Google");
+-        propsToChange.put("DEVICE", "bluejay");
+-        propsToChange.put("PRODUCT", "bluejay");
+-        propsToChange.put("MODEL", "Pixel 6a");
+-        propsToChange.put("FINGERPRINT", "google/bluejay/bluejay:13/TP1A.221005.003/9018821:user/release-keys");
++        propsToChange.put("DEVICE", "raven");
++        propsToChange.put("PRODUCT", "raven");
++        propsToChange.put("MODEL", "Pixel 6 Pro");
++        propsToChange.put("FINGERPRINT", "google/raven/raven:13/TP1A.220905.004/8927612:user/release-keys");
+ 	propsToChangeMeizu = new HashMap<>();
+ 	propsToChangeMeizu.put("BRAND", "meizu");
+ 	propsToChangeMeizu.put("MANUFACTURER", "meizu");
+-- 
+2.30.2
+

@@ -1,0 +1,27 @@
+From 9429250f700b5fba273254da4da6a0e466d177d0 Mon Sep 17 00:00:00 2001
+From: me-cafebabe <me.cafebabe@gmail.com>
+Date: Tue, 31 Jan 2023 17:06:02 +0800
+Subject: [PATCH 2/8] Revert "PropsUtils: Update fingerprint to cheetah 2023
+ Jan"
+
+This reverts commit 3537fc1456ef2e900b8cbfccc3819f0162a0c45d.
+---
+ core/java/com/android/internal/util/miku/PropsUtils.java | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/core/java/com/android/internal/util/miku/PropsUtils.java b/core/java/com/android/internal/util/miku/PropsUtils.java
+index 9930c8563078..9839063d35c7 100644
+--- a/core/java/com/android/internal/util/miku/PropsUtils.java
++++ b/core/java/com/android/internal/util/miku/PropsUtils.java
+@@ -59,7 +59,7 @@ public class PropsUtils {
+         propsToChange.put("DEVICE", "cheetah");
+         propsToChange.put("PRODUCT", "cheetah");
+         propsToChange.put("MODEL", "Pixel 7 Pro");
+-        propsToChange.put("FINGERPRINT", "google/cheetah/cheetah:13/TQ1A.230105.002.A1/9409646:user/release-keys");
++        propsToChange.put("FINGERPRINT", "google/cheetah/cheetah:13/TQ1A.221205.011/9244662:user/release-keys");
+ 	propsToChangeMeizu = new HashMap<>();
+ 	propsToChangeMeizu.put("BRAND", "meizu");
+ 	propsToChangeMeizu.put("MANUFACTURER", "meizu");
+-- 
+2.30.2
+

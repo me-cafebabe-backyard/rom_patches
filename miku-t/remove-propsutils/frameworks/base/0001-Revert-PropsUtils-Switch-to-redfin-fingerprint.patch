@@ -1,0 +1,32 @@
+From ba95fce81d8a0d1f9c85a89a0f1c29accc643ece Mon Sep 17 00:00:00 2001
+From: me-cafebabe <me.cafebabe@gmail.com>
+Date: Tue, 31 Jan 2023 17:06:01 +0800
+Subject: [PATCH 1/8] Revert "PropsUtils: Switch to redfin fingerprint"
+
+This reverts commit 1c19afba731bdba80c128466dd8b471bd5925a6b.
+---
+ core/java/com/android/internal/util/miku/PropsUtils.java | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/core/java/com/android/internal/util/miku/PropsUtils.java b/core/java/com/android/internal/util/miku/PropsUtils.java
+index cf4f22467ddf..9930c8563078 100644
+--- a/core/java/com/android/internal/util/miku/PropsUtils.java
++++ b/core/java/com/android/internal/util/miku/PropsUtils.java
+@@ -56,10 +56,10 @@ public class PropsUtils {
+         propsToChange = new HashMap<>();
+         propsToChange.put("BRAND", "google");
+         propsToChange.put("MANUFACTURER", "Google");
+-        propsToChange.put("DEVICE", "redfin");
+-        propsToChange.put("PRODUCT", "redfin");
+-        propsToChange.put("MODEL", "Pixel 5");
+-        propsToChange.put("FINGERPRINT", "google/redfin/redfin:13/TQ1A.230105.001/9292298:user/release-keys");
++        propsToChange.put("DEVICE", "cheetah");
++        propsToChange.put("PRODUCT", "cheetah");
++        propsToChange.put("MODEL", "Pixel 7 Pro");
++        propsToChange.put("FINGERPRINT", "google/cheetah/cheetah:13/TQ1A.230105.002.A1/9409646:user/release-keys");
+ 	propsToChangeMeizu = new HashMap<>();
+ 	propsToChangeMeizu.put("BRAND", "meizu");
+ 	propsToChangeMeizu.put("MANUFACTURER", "meizu");
+-- 
+2.30.2
+

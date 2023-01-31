@@ -1,0 +1,27 @@
+From 285072c53d446b6b8946c63ece01c76f9119bc1a Mon Sep 17 00:00:00 2001
+From: me-cafebabe <me.cafebabe@gmail.com>
+Date: Tue, 31 Jan 2023 17:06:06 +0800
+Subject: [PATCH 6/8] Revert "PropUtils: Using Raven September 2022
+ Fingerprint"
+
+This reverts commit 3b804c2cf8ca8ced0694908e29d0ac41a0b2b12b.
+---
+ core/java/com/android/internal/util/miku/PropsUtils.java | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/core/java/com/android/internal/util/miku/PropsUtils.java b/core/java/com/android/internal/util/miku/PropsUtils.java
+index 46525dae7712..a8d91a8cd54f 100644
+--- a/core/java/com/android/internal/util/miku/PropsUtils.java
++++ b/core/java/com/android/internal/util/miku/PropsUtils.java
+@@ -59,7 +59,7 @@ public class PropsUtils {
+         propsToChange.put("DEVICE", "raven");
+         propsToChange.put("PRODUCT", "raven");
+         propsToChange.put("MODEL", "Pixel 6 Pro");
+-        propsToChange.put("FINGERPRINT", "google/raven/raven:13/TP1A.220905.004/8927612:user/release-keys");
++        propsToChange.put("FINGERPRINT", "google/redfin/redfin:12/SP2A.220305.012/8177914:user/release-keys");
+ 	propsToChangeMeizu = new HashMap<>();
+ 	propsToChangeMeizu.put("BRAND", "meizu");
+ 	propsToChangeMeizu.put("MANUFACTURER", "meizu");
+-- 
+2.30.2
+
