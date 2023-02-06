@@ -1,0 +1,31 @@
+From 6a735c23af006395de8aa2473220b0a36cc7c358 Mon Sep 17 00:00:00 2001
+From: Ethan Chen <intervigil@gmail.com>
+Date: Tue, 21 Aug 2018 21:16:17 -0700
+Subject: [PATCH 2/3] config: Use standard inherit-product-if-exists for
+ vendor/extra
+
+* prepend-product-if-exists was developed specifically to handle some
+  special cases where Cyanogen Inc configuration ordering needed to be
+  handled ahead of the standard inclusion order.
+
+Change-Id: Ia3e041fb9e3c84d0763d18e4a401121bc210b976
+---
+ config/common.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/config/common.mk b/config/common.mk
+index a5d60fc3..b8c94db6 100644
+--- a/config/common.mk
++++ b/config/common.mk
+@@ -201,7 +201,7 @@ endif
+ 
+ include vendor/bootleggers/config/btlg_main.mk
+ 
+-$(call prepend-product-if-exists, vendor/extra/product.mk)
++$(call inherit-product-if-exists, vendor/extra/product.mk)
+ 
+ # RRO Overlays
+ PRODUCT_PACKAGES += \
+-- 
+2.30.2
+
