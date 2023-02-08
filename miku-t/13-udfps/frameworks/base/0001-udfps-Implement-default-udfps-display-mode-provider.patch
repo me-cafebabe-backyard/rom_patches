@@ -1,7 +1,7 @@
-From 7fcbcda3895e5c27b81044e9c176219a6a2a84c4 Mon Sep 17 00:00:00 2001
+From 796389a6f480b2496c96da887ae38216c48cf420 Mon Sep 17 00:00:00 2001
 From: LuK1337 <priv.luk@gmail.com>
 Date: Mon, 21 Feb 2022 23:33:58 +0100
-Subject: [PATCH 1/4] udfps: Implement default udfps display mode provider
+Subject: [PATCH 1/3] udfps: Implement default udfps display mode provider
 
 This should let us choose between multiple UdfpsDisplayModeProvider
 implementations.
@@ -76,13 +76,13 @@ index 000000000000..e2aa3f7905eb
 +    <bool name="doze_long_press_proximity_check">false</bool>
 +</resources>
 diff --git a/packages/SystemUI/res/values/miku_config.xml b/packages/SystemUI/res/values/miku_config.xml
-index 59c191154a85..659cefc193ee 100644
+index d3cafb976e11..12ea8574ef62 100644
 --- a/packages/SystemUI/res/values/miku_config.xml
 +++ b/packages/SystemUI/res/values/miku_config.xml
-@@ -4,4 +4,7 @@
-     <integer name="config_maxVisibleNotificationIconsOnLock">3</integer>
-     <!-- Udfps vendor code -->
-     <integer name="config_udfps_vendor_code">0</integer>
+@@ -8,4 +8,7 @@
+     <bool name="doze_double_tap_proximity_check">false</bool>
+     <!-- Doze: does the long press sensor need a proximity check? -->
+     <bool name="doze_long_press_proximity_check">false</bool>
 +
 +    <!-- Udfps display mode provider class name -->
 +    <string name="config_udfpsDisplayModeProviderComponent">com.android.systemui.biometrics.DummyUdfpsDisplayModeProvider</string>

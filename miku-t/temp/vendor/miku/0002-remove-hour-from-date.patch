@@ -1,14 +1,14 @@
-From dd644659a87ac1441e1c2011ce01d8f0a39888a7 Mon Sep 17 00:00:00 2001
+From 9c4e0d671d1956f34d20e114b627ec85f701de51 Mon Sep 17 00:00:00 2001
 From: Android Build Server <build@AndroidBuild>
 Date: Sun, 29 Jan 2023 10:14:21 +0000
-Subject: [PATCH] remove hour from date
+Subject: [PATCH 2/2] remove hour from date
 
 ---
  config/versioning.mk | 8 ++++----
  1 file changed, 4 insertions(+), 4 deletions(-)
 
 diff --git a/config/versioning.mk b/config/versioning.mk
-index f0136b2..f5b4dd4 100644
+index 1d16069..004efc5 100644
 --- a/config/versioning.mk
 +++ b/config/versioning.mk
 @@ -18,7 +18,7 @@
@@ -18,7 +18,7 @@ index f0136b2..f5b4dd4 100644
 -PLATFORM_MIKU_VERSION := $(PLATFORM_MIKU_RELEASE).$(shell date +%y%m%d%H)
 +PLATFORM_MIKU_VERSION := $(PLATFORM_MIKU_RELEASE).$(shell date +%y%m%d)
  
- MIKU_ROM_VERSION := TDA_0.9.0
+ MIKU_ROM_VERSION := TDA_0.11.0
  
 @@ -31,14 +31,14 @@ endif
  

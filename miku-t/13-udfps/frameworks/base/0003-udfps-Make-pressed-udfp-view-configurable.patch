@@ -1,7 +1,7 @@
-From ad1de2807c6d9999f3ce60a09eae77811e3042c3 Mon Sep 17 00:00:00 2001
+From 2e54a48ca1692ea13e61dc2ddaa4948d20fac99b Mon Sep 17 00:00:00 2001
 From: TheScarastic <warabhishek@gmail.com>
 Date: Wed, 6 Oct 2021 06:44:17 +0000
-Subject: [PATCH 4/4] udfps: Make pressed udfp view configurable
+Subject: [PATCH 3/3] udfps: Make pressed udfp view configurable
 
  * set a solid color by configuring config_udfpsColor
  * set a custom image by setting udfps_icon_pressed and making
