@@ -1,0 +1,41 @@
+From 7cf952e0883390415d48d751e99330d5b19d8120 Mon Sep 17 00:00:00 2001
+From: me-cafebabe <me.cafebabe@gmail.com>
+Date: Wed, 8 Feb 2023 22:52:45 +0800
+Subject: [PATCH] Rename `libmegface` module to `libmegface_system`
+
+Many new devices uses a shim lib called `libmegface`, It causes conflict with that
+---
+ Android.bp              | 3 ++-
+ dependencies/Android.bp | 2 +-
+ 2 files changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/Android.bp b/Android.bp
+index 1ed3bd3..7fcf343 100644
+--- a/Android.bp
++++ b/Android.bp
+@@ -14,7 +14,8 @@ cc_prebuilt_library_shared {
+ }
+ 
+ cc_prebuilt_library_shared {
+-    name: "libmegface",
++    name: "libmegface_system",
++    stem: "libmegface",
+     strip: {
+         none: true,
+     },
+diff --git a/dependencies/Android.bp b/dependencies/Android.bp
+index 8f9ab65..9cb6d37 100644
+--- a/dependencies/Android.bp
++++ b/dependencies/Android.bp
+@@ -12,7 +12,7 @@ cc_library {
+     compile_multilib: "64",
+     required: [
+         "libFaceDetectCA",
+-        "libmegface",
++        "libmegface_system",
+         "libMegviiUnlock",
+         "libMegviiUnlock-jni-1.2",
+         "libarcsoft_faceid",
+-- 
+2.30.2
+
