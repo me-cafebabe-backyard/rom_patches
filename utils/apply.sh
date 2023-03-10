@@ -13,7 +13,7 @@ rm patch-failed.txt || true
 
 for d in $CATEGORIES; do
 	for r in `dirname $(find -L $MY_PATH/$d -name *.patch)|sort|uniq|sed "s|$MY_PATH/$d/||g"`; do
-		cd $r
+		cd $r || continue
 		if ! git am $MY_PATH/$d/$r/*.patch; then
 			git am --abort || true
 			echo "${d} ${r}" >> $TOPDIR/patch-failed.txt
