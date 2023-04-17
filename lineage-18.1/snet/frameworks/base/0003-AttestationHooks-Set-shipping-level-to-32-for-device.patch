@@ -1,0 +1,50 @@
+From e13d8d52152b4f6d420153599621a4b529598237 Mon Sep 17 00:00:00 2001
+From: Anirudh Gupta <anirudhgupta109@aosip.dev>
+Date: Wed, 4 Jan 2023 18:20:56 +0000
+Subject: [PATCH 3/7] AttestationHooks: Set shipping level to 32 for devices
+ >=33
+
+If ro.product.first_api_level is 33, it's forced to use HW attestation.
+Setting it to 32 allows for software attestation and passing CTS.
+
+Change-Id: Ie47fd00b009c93580ec8c950d223c60ed63a0d2f
+---
+ .../internal/gmscompat/AttestationHooks.java  | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+diff --git a/core/java/com/android/internal/gmscompat/AttestationHooks.java b/core/java/com/android/internal/gmscompat/AttestationHooks.java
+index fe12dfe02a9f..f512adc3985b 100644
+--- a/core/java/com/android/internal/gmscompat/AttestationHooks.java
++++ b/core/java/com/android/internal/gmscompat/AttestationHooks.java
+@@ -49,9 +49,28 @@ public final class AttestationHooks {
+         }
+     }
+ 
++    private static void setVersionField(String key, Integer value) {
++        try {
++            // Unlock
++            Field field = Build.VERSION.class.getDeclaredField(key);
++            field.setAccessible(true);
++
++            // Edit
++            field.set(null, value);
++
++            // Lock
++            field.setAccessible(false);
++        } catch (NoSuchFieldException | IllegalAccessException e) {
++            Log.e(TAG, "Failed to spoof Build.VERSION." + key, e);
++        }
++    }
++
+     private static void spoofBuildGms() {
+         // Alter model name to avoid hardware attestation enforcement
+         setBuildField("MODEL", Build.MODEL + " ");
++        if (Build.VERSION.DEVICE_INITIAL_SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
++            setVersionField("DEVICE_INITIAL_SDK_INT", Build.VERSION_CODES.S_V2);
++        }
+     }
+ 
+     public static void initApplicationBeforeOnCreate(Application app) {
+-- 
+2.30.2
+
