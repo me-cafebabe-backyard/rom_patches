@@ -1,0 +1,38 @@
+From 2dd4ceaae6f0e21acc608bb9752b1ffe41d1217c Mon Sep 17 00:00:00 2001
+From: DarkJoker360 <simoespo159@gmail.com>
+Date: Fri, 31 Mar 2023 16:18:41 +0000
+Subject: [PATCH] HACK: telephony: Conditionally force enable LTE_CA
+
+* Apparently since S LTE_CA is not properly working,
+  let's conditionally force enable it until a proper
+  solution is found.
+
+Signed-off-by: DarkJoker360 <simoespo159@gmail.com>
+---
+ .../java/android/telephony/NetworkRegistrationInfo.java     | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/telephony/java/android/telephony/NetworkRegistrationInfo.java b/telephony/java/android/telephony/NetworkRegistrationInfo.java
+index 1d6798b7fc6e..288db3dfe2d5 100644
+--- a/telephony/java/android/telephony/NetworkRegistrationInfo.java
++++ b/telephony/java/android/telephony/NetworkRegistrationInfo.java
+@@ -23,6 +23,7 @@
+ import android.os.Build;
+ import android.os.Parcel;
+ import android.os.Parcelable;
++import android.os.SystemProperties;
+ import android.telephony.AccessNetworkConstants.TransportType;
+ import android.telephony.Annotation.NetworkType;
+ import android.text.TextUtils;
+@@ -522,6 +523,11 @@ public List<Integer> getAvailableServices() {
+      * @hide
+      */
+     public void setAccessNetworkTechnology(@NetworkType int tech) {
++        // HACK: Force LTE Carrier Aggregation
++        if (SystemProperties.getBoolean("persist.sys.radio.force_lte_ca", false)
++                && tech == TelephonyManager.NETWORK_TYPE_LTE) {
++            mIsUsingCarrierAggregation = true;
++        }
+         if (tech == TelephonyManager.NETWORK_TYPE_LTE_CA) {
+             // For old device backward compatibility support
+             tech = TelephonyManager.NETWORK_TYPE_LTE;

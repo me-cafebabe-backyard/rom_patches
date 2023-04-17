@@ -1,0 +1,220 @@
+From a88066cb1451edb42e75eb66d3b6b8a3dbcba9a6 Mon Sep 17 00:00:00 2001
+From: DarkJoker360 <simoespo159@gmail.com>
+Date: Fri, 31 Mar 2023 10:42:42 +0000
+Subject: [PATCH] Settings: Add a toggle to force LTE_CA
+
+Signed-off-by: DarkJoker360 <simoespo159@gmail.com>
+---
+ res/values/strings.xml                        |   3 +
+ res/xml/mobile_network_settings.xml           |   6 +
+ .../ForceLteCaPreferenceController.java       | 159 ++++++++++++++++++
+ .../telephony/MobileNetworkSettings.java      |   1 +
+ 4 files changed, 169 insertions(+)
+ create mode 100644 src/com/android/settings/network/telephony/ForceLteCaPreferenceController.java
+
+diff --git a/res/values/strings.xml b/res/values/strings.xml
+index f693a9db0c8..9c0054b5584 100644
+--- a/res/values/strings.xml
++++ b/res/values/strings.xml
+@@ -14457,4 +14457,7 @@
+     <!-- [CHAR LIMIT=NONE] Hint for QR code process failure -->
+     <string name="bt_le_audio_qr_code_is_not_valid_format">QR code isn\u0027t a valid format</string>
+ 
++    <!-- Force LTE_CA -->
++    <string name="force_lte_ca">Force LTE CA</string>
++    <string name="force_lte_ca_summary">Force LTE carrier aggregation to work</string>
+ </resources>
+diff --git a/res/xml/mobile_network_settings.xml b/res/xml/mobile_network_settings.xml
+index 8fd6dc85d50..5c140ce5a09 100644
+--- a/res/xml/mobile_network_settings.xml
++++ b/res/xml/mobile_network_settings.xml
+@@ -221,6 +221,12 @@
+                 android:title="@string/select_automatically"
+                 settings:controller="com.android.settings.network.telephony.gsm.AutoSelectPreferenceController"/>
+ 
++            <SwitchPreference
++                android:key="force_lteca_key"
++                android:title="@string/force_lte_ca"
++                android:summary="@string/force_lte_ca_summary"
++                settings:controller="com.android.settings.network.telephony.ForceLteCaPreferenceController"/>
++
+             <Preference
+                 android:key="choose_network_key"
+                 android:title="@string/choose_network_title"
+diff --git a/src/com/android/settings/network/telephony/ForceLteCaPreferenceController.java b/src/com/android/settings/network/telephony/ForceLteCaPreferenceController.java
+new file mode 100644
+index 00000000000..8eaaf1dac4d
+--- /dev/null
++++ b/src/com/android/settings/network/telephony/ForceLteCaPreferenceController.java
+@@ -0,0 +1,159 @@
++package com.android.settings.network.telephony;
++
++import android.content.Context;
++import android.os.PersistableBundle;
++import android.telephony.CarrierConfigManager;
++import android.telephony.SubscriptionManager;
++import android.telephony.TelephonyCallback;
++import android.telephony.TelephonyManager;
++import android.os.SystemProperties;
++import android.util.Log;
++
++import androidx.annotation.VisibleForTesting;
++import androidx.preference.Preference;
++import androidx.preference.PreferenceScreen;
++import androidx.preference.SwitchPreference;
++
++import com.android.internal.telephony.util.ArrayUtils;
++import com.android.settingslib.core.lifecycle.LifecycleObserver;
++import com.android.settingslib.core.lifecycle.events.OnStart;
++import com.android.settingslib.core.lifecycle.events.OnStop;
++
++/**
++ * Preference controller for "Force LTE_CA" hack
++ */
++public class ForceLteCaPreferenceController extends TelephonyTogglePreferenceController
++        implements LifecycleObserver, OnStart, OnStop {
++
++    private static final String TAG = "ForceLteCaSettings";
++
++    private static final String KEY_PROP = "persist.sys.radio.force_lte_ca";
++
++    @VisibleForTesting
++    Preference mPreference;
++    private TelephonyManager mTelephonyManager;
++    private PhoneCallStateTelephonyCallback mTelephonyCallback;
++    private Integer mCallState;
++
++    public ForceLteCaPreferenceController(Context context, String key) {
++        super(context, key);
++        mTelephonyManager = context.getSystemService(TelephonyManager.class);
++    }
++
++    /**
++     * Initial this PreferenceController.
++     * @param subId The subscription Id.
++     * @return This PreferenceController.
++     */
++    public ForceLteCaPreferenceController init(int subId) {
++        Log.d(TAG, "init: ");
++        if (mTelephonyCallback == null) {
++            mTelephonyCallback = new PhoneCallStateTelephonyCallback();
++        }
++
++        mSubId = subId;
++
++        if (mTelephonyManager == null) {
++            mTelephonyManager = mContext.getSystemService(TelephonyManager.class);
++        }
++
++        if (SubscriptionManager.isValidSubscriptionId(subId)) {
++            mTelephonyManager = mTelephonyManager.createForSubscriptionId(subId);
++        }
++
++        PersistableBundle carrierConfig = getCarrierConfigForSubId(subId);
++        if (carrierConfig == null) {
++            return this;
++        }
++        return this;
++    }
++
++    @Override
++    public int getAvailabilityStatus(int subId) {
++        init(subId);
++        if (SubscriptionManager.isValidSubscriptionId(mSubId)) {
++            return AVAILABLE;
++        }
++        return CONDITIONALLY_UNAVAILABLE;
++    }
++
++    @Override
++    public void displayPreference(PreferenceScreen screen) {
++        super.displayPreference(screen);
++        mPreference = screen.findPreference(getPreferenceKey());
++    }
++
++    @Override
++    public void onStart() {
++        if (mTelephonyCallback == null) {
++            return;
++        }
++        mTelephonyCallback.register(mTelephonyManager);
++    }
++
++    @Override
++    public void onStop() {
++        if (mTelephonyCallback == null) {
++            return;
++        }
++        mTelephonyCallback.unregister();
++    }
++
++    @Override
++    public void updateState(Preference preference) {
++        super.updateState(preference);
++        if (preference == null) {
++            return;
++        }
++        final SwitchPreference switchPreference = (SwitchPreference) preference;
++        switchPreference.setEnabled(isUserControlAllowed());
++    }
++
++    @Override
++    public boolean setChecked(boolean isChecked) {
++        if (!SubscriptionManager.isValidSubscriptionId(mSubId)) {
++            return false;
++        }
++        Log.d(TAG, "setChecked: " + isChecked);
++        SystemProperties.set(KEY_PROP, String.valueOf(isChecked));
++        return true;
++    }
++
++    @Override
++    public boolean isChecked() {
++        return SystemProperties.getBoolean(KEY_PROP, false);
++    }
++
++    private boolean isUserControlAllowed() {
++        return SubscriptionManager.isValidSubscriptionId(mSubId);
++    }
++
++    private class PhoneCallStateTelephonyCallback extends TelephonyCallback implements
++            TelephonyCallback.CallStateListener {
++
++        private TelephonyManager mLocalTelephonyManager;
++
++        @Override
++        public void onCallStateChanged(int state) {
++            mCallState = state;
++            updateState(mPreference);
++        }
++
++        public void register(TelephonyManager telephonyManager) {
++            mLocalTelephonyManager = telephonyManager;
++
++            // assign current call state so that it helps to show correct preference state even
++            // before first onCallStateChanged() by initial registration.
++            mCallState = mLocalTelephonyManager.getCallState();
++            mLocalTelephonyManager.registerTelephonyCallback(
++                    mContext.getMainExecutor(), mTelephonyCallback);
++        }
++
++        public void unregister() {
++            mCallState = null;
++            if (mLocalTelephonyManager != null) {
++                mLocalTelephonyManager.unregisterTelephonyCallback(this);
++            }
++        }
++    }
++}
+diff --git a/src/com/android/settings/network/telephony/MobileNetworkSettings.java b/src/com/android/settings/network/telephony/MobileNetworkSettings.java
+index 9601de1fd2e..b78f4cc3030 100644
+--- a/src/com/android/settings/network/telephony/MobileNetworkSettings.java
++++ b/src/com/android/settings/network/telephony/MobileNetworkSettings.java
+@@ -236,6 +236,7 @@ public void onAttach(Context context) {
+                 .addListener(videoCallingPreferenceController);
+         use(ContactDiscoveryPreferenceController.class).init(getParentFragmentManager(), mSubId);
+         use(NrAdvancedCallingPreferenceController.class).init(mSubId);
++        use(ForceLteCaPreferenceController.class).init(mSubId);
+     }
+ 
+     @Override
