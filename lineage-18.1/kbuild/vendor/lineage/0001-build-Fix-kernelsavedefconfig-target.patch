@@ -1,0 +1,28 @@
+From 03c8be643a946e7b8c7637075e2ffbf2326f6ea8 Mon Sep 17 00:00:00 2001
+From: Michael Bestas <mkbestas@lineageos.org>
+Date: Thu, 17 Feb 2022 18:49:04 +0200
+Subject: [PATCH 1/2] build: Fix kernelsavedefconfig target
+
+Change-Id: Ie3d9a187693f2435f2555658c833de666848e48e
+---
+ build/tasks/kernel.mk | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/build/tasks/kernel.mk b/build/tasks/kernel.mk
+index 97aa37de..1cf02261 100644
+--- a/build/tasks/kernel.mk
++++ b/build/tasks/kernel.mk
+@@ -437,9 +437,7 @@ kerneltags: $(KERNEL_CONFIG)
+ .PHONY: kernelsavedefconfig alldefconfig
+ 
+ kernelsavedefconfig: $(KERNEL_OUT)
+-	$(call make-kernel-target,$(KERNEL_DEFCONFIG))
+-	env KCONFIG_NOTIMESTAMP=true \
+-		 $(call make-kernel-target,savedefconfig)
++	$(call make-kernel-config,$(KERNEL_OUT),$(KERNEL_DEFCONFIG))
+ 	cp $(KERNEL_OUT)/defconfig $(KERNEL_DEFCONFIG_SRC)
+ 
+ alldefconfig: $(KERNEL_OUT)
+-- 
+2.30.2
+
