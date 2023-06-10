@@ -1,0 +1,44 @@
+From fcb866d1ce16507db0ee744522d00221ea5e82da Mon Sep 17 00:00:00 2001
+From: me-cafebabe <me.cafebabe@gmail.com>
+Date: Wed, 24 May 2023 19:05:38 +0800
+Subject: [PATCH] compatibility_matrices: Allow radio.config@1.0 till
+ target-level 5
+
+* Some legacy devices has got newer kernel version that is only supported on target-level 4 and above
+* Unfortunately, Most of them has old modem, which isn't capable of using radio.config@1.1
+
+Change-Id: Ica16877df7d15c6cae1538365dea1f5ad4185294
+---
+ compatibility_matrices/compatibility_matrix.4.xml | 2 +-
+ compatibility_matrices/compatibility_matrix.5.xml | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/compatibility_matrices/compatibility_matrix.4.xml b/compatibility_matrices/compatibility_matrix.4.xml
+index e5e012cbb..e291026c3 100644
+--- a/compatibility_matrices/compatibility_matrix.4.xml
++++ b/compatibility_matrices/compatibility_matrix.4.xml
+@@ -365,7 +365,7 @@
+         that can handle version 1.2 of IRadioConfigResponse and
+         IRadioConfigIndication.
+         -->
+-        <version>1.1</version>
++        <version>1.0-1</version>
+         <interface>
+             <name>IRadioConfig</name>
+             <instance>default</instance>
+diff --git a/compatibility_matrices/compatibility_matrix.5.xml b/compatibility_matrices/compatibility_matrix.5.xml
+index e772b6fe1..e8ec4b7d1 100644
+--- a/compatibility_matrices/compatibility_matrix.5.xml
++++ b/compatibility_matrices/compatibility_matrix.5.xml
+@@ -393,7 +393,7 @@
+         <!--
+         See compatibility_matrix.4.xml on versioning of radio config HAL.
+         -->
+-        <version>1.1</version>
++        <version>1.0-1</version>
+         <interface>
+             <name>IRadioConfig</name>
+             <instance>default</instance>
+-- 
+2.30.2
+
