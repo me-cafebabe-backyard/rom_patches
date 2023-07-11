@@ -1,0 +1,46 @@
+From 3b724f7fbabd7f2dfdd76dd660e774cbf604db92 Mon Sep 17 00:00:00 2001
+From: Francescodario Cuzzocrea <bosconovic@gmail.com>
+Date: Thu, 25 May 2023 22:25:55 +0200
+Subject: [PATCH 8/9] gmscompat: also spoof props for samsung/sec apps
+
+ * to be able to use them on samsung phones running lineageos
+
+Change-Id: I2c2495715aa4e1780461abc4655b41437a382079
+Signed-off-by: Francescodario Cuzzocrea <bosconovic@gmail.com>
+---
+ .../android/internal/gmscompat/AttestationHooks.java | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/core/java/com/android/internal/gmscompat/AttestationHooks.java b/core/java/com/android/internal/gmscompat/AttestationHooks.java
+index b10cb04cb4f3..868b4415c516 100644
+--- a/core/java/com/android/internal/gmscompat/AttestationHooks.java
++++ b/core/java/com/android/internal/gmscompat/AttestationHooks.java
+@@ -29,6 +29,8 @@ public final class AttestationHooks {
+     private static final String TAG = "GmsCompat/Attestation";
+     private static final String PACKAGE_GMS = "com.google.android.gms";
+     private static final String PACKAGE_FINSKY = "com.android.vending";
++    private static final String PACKAGE_SAMSUNG = "com.samsung";
++    private static final String PACKAGE_SEC = "com.sec";
+     private static final String PROCESS_UNSTABLE = "com.google.android.gms.unstable";
+ 
+     private static volatile boolean sIsGms = false;
+@@ -87,6 +89,16 @@ public final class AttestationHooks {
+         if (PACKAGE_FINSKY.equals(app.getPackageName())) {
+             sIsFinsky = true;
+         }
++
++        if (app.getPackageName().startsWith(PACKAGE_SAMSUNG)) {
++          setBuildField("BRAND", "google");
++          setBuildField("MANUFACTURER", "google");
++        }
++
++        if (app.getPackageName().startsWith(PACKAGE_SEC)) {
++          setBuildField("BRAND", "google");
++          setBuildField("MANUFACTURER", "google");
++        }
+     }
+ 
+     private static boolean isCallerSafetyNet() {
+-- 
+2.39.2
+

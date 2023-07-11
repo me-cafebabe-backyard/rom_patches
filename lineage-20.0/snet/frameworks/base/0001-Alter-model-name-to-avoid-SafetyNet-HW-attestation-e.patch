@@ -1,7 +1,7 @@
-From d05e796c9ee89a3c2fa8324add1a80078e114096 Mon Sep 17 00:00:00 2001
+From 6baa987296c2e692570e044e1f4725fd8be4b741 Mon Sep 17 00:00:00 2001
 From: Danny Lin <danny@kdrag0n.dev>
 Date: Mon, 11 Oct 2021 19:59:51 -0700
-Subject: [PATCH 1/7] Alter model name to avoid SafetyNet HW attestation
+Subject: [PATCH 1/9] Alter model name to avoid SafetyNet HW attestation
  enforcement
 
 As of September 2, Google is enforcing SafetyNet's previously
@@ -137,5 +137,5 @@ index 000000000000..621156eb84b9
 +    }
 +}
 -- 
-2.30.2
+2.39.2
 
