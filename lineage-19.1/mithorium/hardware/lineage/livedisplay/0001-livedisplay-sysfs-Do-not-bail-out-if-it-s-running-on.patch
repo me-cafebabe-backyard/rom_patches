@@ -1,0 +1,291 @@
+From ad774df10b1ae95b2918733b99dfd8537c94ad77 Mon Sep 17 00:00:00 2001
+From: me-cafebabe <me.cafebabe@gmail.com>
+Date: Thu, 10 Aug 2023 18:17:51 +0800
+Subject: [PATCH] livedisplay: sysfs: Do not bail out if it's running on a
+ custom kernel...
+
+...which does not provide LiveDisplay sysfs nodes.
+
+Change-Id: fuck
+---
+ sysfs/AdaptiveBacklight.cpp                   | 12 ++++-
+ sysfs/SunlightEnhancement.cpp                 | 12 ++++-
+ .../livedisplay/sysfs/AdaptiveBacklight.h     |  2 +
+ .../livedisplay/sysfs/ReadingEnhancement.h    |  4 ++
+ sysfs/include/livedisplay/sysfs/SimpleMode.h  | 17 ++++++-
+ .../livedisplay/sysfs/SunlightEnhancement.h   |  2 +
+ sysfs/service.cpp                             | 47 +++++++++++--------
+ 7 files changed, 72 insertions(+), 24 deletions(-)
+
+diff --git a/sysfs/AdaptiveBacklight.cpp b/sysfs/AdaptiveBacklight.cpp
+index f47a48f..fa51557 100644
+--- a/sysfs/AdaptiveBacklight.cpp
++++ b/sysfs/AdaptiveBacklight.cpp
+@@ -41,11 +41,13 @@ AdaptiveBacklight::AdaptiveBacklight() {
+         file_ = kFileCabc;
+     } else {
+         file_ = nullptr;
++        isFake = true;
++        isFakeEnabled = false;
+     }
+ }
+ 
+ bool AdaptiveBacklight::isSupported() {
+-    return file_ != nullptr;
++    return true;
+ }
+ 
+ // Methods from ::vendor::lineage::livedisplay::V2_0::IAdaptiveBacklight follow.
+@@ -53,6 +55,9 @@ Return<bool> AdaptiveBacklight::isEnabled() {
+     std::string tmp;
+     int32_t contents = 0;
+ 
++    if (isFake)
++        return isFakeEnabled;
++
+     if (ReadFileToString(file_, &tmp)) {
+         contents = std::stoi(Trim(tmp));
+     }
+@@ -61,6 +66,11 @@ Return<bool> AdaptiveBacklight::isEnabled() {
+ }
+ 
+ Return<bool> AdaptiveBacklight::setEnabled(bool enabled) {
++    if (isFake) {
++        isFakeEnabled = enabled;
++        return true;
++    }
++
+     return WriteStringToFile(std::to_string(enabled), file_, true);
+ }
+ 
+diff --git a/sysfs/SunlightEnhancement.cpp b/sysfs/SunlightEnhancement.cpp
+index cdb021d..a702ba2 100644
+--- a/sysfs/SunlightEnhancement.cpp
++++ b/sysfs/SunlightEnhancement.cpp
+@@ -43,11 +43,13 @@ SunlightEnhancement::SunlightEnhancement() {
+         enabled_mode_ = 2;
+     } else {
+         file_ = nullptr;
++        isFake = true;
++        isFakeEnabled = false;
+     }
+ }
+ 
+ bool SunlightEnhancement::isSupported() {
+-    return file_ != nullptr;
++    return true;
+ }
+ 
+ // Methods from ::vendor::lineage::livedisplay::V2_0::ISunlightEnhancement follow.
+@@ -55,6 +57,9 @@ Return<bool> SunlightEnhancement::isEnabled() {
+     std::string tmp;
+     int32_t contents = 0;
+ 
++    if (isFake)
++        return isFakeEnabled;
++
+     if (ReadFileToString(file_, &tmp)) {
+         contents = std::stoi(Trim(tmp));
+     }
+@@ -63,6 +68,11 @@ Return<bool> SunlightEnhancement::isEnabled() {
+ }
+ 
+ Return<bool> SunlightEnhancement::setEnabled(bool enabled) {
++    if (isFake) {
++        isFakeEnabled = enabled;
++        return true;
++    }
++
+     return WriteStringToFile(enabled ? std::to_string(enabled_mode_) : "0", file_, true);
+ }
+ 
+diff --git a/sysfs/include/livedisplay/sysfs/AdaptiveBacklight.h b/sysfs/include/livedisplay/sysfs/AdaptiveBacklight.h
+index 1bd986c..c6479b2 100644
+--- a/sysfs/include/livedisplay/sysfs/AdaptiveBacklight.h
++++ b/sysfs/include/livedisplay/sysfs/AdaptiveBacklight.h
+@@ -37,6 +37,8 @@ class AdaptiveBacklight : public IAdaptiveBacklight {
+ 
+   private:
+     const char* file_;
++    bool isFake;
++    bool isFakeEnabled;
+ };
+ 
+ }  // namespace sysfs
+diff --git a/sysfs/include/livedisplay/sysfs/ReadingEnhancement.h b/sysfs/include/livedisplay/sysfs/ReadingEnhancement.h
+index 8e4ceb7..a3a86b7 100644
+--- a/sysfs/include/livedisplay/sysfs/ReadingEnhancement.h
++++ b/sysfs/include/livedisplay/sysfs/ReadingEnhancement.h
+@@ -33,6 +33,10 @@ class ReadingEnhancement : public IReadingEnhancement {
+     // Methods from ::vendor::lineage::livedisplay::V2_0::IReadingEnhancement follow.
+     Return<bool> isEnabled() override;
+     Return<bool> setEnabled(bool enabled) override;
++
++  private:
++    bool isFake;
++    bool isFakeEnabled;
+ };
+ 
+ }  // namespace sysfs
+diff --git a/sysfs/include/livedisplay/sysfs/SimpleMode.h b/sysfs/include/livedisplay/sysfs/SimpleMode.h
+index 7846a73..51067e4 100644
+--- a/sysfs/include/livedisplay/sysfs/SimpleMode.h
++++ b/sysfs/include/livedisplay/sysfs/SimpleMode.h
+@@ -40,9 +40,10 @@ class SimpleMode : public T {
+     static constexpr const char* kNode = SimpleModeTrait<T>::kNode;
+ 
+   public:
+-    static bool isSupported() {
++    bool isSupported() {
+         static_assert(kNode, "Node unspecified.");
+-        return !access(SimpleModeTrait<T>::kNode, R_OK | W_OK);
++        isFake = !!access(SimpleModeTrait<T>::kNode, R_OK | W_OK);
++        return true;
+     }
+ 
+     // Methods from ::vendor::lineage::livedisplay::V2_0::I* follow.
+@@ -50,6 +51,9 @@ class SimpleMode : public T {
+         std::string tmp;
+         int32_t contents = 0;
+ 
++        if (isFake)
++            return isFakeEnabled;
++
+         if (::android::base::ReadFileToString(kNode, &tmp)) {
+             contents = std::stoi(::android::base::Trim(tmp));
+         }
+@@ -58,8 +62,17 @@ class SimpleMode : public T {
+     }
+ 
+     Return<bool> setEnabled(bool enabled) override {
++        if (isFake) {
++            isFakeEnabled = enabled;
++            return true;
++        }
++
+         return ::android::base::WriteStringToFile(std::to_string(enabled), kNode, true);
+     }
++
++  private:
++    bool isFake;
++    bool isFakeEnabled;
+ };
+ 
+ template <>
+diff --git a/sysfs/include/livedisplay/sysfs/SunlightEnhancement.h b/sysfs/include/livedisplay/sysfs/SunlightEnhancement.h
+index e43d952..90ce260 100644
+--- a/sysfs/include/livedisplay/sysfs/SunlightEnhancement.h
++++ b/sysfs/include/livedisplay/sysfs/SunlightEnhancement.h
+@@ -38,6 +38,8 @@ class SunlightEnhancement : public ISunlightEnhancement {
+   private:
+     const char* file_;
+     int32_t enabled_mode_;
++    bool isFake;
++    bool isFakeEnabled;
+ };
+ 
+ }  // namespace sysfs
+diff --git a/sysfs/service.cpp b/sysfs/service.cpp
+index 2da3715..4cdadd3 100644
+--- a/sysfs/service.cpp
++++ b/sysfs/service.cpp
+@@ -41,69 +41,76 @@ using ::vendor::lineage::livedisplay::V2_0::sysfs::ReadingEnhancement;
+ using ::vendor::lineage::livedisplay::V2_0::sysfs::SunlightEnhancement;
+ 
+ status_t RegisterAsServices() {
++    int registered_count = 0;
+     status_t status = OK;
+ 
+     sp<AdaptiveBacklight> ab = new AdaptiveBacklight();
+     if (ab->isSupported()) {
+         status = ab->registerAsService();
+-        if (status != OK) {
++        if (status == OK) {
++            registered_count++;
++        } else {
+             LOG(ERROR) << "Could not register service for LiveDisplay HAL AdaptiveBacklight Iface ("
+                        << status << ")";
+-            return status;
+         }
+     }
+ 
+-    if (AutoContrast::isSupported()) {
+-        sp<AutoContrast> ac = new AutoContrast();
++    sp<AutoContrast> ac = new AutoContrast();
++    if (ac->isSupported()) {
+         status = ac->registerAsService();
+-        if (status != OK) {
++        if (status == OK) {
++            registered_count++;
++        } else {
+             LOG(ERROR) << "Could not register service for LiveDisplay HAL AutoContrast Iface ("
+                        << status << ")";
+-            return status;
+         }
+     }
+ 
+-    if (ColorEnhancement::isSupported()) {
+-        sp<ColorEnhancement> ce = new ColorEnhancement();
++    sp<ColorEnhancement> ce = new ColorEnhancement();
++    if (ce->isSupported()) {
+         status = ce->registerAsService();
+-        if (status != OK) {
++        if (status == OK) {
++            registered_count++;
++        } else {
+             LOG(ERROR) << "Could not register service for LiveDisplay HAL ColorEnhancement Iface ("
+                        << status << ")";
+-            return status;
+         }
+     }
+ 
++    sp<DisplayColorCalibration> dcc = new DisplayColorCalibration();
+     if (DisplayColorCalibration::isSupported()) {
+-        sp<DisplayColorCalibration> dcc = new DisplayColorCalibration();
+         status = dcc->registerAsService();
+-        if (status != OK) {
++        if (status == OK) {
++            registered_count++;
++        } else {
+             LOG(ERROR) << "Could not register service for LiveDisplay HAL DisplayColorCalibration"
+                        << " Iface (" << status << ")";
+-            return status;
+         }
+     }
+ 
+-    if (ReadingEnhancement::isSupported()) {
+-        sp<ReadingEnhancement> re = new ReadingEnhancement();
++    sp<ReadingEnhancement> re = new ReadingEnhancement();
++    if (re->isSupported()) {
+         status = re->registerAsService();
+-        if (status != OK) {
++        if (status == OK) {
++            registered_count++;
++        } else {
+             LOG(ERROR) << "Could not register service for LiveDisplay HAL ReadingEnhancement Iface"
+                        << " (" << status << ")";
+-            return status;
+         }
+     }
+ 
+     sp<SunlightEnhancement> se = new SunlightEnhancement();
+     if (se->isSupported()) {
+         status = se->registerAsService();
+-        if (status != OK) {
++        if (status == OK) {
++            registered_count++;
++        } else {
+             LOG(ERROR) << "Could not register service for LiveDisplay HAL SunlightEnhancement Iface"
+                        << " (" << status << ")";
+-            return status;
+         }
+     }
+ 
+-    return OK;
++    return registered_count ? OK : android::NO_INIT;
+ }
+ 
+ int main() {
+-- 
+2.39.2
+
