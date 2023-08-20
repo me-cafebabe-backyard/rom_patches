@@ -1,0 +1,27 @@
+From c57a323a1aa54ec491d2a0b681b8f8660afcecb5 Mon Sep 17 00:00:00 2001
+From: me-cafebabe <me.cafebabe@gmail.com>
+Date: Sun, 20 Aug 2023 08:27:00 +0000
+Subject: [PATCH] bpfloader: Don't spam dmesg please
+
+Change-Id: Ic47a58b6113cbab1ba7f85dc390c3bb0cd7883ed
+---
+ bpfloader/BpfLoader.cpp | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/bpfloader/BpfLoader.cpp b/bpfloader/BpfLoader.cpp
+index 5cd80b7..6b6466f 100644
+--- a/bpfloader/BpfLoader.cpp
++++ b/bpfloader/BpfLoader.cpp
+@@ -176,7 +176,8 @@ void createSysFsBpfSubDir(const char* const prefix) {
+ 
+ int main(int argc, char** argv) {
+     (void)argc;
+-    android::base::InitLogging(argv, &android::base::KernelLogger);
++    (void)argv;
++    //android::base::InitLogging(argv, &android::base::KernelLogger);
+ 
+     // Create all the pin subdirectories
+     // (this must be done first to allow selinux_context and pin_subdir functionality,
+-- 
+2.30.2
+
