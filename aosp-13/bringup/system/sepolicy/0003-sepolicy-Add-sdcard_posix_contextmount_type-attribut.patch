@@ -1,7 +1,7 @@
-From 61c92f4a4de8c4c9abf3d6786653b3192fdddc42 Mon Sep 17 00:00:00 2001
+From de976df39ec450a9e4f21088106e04c3850f9f3c Mon Sep 17 00:00:00 2001
 From: LuK1337 <priv.luk@gmail.com>
 Date: Tue, 7 Apr 2020 13:12:18 +0200
-Subject: [PATCH 1/4] sepolicy: Add sdcard_posix_contextmount_type attribute
+Subject: [PATCH 3/3] sepolicy: Add sdcard_posix_contextmount_type attribute
 
 * Since we can't use contextmount_type for sdcard_posix
   due to contextmount_type being read only by design we
@@ -12,19 +12,19 @@ Subject: [PATCH 1/4] sepolicy: Add sdcard_posix_contextmount_type attribute
 Test: m -j selinux_policy
 Change-Id: I0dfe49cc0b34dfcce2840198843bde1272cbc61c
 ---
- prebuilts/api/31.0/public/attributes | 3 +++
- prebuilts/api/31.0/public/domain.te  | 2 +-
+ prebuilts/api/33.0/public/attributes | 3 +++
+ prebuilts/api/33.0/public/domain.te  | 2 +-
  public/attributes                    | 3 +++
  public/domain.te                     | 2 +-
  4 files changed, 8 insertions(+), 2 deletions(-)
 
-diff --git a/prebuilts/api/31.0/public/attributes b/prebuilts/api/31.0/public/attributes
-index b60c9cc62..f4024d7e6 100644
---- a/prebuilts/api/31.0/public/attributes
-+++ b/prebuilts/api/31.0/public/attributes
-@@ -21,6 +21,9 @@ attribute fs_type;
- # All types used for context= mounts.
- attribute contextmount_type;
+diff --git a/prebuilts/api/33.0/public/attributes b/prebuilts/api/33.0/public/attributes
+index 742264a55..1719935f9 100644
+--- a/prebuilts/api/33.0/public/attributes
++++ b/prebuilts/api/33.0/public/attributes
+@@ -30,6 +30,9 @@ attribute contextmount_type;
+ # example.
+ attribute fusefs_type;
  
 +# All types used for sdcard_posix context= mounts.
 +attribute sdcard_posix_contextmount_type;
@@ -32,11 +32,11 @@ index b60c9cc62..f4024d7e6 100644
  # All types used for files that can exist on a labeled fs.
  # Do not use for pseudo file types.
  # On change, update CHECK_FC_ASSERT_ATTRS
-diff --git a/prebuilts/api/31.0/public/domain.te b/prebuilts/api/31.0/public/domain.te
-index 799a2f1c5..4fa157535 100644
---- a/prebuilts/api/31.0/public/domain.te
-+++ b/prebuilts/api/31.0/public/domain.te
-@@ -509,7 +509,7 @@ neverallow * rootfs:file { create write setattr relabelto append unlink link ren
+diff --git a/prebuilts/api/33.0/public/domain.te b/prebuilts/api/33.0/public/domain.te
+index 548f78aee..7bed5e7ef 100644
+--- a/prebuilts/api/33.0/public/domain.te
++++ b/prebuilts/api/33.0/public/domain.te
+@@ -518,7 +518,7 @@ neverallow { domain -recovery } rootfs:file { create write setattr relabelto app
  
  # Restrict context mounts to specific types marked with
  # the contextmount_type attribute.
@@ -60,10 +60,10 @@ index 742264a55..1719935f9 100644
  # Do not use for pseudo file types.
  # On change, update CHECK_FC_ASSERT_ATTRS
 diff --git a/public/domain.te b/public/domain.te
-index 8e1fcf7c9..675a66313 100644
+index 548f78aee..7bed5e7ef 100644
 --- a/public/domain.te
 +++ b/public/domain.te
-@@ -515,7 +515,7 @@ neverallow * rootfs:file { create write setattr relabelto append unlink link ren
+@@ -518,7 +518,7 @@ neverallow { domain -recovery } rootfs:file { create write setattr relabelto app
  
  # Restrict context mounts to specific types marked with
  # the contextmount_type attribute.
@@ -73,5 +73,5 @@ index 8e1fcf7c9..675a66313 100644
  # Ensure that context mount types are not writable, to ensure that
  # the write to /system restriction above is not bypassed via context=
 -- 
-2.30.2
+2.39.2
 
