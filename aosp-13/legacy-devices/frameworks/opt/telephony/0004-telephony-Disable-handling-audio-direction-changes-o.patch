@@ -1,0 +1,52 @@
+From 6705d3dc921d769803b213199084fe5f642d9faa Mon Sep 17 00:00:00 2001
+From: Quallenauge <Hamsi2k@freenet.de>
+Date: Wed, 3 Aug 2022 21:16:11 +0100
+Subject: [PATCH 4/9] telephony: Disable handling audio direction changes on
+ IMS calls.
+
+I6f84e2b90e572c0973dcf04ce1e0c8e5e3524467 (AOSP) introduces
+handling of changes of the audio direction between major call state
+changes.
+
+This breaks ringback tone when establishing IMS calls
+on other devices, so make it configurable.
+
+Change-Id: I29331b7e8ea8f048f4567518b2173c6d7e503a6c
+---
+ .../telephony/imsphone/ImsPhoneCallTracker.java     | 13 +++++++++----
+ 1 file changed, 9 insertions(+), 4 deletions(-)
+
+diff --git a/src/java/com/android/internal/telephony/imsphone/ImsPhoneCallTracker.java b/src/java/com/android/internal/telephony/imsphone/ImsPhoneCallTracker.java
+index 5968ba6fa1..a47ae91484 100644
+--- a/src/java/com/android/internal/telephony/imsphone/ImsPhoneCallTracker.java
++++ b/src/java/com/android/internal/telephony/imsphone/ImsPhoneCallTracker.java
+@@ -50,6 +50,7 @@ import android.os.Registrant;
+ import android.os.RegistrantList;
+ import android.os.RemoteException;
+ import android.os.SystemClock;
++import android.os.SystemProperties;
+ import android.preference.PreferenceManager;
+ import android.provider.Settings;
+ import android.sysprop.TelephonyProperties;
+@@ -2808,10 +2809,14 @@ public class ImsPhoneCallTracker extends CallTracker implements ImsPullCall {
+         if (ignoreState) {
+             conn.updateAddressDisplay(imsCall);
+             conn.updateExtras(imsCall);
+-            // Some devices will change the audio direction between major call state changes, so we
+-            // need to check whether to start or stop ringback
+-            conn.maybeChangeRingbackState();
+-
++            boolean handleAudioDirectionChangesBetweenCallStateChanges =
++                SystemProperties.getBoolean(
++                    "ro.telephony.handle_audio_direction_changes_between_call_state_changes", true);
++            if (handleAudioDirectionChangesBetweenCallStateChanges) {
++                // Some devices will change the audio direction between major call state change,
++                // so we need to check whether to start or stop ringback
++                conn.maybeChangeRingbackState();
++            }
+             maybeSetVideoCallProvider(conn, imsCall);
+             return;
+         }
+-- 
+2.39.2
+

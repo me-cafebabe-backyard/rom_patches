@@ -1,0 +1,44 @@
+From f366b2af46a020284c38463cabad8fe25bf526ff Mon Sep 17 00:00:00 2001
+From: Paul Keith <javelinanddart@gmail.com>
+Date: Sat, 12 Aug 2023 22:43:33 +0200
+Subject: [PATCH 9/9] RadioMessagingProxy: Fix sending CDMA IMS SMS
+
+When cdmaPdu is not null, we need to set the message technology to
+THREE_GPP2 so that dispatchImsCdmaSms() is chosen in libril. If we
+don't do this, libril chooses dispatchImsGsmSms() instead, which
+means that the message is empty if AIDL is being used and may be
+empty or invalid if HIDL is being used.
+
+Specifically, this fixes (some?) devices not being able to send
+text messages on Verizon with an "error 0" message.
+
+Fixes: https://gitlab.com/LineageOS/issues/android/-/issues/5391
+Fixes: https://gitlab.com/LineageOS/issues/android/-/issues/5612
+Change-Id: If287c6fa1712a624531e11dd09aeaf7a6c7914c6
+---
+ .../com/android/internal/telephony/RadioMessagingProxy.java     | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/src/java/com/android/internal/telephony/RadioMessagingProxy.java b/src/java/com/android/internal/telephony/RadioMessagingProxy.java
+index e68e957b7d..66f2fefaf5 100644
+--- a/src/java/com/android/internal/telephony/RadioMessagingProxy.java
++++ b/src/java/com/android/internal/telephony/RadioMessagingProxy.java
+@@ -298,6 +298,7 @@ public class RadioMessagingProxy extends RadioServiceProxy {
+                 msg.cdmaMessage = new android.hardware.radio.messaging.CdmaSmsMessage[0];
+             }
+             if (cdmaPdu != null) {
++                msg.tech = android.hardware.radio.RadioTechnologyFamily.THREE_GPP2;
+                 msg.gsmMessage = new android.hardware.radio.messaging.GsmSmsMessage[0];
+                 msg.cdmaMessage = new android.hardware.radio.messaging.CdmaSmsMessage[]{
+                         RILUtils.convertToHalCdmaSmsMessageAidl(cdmaPdu)};
+@@ -313,6 +314,7 @@ public class RadioMessagingProxy extends RadioServiceProxy {
+                 msg.gsmMessage.add(RILUtils.convertToHalGsmSmsMessage(smscPdu, gsmPdu));
+             }
+             if (cdmaPdu != null) {
++                msg.tech = android.hardware.radio.RadioTechnologyFamily.THREE_GPP2;
+                 msg.cdmaMessage.add(RILUtils.convertToHalCdmaSmsMessage(cdmaPdu));
+             }
+             mRadioProxy.sendImsSms(serial, msg);
+-- 
+2.39.2
+

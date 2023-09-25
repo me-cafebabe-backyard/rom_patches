@@ -1,0 +1,54 @@
+From b961b10d8c84f179ccb2ccc0edd1d8e45f4d7f84 Mon Sep 17 00:00:00 2001
+From: Christian Hoffmann <chrmhoffmann@gmail.com>
+Date: Sun, 23 Oct 2022 22:17:26 +0200
+Subject: [PATCH 8/9] Provide a default executor
+
+Change-Id: Ia9729142227f55665e122c8fa05296e5e146178b
+---
+ .../internal/telephony/ims/ImsConfigCompatAdapter.java        | 1 +
+ .../internal/telephony/ims/ImsRegistrationCompatAdapter.java  | 4 ++++
+ .../internal/telephony/ims/MmTelFeatureCompatAdapter.java     | 1 +
+ 3 files changed, 6 insertions(+)
+
+diff --git a/src/java/com/android/internal/telephony/ims/ImsConfigCompatAdapter.java b/src/java/com/android/internal/telephony/ims/ImsConfigCompatAdapter.java
+index 90d415ec5c..73fa754663 100644
+--- a/src/java/com/android/internal/telephony/ims/ImsConfigCompatAdapter.java
++++ b/src/java/com/android/internal/telephony/ims/ImsConfigCompatAdapter.java
+@@ -34,6 +34,7 @@ public class ImsConfigCompatAdapter extends ImsConfigImplBase {
+     public static final int FAILED =  1;
+ 
+     public ImsConfigCompatAdapter(IImsConfig config) {
++        super(Runnable::run);
+         mOldConfigInterface = config;
+     }
+ 
+diff --git a/src/java/com/android/internal/telephony/ims/ImsRegistrationCompatAdapter.java b/src/java/com/android/internal/telephony/ims/ImsRegistrationCompatAdapter.java
+index a41ed7ff46..a0920d90dd 100644
+--- a/src/java/com/android/internal/telephony/ims/ImsRegistrationCompatAdapter.java
++++ b/src/java/com/android/internal/telephony/ims/ImsRegistrationCompatAdapter.java
+@@ -32,6 +32,10 @@ import java.util.Map;
+ 
+ public class ImsRegistrationCompatAdapter extends ImsRegistrationImplBase {
+ 
++    public ImsRegistrationCompatAdapter() {
++        super(Runnable::run);
++    }
++
+     // Maps "RAT" based radio technologies to ImsRegistrationImplBase definitions.
+     private static final Map<Integer, Integer> RADIO_TECH_MAPPER = new ArrayMap<>(2);
+     static {
+diff --git a/src/java/com/android/internal/telephony/ims/MmTelFeatureCompatAdapter.java b/src/java/com/android/internal/telephony/ims/MmTelFeatureCompatAdapter.java
+index d9dfd79549..3625e45dea 100644
+--- a/src/java/com/android/internal/telephony/ims/MmTelFeatureCompatAdapter.java
++++ b/src/java/com/android/internal/telephony/ims/MmTelFeatureCompatAdapter.java
+@@ -287,6 +287,7 @@ public class MmTelFeatureCompatAdapter extends MmTelFeature {
+ 
+     public MmTelFeatureCompatAdapter(Context context, int slotId,
+             MmTelInterfaceAdapter compatFeature) {
++        super(Runnable::run);
+         initialize(context, slotId);
+         mCompatFeature = compatFeature;
+     }
+-- 
+2.39.2
+
