@@ -1,0 +1,42 @@
+From 14b83e37cf8fefd285b9c6bc9fc7a4327b3f2e32 Mon Sep 17 00:00:00 2001
+From: Myles Watson <mylesgw@google.com>
+Date: Sat, 27 Aug 2022 00:08:59 -0700
+Subject: [PATCH 07/10] Controller: Warn on LeSetEventMask error codes
+
+Bug: 239662211
+Test: cert/run
+Tag: #compatibility
+Change-Id: Ib7769c0d7a2a3783d82cd9b561d8c38cca7b9c14
+(cherry picked from commit b8b071e8186504ca4bd8e69fc69390f361ec96bc)
+---
+ system/gd/hci/controller.cc | 14 ++++++++++++--
+ 1 file changed, 12 insertions(+), 2 deletions(-)
+
+diff --git a/system/gd/hci/controller.cc b/system/gd/hci/controller.cc
+index 9dac2b6a84..18f881369e 100644
+--- a/system/gd/hci/controller.cc
++++ b/system/gd/hci/controller.cc
+@@ -547,8 +547,18 @@ struct Controller::impl {
+ 
+   void le_set_event_mask(uint64_t le_event_mask) {
+     std::unique_ptr<LeSetEventMaskBuilder> packet = LeSetEventMaskBuilder::Create(le_event_mask);
+-    hci_->EnqueueCommand(std::move(packet), module_.GetHandler()->BindOnceOn(
+-                                                this, &Controller::impl::check_status<LeSetEventMaskCompleteView>));
++    hci_->EnqueueCommand(
++        std::move(packet), module_.GetHandler()->BindOnceOn(this, &Controller::impl::check_le_set_event_mask_status));
++  }
++
++  void check_le_set_event_mask_status(CommandCompleteView view) {
++    ASSERT(view.IsValid());
++    auto status_view = LeSetEventMaskCompleteView::Create(view);
++    ASSERT(status_view.IsValid());
++    auto status = status_view.GetStatus();
++    if (status != ErrorCode::SUCCESS) {
++      LOG_WARN("Unexpected return status %s", ErrorCodeText(status).c_str());
++    }
+   }
+ 
+   template <class T>
+-- 
+2.39.2
+

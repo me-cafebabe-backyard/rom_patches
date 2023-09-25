@@ -1,0 +1,41 @@
+From 8039db4fb3b5e5881305bf3bdc2a09bd86b36702 Mon Sep 17 00:00:00 2001
+From: Geel <dev.xxseva44@gmail.com>
+Date: Tue, 15 Aug 2023 00:45:52 -0400
+Subject: [PATCH 10/10] btm: allow BTM_VSC_CHIP_CAPABILITY_RSP_LEN_M_RELEASE to
+ be adjustable
+
+Some BCM firmwares shipped with LGE devices will not pass a check involving the BTM_VSC_CHIP_CAPABILITY_RSP_LEN_M_RELEASE capability.
+
+This commit allows BTM_VSC_CHIP_CAPABILITY_RSP_LEN_M_RELEASE to be adjusted as a workaround for these firmwares.
+This issue was seen on some v20 and g5 oreo release BCM firmwares and the BCM4358A3_001.004.015.0095.0168_KR_ORC.HCD fw found
+on the v20 f800k pie release (lge/elsa_kt_kr/elsa:9/PKQ1.190522.001/20192161159c5)
+
+Log snippet:
+```
+08-14 11:16:52.534  3468  3468 F DEBUG   : Abort message: '[FATAL:btm_ble_gap.cc(668)] Check failed: p_vcs_cplt_params->param_len >= BTM_VSC_CHIP_CAPABILITY_RSP_LEN_M_RELEASE.
+```
+
+Change-Id: I1fccfd0f8877bdc878e7a2068f654369b136956e
+---
+ system/stack/btm/btm_ble_gap.cc | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/system/stack/btm/btm_ble_gap.cc b/system/stack/btm/btm_ble_gap.cc
+index 141744023e..d58ed8f4ca 100644
+--- a/system/stack/btm/btm_ble_gap.cc
++++ b/system/stack/btm/btm_ble_gap.cc
+@@ -77,7 +77,11 @@ extern const tBLE_BD_ADDR convert_to_address_with_type(
+ #define BTM_VSC_CHIP_CAPABILITY_RSP_LEN 9
+ #define BTM_VSC_CHIP_CAPABILITY_RSP_LEN_L_RELEASE \
+   BTM_VSC_CHIP_CAPABILITY_RSP_LEN
++
++#ifndef BTM_VSC_CHIP_CAPABILITY_RSP_LEN_M_RELEASE
+ #define BTM_VSC_CHIP_CAPABILITY_RSP_LEN_M_RELEASE 15
++#endif
++
+ #define BTM_VSC_CHIP_CAPABILITY_RSP_LEN_S_RELEASE 25
+ 
+ namespace {
+-- 
+2.39.2
+

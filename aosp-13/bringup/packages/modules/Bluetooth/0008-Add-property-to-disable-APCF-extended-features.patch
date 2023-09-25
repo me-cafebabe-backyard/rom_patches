@@ -1,0 +1,48 @@
+From 6fa6411a2978c944dd673ea8a202edb37be104a5 Mon Sep 17 00:00:00 2001
+From: me-cafebabe <me.cafebabe@gmail.com>
+Date: Mon, 20 Mar 2023 19:54:49 +0800
+Subject: [PATCH 08/10] Add property to disable APCF extended features
+
+* It's broken on some legacy devices, rendering Bluetooth crashing
+
+Change-Id: I4b1764b7551150e78dd8e2dfc99a6472c1293c2b
+---
+ system/gd/hci/le_scanning_manager.cc | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/system/gd/hci/le_scanning_manager.cc b/system/gd/hci/le_scanning_manager.cc
+index 4b1ccf5a5b..d48c900a51 100644
+--- a/system/gd/hci/le_scanning_manager.cc
++++ b/system/gd/hci/le_scanning_manager.cc
+@@ -28,6 +28,7 @@
+ #include "module.h"
+ #include "os/handler.h"
+ #include "os/log.h"
++#include "os/system_properties.h"
+ #include "storage/storage_module.h"
+ 
+ namespace bluetooth {
+@@ -48,6 +49,9 @@ constexpr uint8_t kScanResponseBit = 3;
+ constexpr uint8_t kLegacyBit = 4;
+ constexpr uint8_t kDataStatusBits = 5;
+ 
++bool kDisableApcfExtendedFeatures = false;
++static const std::string kPropertyDisableApcfExtendedFeatures = "bluetooth.le.disable_apcf_extended_features";
++
+ const ModuleFactory LeScanningManager::Factory = ModuleFactory([]() { return new LeScanningManager(); });
+ 
+ enum class ScanApiType {
+@@ -260,7 +264,9 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
+       api_type_ = ScanApiType::LEGACY;
+     }
+     is_filter_supported_ = controller_->IsSupported(OpCode::LE_ADV_FILTER);
+-    if (is_filter_supported_) {
++    if (os::GetSystemProperty(kPropertyDisableApcfExtendedFeatures) == "1")
++      kDisableApcfExtendedFeatures = true;
++    if (is_filter_supported_ && !kDisableApcfExtendedFeatures) {
+       le_scanning_interface_->EnqueueCommand(
+           LeAdvFilterReadExtendedFeaturesBuilder::Create(),
+           module_handler_->BindOnceOn(this, &impl::on_apcf_read_extended_features_complete));
+-- 
+2.39.2
+

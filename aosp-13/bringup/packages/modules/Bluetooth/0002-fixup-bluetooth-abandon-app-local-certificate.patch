@@ -1,0 +1,38 @@
+From 39859a05615a98663acf38717894c991ff46f1e7 Mon Sep 17 00:00:00 2001
+From: Michael Bestas <mkbestas@lineageos.org>
+Date: Tue, 6 Dec 2022 19:10:54 +0200
+Subject: [PATCH 02/10] fixup! bluetooth: abandon app local certificate
+
+Change-Id: I426ff8b51f68147fdbf645cab8b6f9eec3a70dde
+---
+ framework/tests/stress/Android.bp | 2 +-
+ service/tests/Android.bp          | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/framework/tests/stress/Android.bp b/framework/tests/stress/Android.bp
+index f176be001c..dea516e641 100644
+--- a/framework/tests/stress/Android.bp
++++ b/framework/tests/stress/Android.bp
+@@ -28,5 +28,5 @@ android_test {
+     test_suites: [
+         "general-tests",
+     ],
+-    certificate: ":com.android.bluetooth.certificate",
++    certificate: "bluetooth",
+ }
+diff --git a/service/tests/Android.bp b/service/tests/Android.bp
+index 5225038815..4848480853 100644
+--- a/service/tests/Android.bp
++++ b/service/tests/Android.bp
+@@ -59,7 +59,7 @@ android_test {
+         "libbluetooth_jni",
+     ],
+     compile_multilib: "both",
+-    certificate: ":com.android.bluetooth.certificate",
++    certificate: "bluetooth",
+ 
+     min_sdk_version: "current",
+ 
+-- 
+2.39.2
+

@@ -1,0 +1,60 @@
+From 461ab43b21583708575c22b3d1c486209f725ac1 Mon Sep 17 00:00:00 2001
+From: LuK1337 <priv.luk@gmail.com>
+Date: Wed, 26 Jul 2023 22:03:00 +0200
+Subject: [PATCH 09/10] gd: hci: Allow disabling selected local commands
+
+This allows us to disable selected commands in case they behave in
+unexpected ways. e.g. bluetooth.hci.disabled_commands=377 will disable
+LE_EXTENDED_CREATE_CONNECTION.
+
+Change-Id: I1fcc624df9fd07200a8406c51772ccb856a4258e
+---
+ system/gd/hci/controller.cc | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/system/gd/hci/controller.cc b/system/gd/hci/controller.cc
+index 18f881369e..10023e3dd9 100644
+--- a/system/gd/hci/controller.cc
++++ b/system/gd/hci/controller.cc
+@@ -16,6 +16,7 @@
+ 
+ #include "hci/controller.h"
+ 
++#include <android-base/strings.h>
+ #include <future>
+ #include <memory>
+ #include <string>
+@@ -25,10 +26,14 @@
+ #include "hci/hci_layer.h"
+ #include "hci_controller_generated.h"
+ #include "os/metrics.h"
++#include "os/system_properties.h"
+ 
+ namespace bluetooth {
+ namespace hci {
+ 
++static const char kPropertyDisabledCommands[] =
++    "bluetooth.hci.disabled_commands";
++
+ using os::Handler;
+ 
+ struct Controller::impl {
+@@ -260,6 +265,15 @@ struct Controller::impl {
+     ErrorCode status = complete_view.GetStatus();
+     ASSERT_LOG(status == ErrorCode::SUCCESS, "Status 0x%02hhx, %s", status, ErrorCodeText(status).c_str());
+     local_supported_commands_ = complete_view.GetSupportedCommands();
++
++    if (auto disabledCommands = os::GetSystemProperty(kPropertyDisabledCommands)) {
++      for (const auto& command : android::base::Split(*disabledCommands, ",")) {
++        uint16_t index = std::stoi(command);
++        uint16_t byte_index = index / 10;
++        uint16_t bit_index = index % 10;
++        local_supported_commands_[byte_index] &= ~(1 << bit_index);
++      }
++    }
+   }
+ 
+   void read_local_extended_features_complete_handler(std::promise<void> promise, CommandCompleteView view) {
+-- 
+2.39.2
+

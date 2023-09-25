@@ -1,0 +1,25 @@
+From 1a559a58de49f99f99eae476def541591b2277a9 Mon Sep 17 00:00:00 2001
+From: Michael Bestas <mkbestas@lineageos.org>
+Date: Tue, 14 Mar 2023 04:09:44 +0200
+Subject: [PATCH 03/10] fixup! bluetooth: abandon app local certificate
+
+Change-Id: Ibd89408568b969394f2fad2239e20ae5a5ea8e0a
+---
+ android/BluetoothLegacyMigration/Android.bp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/android/BluetoothLegacyMigration/Android.bp b/android/BluetoothLegacyMigration/Android.bp
+index b755fa0895..786264efd5 100644
+--- a/android/BluetoothLegacyMigration/Android.bp
++++ b/android/BluetoothLegacyMigration/Android.bp
+@@ -9,6 +9,6 @@ android_app {
+     srcs: [ "BluetoothLegacyMigration.kt" ],
+ 
+     // Must match Bluetooth.apk certificate because of sharedUserId
+-    certificate: ":com.android.bluetooth.certificate",
++    certificate: "bluetooth",
+     platform_apis: true,
+ }
+-- 
+2.39.2
+

@@ -1,7 +1,8 @@
-From 809d26d6e96171e7217087a68b932a2e20d10a79 Mon Sep 17 00:00:00 2001
+From a32511ef696371b7d06dcb2d7b0529fc03317699 Mon Sep 17 00:00:00 2001
 From: Abhishek Pandit-Subedi <abhishekpandit@google.com>
 Date: Mon, 24 Oct 2022 13:40:14 -0700
-Subject: [PATCH] BACKPORT: floss: Disable enhanced sco connection via sysprop
+Subject: [PATCH 05/10] BACKPORT: floss: Disable enhanced sco connection via
+ sysprop
 
 Commit 7279b5633c63acf2a30b10b9743ff90df88a4d61 upstream.
 
@@ -77,5 +78,5 @@ index 9c5c41fb13..99701d6bfa 100644
        p_setup->input_data_path = p_setup->output_data_path = ESCO_DATA_PATH;
  
 -- 
-2.30.2
+2.39.2
 
