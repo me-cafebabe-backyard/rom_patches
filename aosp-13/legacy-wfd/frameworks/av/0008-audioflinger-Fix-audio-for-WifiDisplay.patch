@@ -1,7 +1,7 @@
-From 52dfc7b9edf00deb3161a179c91b32e8e3a0957c Mon Sep 17 00:00:00 2001
+From e6c0e66e23f919955ed921064345b3eca2659f49 Mon Sep 17 00:00:00 2001
 From: myfluxi <myfluxi@users.noreply.github.com>
 Date: Thu, 16 Apr 2020 12:53:23 +0000
-Subject: [PATCH 8/9] audioflinger: Fix audio for WifiDisplay
+Subject: [PATCH 8/8] audioflinger: Fix audio for WifiDisplay
 
 AudioFlinger is not able to determine the correct
 pid/tid for WifiDisplay and thus we do not pass checks
@@ -17,7 +17,7 @@ Change-Id: Ifa46d8e77a43027645cad02a04263b58e134c3ad
  1 file changed, 5 insertions(+), 3 deletions(-)
 
 diff --git a/services/audiopolicy/service/AudioPolicyInterfaceImpl.cpp b/services/audiopolicy/service/AudioPolicyInterfaceImpl.cpp
-index 140cabb808..7913f594e0 100644
+index 140cabb808..5f323230fa 100644
 --- a/services/audiopolicy/service/AudioPolicyInterfaceImpl.cpp
 +++ b/services/audiopolicy/service/AudioPolicyInterfaceImpl.cpp
 @@ -615,7 +615,8 @@ Status AudioPolicyService::getInputForAttr(const media::AudioAttributesInternal&
@@ -35,7 +35,7 @@ index 140cabb808..7913f594e0 100644
                  FALLTHROUGH_INTENDED;
              case AudioPolicyInterface::API_INPUT_MIX_CAPTURE:
 -                if (!canCaptureOutput) {
-+                if (!isAudioServerOrMediaServerUid(callingUid) && !canCaptureOutput) {
++                if (!isAudioServerOrMediaServerUid(attributionSource.uid) && !canCaptureOutput) {
                      ALOGE("%s permission denied: capture not allowed", __func__);
                      status = PERMISSION_DENIED;
                  }
@@ -44,8 +44,8 @@ index 140cabb808..7913f594e0 100644
  
      // check calling permissions
 -    if (!(startRecording(client->attributionSource, String16(msg.str().c_str()),
-+    if (!isAudioServerOrMediaServerUid(IPCThreadState::self()->getCallingUid()) &&
-+            !(startRecording(client->attributionSource, String16(msg.str().c_str()),
++    if (!isAudioServerOrMediaServerUid(client->attributionSource.uid)
++            && !(startRecording(client->attributionSource, String16(msg.str().c_str()),
                           client->attributes.source)
              || client->attributes.source == AUDIO_SOURCE_FM_TUNER
              || client->attributes.source == AUDIO_SOURCE_REMOTE_SUBMIX

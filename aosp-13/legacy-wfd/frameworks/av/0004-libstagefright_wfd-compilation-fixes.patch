@@ -1,7 +1,7 @@
-From cc6f18ad8fbefe2aac8674d1964ee45ed4443de0 Mon Sep 17 00:00:00 2001
+From 36c36a4fc0a9c72492ca9435974d5a29e5fe8137 Mon Sep 17 00:00:00 2001
 From: Vladimir Oltean <olteanv@gmail.com>
 Date: Wed, 9 Jan 2019 01:43:08 +0200
-Subject: [PATCH 4/9] libstagefright_wfd: compilation fixes
+Subject: [PATCH 4/8] libstagefright_wfd: compilation fixes
 
 * Among others, adapt to the ABuffer API changes in
   "f03606d9 Move MediaBufferXXX from foundation to libmediaextractor"

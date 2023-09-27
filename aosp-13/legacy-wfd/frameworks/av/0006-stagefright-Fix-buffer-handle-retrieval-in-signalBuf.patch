@@ -1,7 +1,7 @@
-From 8cca1ae103a36c95d749f62eb49732244fe4ab97 Mon Sep 17 00:00:00 2001
+From 5f6f3af378b51a0a6b3e793e6a3990ebdf847bf8 Mon Sep 17 00:00:00 2001
 From: "Angelo G. Del Regno" <kholk11@gmail.com>
 Date: Sun, 30 Apr 2017 20:19:08 +0200
-Subject: [PATCH 6/9] stagefright: Fix buffer handle retrieval in
+Subject: [PATCH 6/8] stagefright: Fix buffer handle retrieval in
  signalBufferReturned
 
 In commit 3e32878 the stagefright code was restructured to fix
