@@ -1,4 +1,4 @@
-From c867a4ea2dc462564b7ee66018fb8d84fa20a9d9 Mon Sep 17 00:00:00 2001
+From 45e6344dfd7c09ab3062d94eecd2c79e7d4281db Mon Sep 17 00:00:00 2001
 From: Bruno Martins <bgcngm@gmail.com>
 Date: Mon, 5 Oct 2020 18:22:43 +0100
 Subject: [PATCH 2/3] res: Introduce overlays for biometrics hax
@@ -10,13 +10,13 @@ Change-Id: I5037be2fc49680a5092939b5e8b6518a506d7297
  2 files changed, 16 insertions(+)
 
 diff --git a/core/res/res/values/config.xml b/core/res/res/values/config.xml
-index 31229e97024f..7e523b6e4465 100644
+index 514083cefca9..0fb835246c84 100644
 --- a/core/res/res/values/config.xml
 +++ b/core/res/res/values/config.xml
-@@ -5816,4 +5816,12 @@
-     <string-array name="config_serviceStateLocationAllowedPackages">
-         <item>"com.android.phone"</item>
-     </string-array>
+@@ -6136,4 +6136,12 @@
+     <!-- Whether we should persist the brightness value in nits for the default display even if
+          the underlying display device changes. -->
+     <bool name="config_persistBrightnessNitsForDefaultDisplay">false</bool>
 +
 +    <!-- Whether to cleanup fingerprints upon connection to the daemon and when
 +         user switches -->
@@ -27,13 +27,13 @@ index 31229e97024f..7e523b6e4465 100644
 +    <bool name="config_fingerprintPostResetRunnableForAllClients">false</bool>
  </resources>
 diff --git a/core/res/res/values/symbols.xml b/core/res/res/values/symbols.xml
-index 4e7e20ca10b0..8c12259abaa4 100644
+index 17a8a76bd590..c2d1b961edc1 100644
 --- a/core/res/res/values/symbols.xml
 +++ b/core/res/res/values/symbols.xml
-@@ -4796,4 +4796,12 @@
-   <java-symbol type="id" name="language_picker_header" />
+@@ -4914,4 +4914,12 @@
  
-   <java-symbol type="dimen" name="status_bar_height_default" />
+   <!-- Whether to show weather on the lockscreen by default. -->
+   <java-symbol type="bool" name="config_lockscreenWeatherEnabledByDefault" />
 +
 +    <!-- Whether to cleanup fingerprints upon connection to the daemon and when
 +         user switches -->
