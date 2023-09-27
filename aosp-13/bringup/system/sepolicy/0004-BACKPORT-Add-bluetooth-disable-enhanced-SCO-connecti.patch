@@ -1,7 +1,7 @@
-From 9d9869010fc6b6646c1eeac7acd65a055497aa17 Mon Sep 17 00:00:00 2001
+From 54d5cf6ccb727d0bc71143b11e3484e582f3e5b6 Mon Sep 17 00:00:00 2001
 From: Katherine Lai <laikatherine@google.com>
 Date: Mon, 31 Oct 2022 17:52:52 +0000
-Subject: [PATCH] BACKPORT: Add bluetooth disable enhanced SCO connection
+Subject: [PATCH 4/5] BACKPORT: Add bluetooth disable enhanced SCO connection
 
 Commit 803f4e86c443b7f3358e0c541964873c4646a4f9 upstream.
 
@@ -15,10 +15,10 @@ Change-Id: I79d8168e39e0e72335389ef5ba93e6c5ddf5a0af
  2 files changed, 4 insertions(+)
 
 diff --git a/prebuilts/api/33.0/private/property_contexts b/prebuilts/api/33.0/private/property_contexts
-index 4eda4a169..5a04be1d2 100644
+index 158693878..48dbf389a 100644
 --- a/prebuilts/api/33.0/private/property_contexts
 +++ b/prebuilts/api/33.0/private/property_contexts
-@@ -520,6 +520,8 @@ bluetooth.profile.pbap.server.enabled                u:object_r:bluetooth_config
+@@ -535,6 +535,8 @@ bluetooth.profile.pbap.server.enabled                u:object_r:bluetooth_config
  bluetooth.profile.sap.server.enabled                 u:object_r:bluetooth_config_prop:s0 exact bool
  bluetooth.profile.vcp.controller.enabled             u:object_r:bluetooth_config_prop:s0 exact bool
  
@@ -28,10 +28,10 @@ index 4eda4a169..5a04be1d2 100644
  
  persist.radio.multisim.config u:object_r:radio_control_prop:s0 exact string
 diff --git a/private/property_contexts b/private/property_contexts
-index 4eda4a169..5a04be1d2 100644
+index 158693878..48dbf389a 100644
 --- a/private/property_contexts
 +++ b/private/property_contexts
-@@ -520,6 +520,8 @@ bluetooth.profile.pbap.server.enabled                u:object_r:bluetooth_config
+@@ -535,6 +535,8 @@ bluetooth.profile.pbap.server.enabled                u:object_r:bluetooth_config
  bluetooth.profile.sap.server.enabled                 u:object_r:bluetooth_config_prop:s0 exact bool
  bluetooth.profile.vcp.controller.enabled             u:object_r:bluetooth_config_prop:s0 exact bool
  

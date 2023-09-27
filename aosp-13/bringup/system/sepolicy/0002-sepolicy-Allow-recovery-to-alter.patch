@@ -1,7 +1,7 @@
-From dea1ed2e0f283015c2504a0529a3f2bf7345c8f1 Mon Sep 17 00:00:00 2001
+From 31e1eca0ca4eb2a62e34558ee3dcd07d38246224 Mon Sep 17 00:00:00 2001
 From: Gabriele M <moto.falcon.git@gmail.com>
 Date: Wed, 25 Jan 2017 02:09:04 +0100
-Subject: [PATCH 2/3] sepolicy: Allow recovery to alter /
+Subject: [PATCH 2/5] sepolicy: Allow recovery to alter /
 
 This is needed for /etc/fstab, /adb_keys and volmgr
 
@@ -42,5 +42,5 @@ index 03db4c9e2..548f78aee 100644
  # Restrict context mounts to specific types marked with
  # the contextmount_type attribute.
 -- 
-2.39.2
+2.30.2
 

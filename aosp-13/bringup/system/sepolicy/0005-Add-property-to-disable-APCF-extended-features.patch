@@ -1,0 +1,42 @@
+From d6e14f4450ba428eb11e8ef9101129b246fa69ff Mon Sep 17 00:00:00 2001
+From: me-cafebabe <me.cafebabe@gmail.com>
+Date: Mon, 20 Mar 2023 20:01:50 +0800
+Subject: [PATCH 5/5] Add property to disable APCF extended features
+
+* Required for change I4b1764b7551150e78dd8e2dfc99a6472c1293c2b
+
+Change-Id: I895c7c81b55eff7137b6c558e3a66d57f2406a30
+---
+ prebuilts/api/33.0/private/property_contexts | 2 ++
+ private/property_contexts                    | 2 ++
+ 2 files changed, 4 insertions(+)
+
+diff --git a/prebuilts/api/33.0/private/property_contexts b/prebuilts/api/33.0/private/property_contexts
+index 48dbf389a..ea3436a97 100644
+--- a/prebuilts/api/33.0/private/property_contexts
++++ b/prebuilts/api/33.0/private/property_contexts
+@@ -506,6 +506,8 @@ bluetooth.core.gap.le.privacy.enabled                u:object_r:bluetooth_config
+ bluetooth.device.default_name                        u:object_r:bluetooth_config_prop:s0 exact string
+ bluetooth.device.class_of_device                     u:object_r:bluetooth_config_prop:s0 exact string
+ 
++bluetooth.le.disable_apcf_extended_features          u:object_r:bluetooth_config_prop:s0 exact bool
++
+ bluetooth.profile.a2dp.sink.enabled                  u:object_r:bluetooth_config_prop:s0 exact bool
+ bluetooth.profile.a2dp.source.enabled                u:object_r:bluetooth_config_prop:s0 exact bool
+ bluetooth.profile.asha.central.enabled               u:object_r:bluetooth_config_prop:s0 exact bool
+diff --git a/private/property_contexts b/private/property_contexts
+index 48dbf389a..ea3436a97 100644
+--- a/private/property_contexts
++++ b/private/property_contexts
+@@ -506,6 +506,8 @@ bluetooth.core.gap.le.privacy.enabled                u:object_r:bluetooth_config
+ bluetooth.device.default_name                        u:object_r:bluetooth_config_prop:s0 exact string
+ bluetooth.device.class_of_device                     u:object_r:bluetooth_config_prop:s0 exact string
+ 
++bluetooth.le.disable_apcf_extended_features          u:object_r:bluetooth_config_prop:s0 exact bool
++
+ bluetooth.profile.a2dp.sink.enabled                  u:object_r:bluetooth_config_prop:s0 exact bool
+ bluetooth.profile.a2dp.source.enabled                u:object_r:bluetooth_config_prop:s0 exact bool
+ bluetooth.profile.asha.central.enabled               u:object_r:bluetooth_config_prop:s0 exact bool
+-- 
+2.30.2
+
