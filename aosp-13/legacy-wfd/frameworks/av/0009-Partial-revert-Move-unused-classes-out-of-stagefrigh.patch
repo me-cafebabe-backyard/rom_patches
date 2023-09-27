@@ -1,4 +1,4 @@
-From dd1b84e9795178a980a47d4af2dc523bf72dd6aa Mon Sep 17 00:00:00 2001
+From e85d2153cc4f8d436d555f0746680b2a33808abe Mon Sep 17 00:00:00 2001
 From: Nico <nicorg2529@gmail.com>
 Date: Fri, 1 Nov 2019 15:41:51 +0000
 Subject: [PATCH 9/9] Partial revert "Move unused classes out of stagefright

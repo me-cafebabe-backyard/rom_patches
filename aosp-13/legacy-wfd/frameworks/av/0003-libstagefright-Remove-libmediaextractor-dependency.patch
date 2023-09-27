@@ -1,4 +1,4 @@
-From cec52a16eb0cbfaf3c56be2ed97902ca80c65724 Mon Sep 17 00:00:00 2001
+From 899c3f5ef0be3a5d7c9798a7cff58b2120077456 Mon Sep 17 00:00:00 2001
 From: Adithya R <gh0strider.2k18.reborn@gmail.com>
 Date: Sat, 14 Dec 2019 02:22:56 +0530
 Subject: [PATCH 3/9] libstagefright: Remove libmediaextractor dependency

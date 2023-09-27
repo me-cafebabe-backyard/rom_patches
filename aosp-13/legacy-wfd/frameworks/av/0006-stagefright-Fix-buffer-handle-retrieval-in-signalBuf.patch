@@ -1,4 +1,4 @@
-From 878f8c8c7313a10ca6b7af89cfc5e6a09f80b6b0 Mon Sep 17 00:00:00 2001
+From 8cca1ae103a36c95d749f62eb49732244fe4ab97 Mon Sep 17 00:00:00 2001
 From: "Angelo G. Del Regno" <kholk11@gmail.com>
 Date: Sun, 30 Apr 2017 20:19:08 +0200
 Subject: [PATCH 6/9] stagefright: Fix buffer handle retrieval in

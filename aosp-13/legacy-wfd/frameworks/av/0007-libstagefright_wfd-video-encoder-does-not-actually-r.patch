@@ -1,4 +1,4 @@
-From c801160cc037d3b85b5faf3743aad700c3a1034c Mon Sep 17 00:00:00 2001
+From c496096ca9c1afa9fdf291fc4b0d6bda2b9d0fd1 Mon Sep 17 00:00:00 2001
 From: Vladimir Oltean <olteanv@gmail.com>
 Date: Sun, 20 Jan 2019 22:10:41 +0200
 Subject: [PATCH 7/9] libstagefright_wfd: video encoder does not actually

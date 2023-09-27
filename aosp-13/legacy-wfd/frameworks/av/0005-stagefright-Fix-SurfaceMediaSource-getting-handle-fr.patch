@@ -1,4 +1,4 @@
-From df666bdb274aa21167f15f40c24d8c5aed3120d0 Mon Sep 17 00:00:00 2001
+From 2341b136842ea69d4faa2a138d8504dc4556eb17 Mon Sep 17 00:00:00 2001
 From: zhangbo_a <zhangbo_a@pinecone.net>
 Date: Thu, 11 May 2017 11:50:57 +0800
 Subject: [PATCH 5/9] stagefright: Fix SurfaceMediaSource getting handle from

@@ -1,4 +1,4 @@
-From 74afb36c754b7df684b69709765324d2bb3e2cc4 Mon Sep 17 00:00:00 2001
+From 80f8c17954b25172fec7f62707e5b3e12ac34519 Mon Sep 17 00:00:00 2001
 From: Vladimir Oltean <olteanv@gmail.com>
 Date: Wed, 9 Jan 2019 01:13:10 +0200
 Subject: [PATCH 1/9] Revert "stagefright: remove Miracast sender code"
@@ -945,7 +945,7 @@ index 0000000000..83c61b56c0
 +#endif  // HDCP_H_
 +
 diff --git a/media/libmediaplayerservice/MediaPlayerService.cpp b/media/libmediaplayerservice/MediaPlayerService.cpp
-index 8e19d02d2f..95d358d069 100644
+index e654bce2e7..df0f1e8a1c 100644
 --- a/media/libmediaplayerservice/MediaPlayerService.cpp
 +++ b/media/libmediaplayerservice/MediaPlayerService.cpp
 @@ -84,6 +84,8 @@
