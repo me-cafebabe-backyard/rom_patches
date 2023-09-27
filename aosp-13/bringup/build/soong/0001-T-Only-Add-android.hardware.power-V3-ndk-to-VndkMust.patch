@@ -1,0 +1,44 @@
+From 703cc091154b7cdec61ab0d5398c691318224882 Mon Sep 17 00:00:00 2001
+From: Jake Weinstein <jake@aospa.co>
+Date: Tue, 7 Mar 2023 02:49:13 +0900
+Subject: [PATCH] [T-Only] Add android.hardware.power-V3-ndk to
+ VndkMustUseVendorVariantList
+
+8550 uses the AIDL V3 PowerHAL. Qualcomm must be disabling
+build restrictions because the below error occurs in
+LA.QSSI.13.0.r1.
+
+FAILED: out/target/product/spes/obj/SHARED_LIBRARIES/android.hardware.power-V3-ndk.vendor_intermediates/same_vndk_variants.timestamp
+/bin/bash -c "(CLANG_BIN=\"prebuilts/clang/host/linux-x86/clang-r450784d/bin\" CROSS_COMPILE=\"prebuilts/clang/host/linux-x86/clang-r450784d/bin/llvm-\" XZ=\">ERROR: VNDK library android.hardware.power-V3-ndk has different core and vendor variants! This means that the copy used in the system.img/etc and vendor.img/e>
+ERROR: 1). Remove differences, possibly using the libvndksupport function android_is_in_vendor_process in order to turn this into a runtime difference.
+ERROR: 2). Add the library to the VndkMustUseVendorVariantList variable in build/soong/cc/config/vndk.go, which is used to acknowledge this difference.
+
+This is expected because vendor versions of AIDL are by
+default different from core versions per
+https://android.googlesource.com/platform/build/soong/+/43b2c668da97601f828c7a42001147181a83449e%5E%21/#F0
+
+There are a number of commits in AOSP master that will
+prevent this compilation error, however, to minimize
+risk on T, we will match the V2 and V1 behavior.
+
+Change-Id: If47fed934a8d26ac9515012a02dd188c88ca18b2
+---
+ cc/config/vndk.go | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/cc/config/vndk.go b/cc/config/vndk.go
+index db69ce785..626f990a0 100644
+--- a/cc/config/vndk.go
++++ b/cc/config/vndk.go
+@@ -58,6 +58,8 @@ var VndkMustUseVendorVariantList = []string{
+ 	"android.hardware.power-V1-ndk_platform",
+ 	"android.hardware.power-V2-ndk",
+ 	"android.hardware.power-V2-ndk_platform",
++	"android.hardware.power-V3-ndk",
++	"android.hardware.power-V3-ndk_platform",
+ 	"android.hardware.power-ndk_platform",
+ 	"android.hardware.power.stats-V1-ndk",
+ 	"android.hardware.power.stats-V1-ndk_platform",
+-- 
+2.30.2
+
