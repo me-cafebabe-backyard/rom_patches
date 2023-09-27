@@ -1,7 +1,7 @@
-From 8cd5c50140aab5edeed445022a3b075a6035691b Mon Sep 17 00:00:00 2001
+From 853650f59c45f6a7294ea93db8cca03561eef81a Mon Sep 17 00:00:00 2001
 From: Andrew Dodd <atd7@cornell.edu>
 Date: Mon, 2 Dec 2013 23:15:30 -0500
-Subject: [PATCH 2/4] ota: Disable downgrade check
+Subject: [PATCH 4/6] ota: Disable downgrade check
 
 We want users to be able to downgrade their packages.
 
@@ -11,7 +11,7 @@ Change-Id: I6bcbd4ee2a02640fe0855b0f1f197a02e914c927
  1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/tools/releasetools/non_ab_ota.py b/tools/releasetools/non_ab_ota.py
-index 9732cdaa69..430536289a 100644
+index 9732cdaa6..430536289 100644
 --- a/tools/releasetools/non_ab_ota.py
 +++ b/tools/releasetools/non_ab_ota.py
 @@ -150,9 +150,9 @@ def WriteFullOTAPackage(input_zip, output_file):

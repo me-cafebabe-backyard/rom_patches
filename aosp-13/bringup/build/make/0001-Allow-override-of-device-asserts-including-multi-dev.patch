@@ -1,7 +1,7 @@
-From 67ce22b4438fd4f302f3e3c9112d969bdd2eab1f Mon Sep 17 00:00:00 2001
+From efd510b46c00efc48be7f37ccb197669e610f986 Mon Sep 17 00:00:00 2001
 From: Steve Kondik <shade@chemlab.org>
 Date: Wed, 21 Apr 2010 11:39:48 -0400
-Subject: [PATCH 1/4] Allow override of device asserts, including multi-device
+Subject: [PATCH 1/6] Allow override of device asserts, including multi-device
  support.
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -30,10 +30,10 @@ Signed-off-by: André Pinela <sheffzor@gmail.com>
  3 files changed, 11 insertions(+), 6 deletions(-)
 
 diff --git a/core/Makefile b/core/Makefile
-index de9fd52c12..838742b017 100644
+index 72aa890ce..2f67523bf 100644
 --- a/core/Makefile
 +++ b/core/Makefile
-@@ -5315,6 +5315,9 @@ endif
+@@ -5377,6 +5377,9 @@ endif
  ifeq ($(TARGET_FLATTEN_APEX),false)
  	$(hide) echo "target_flatten_apex=false" >> $@
  endif
@@ -44,7 +44,7 @@ index de9fd52c12..838742b017 100644
  $(call declare-0p-target,$(INSTALLED_MISC_INFO_TARGET))
  
 diff --git a/tools/releasetools/common.py b/tools/releasetools/common.py
-index 418d8daa85..b388348ba0 100644
+index 656c9a6d9..bdc456b14 100644
 --- a/tools/releasetools/common.py
 +++ b/tools/releasetools/common.py
 @@ -430,7 +430,7 @@ class BuildInfo(object):
@@ -57,7 +57,7 @@ index 418d8daa85..b388348ba0 100644
      check_fingerprint(self._fingerprint)
  
 diff --git a/tools/releasetools/edify_generator.py b/tools/releasetools/edify_generator.py
-index 033c02e60c..f8247ee196 100644
+index 033c02e60..f8247ee19 100644
 --- a/tools/releasetools/edify_generator.py
 +++ b/tools/releasetools/edify_generator.py
 @@ -137,11 +137,13 @@ class EdifyGenerator(object):

@@ -1,7 +1,7 @@
-From f04106257d25d4ff8348b6ff2aeff4362160e5d9 Mon Sep 17 00:00:00 2001
+From 04f8ebd789a11addef1979e0ecbd97e6cd35ecc3 Mon Sep 17 00:00:00 2001
 From: Rashed Abdel-Tawab <rashed@linux.com>
 Date: Thu, 20 Sep 2018 08:25:23 -0700
-Subject: [PATCH 1/5] build: Automatically replace old-style kernel header
+Subject: [PATCH 2/6] build: Automatically replace old-style kernel header
  includes with new header lib
 
 This is a combination of 3 commits.
@@ -48,7 +48,7 @@ Change-Id: I716955534e50831e6568ca01e480aa8b90075d92
  1 file changed, 20 insertions(+)
 
 diff --git a/core/binary.mk b/core/binary.mk
-index 665270e30a..4991881fc1 100644
+index 665270e30..4991881fc 100644
 --- a/core/binary.mk
 +++ b/core/binary.mk
 @@ -40,6 +40,26 @@ endif

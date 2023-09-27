@@ -1,7 +1,7 @@
-From b7f3b1ebc13f9ab41014351d307f4dda64d55f9e Mon Sep 17 00:00:00 2001
+From ac4876b22c7e99e8209e9d0f0e804eb89087e981 Mon Sep 17 00:00:00 2001
 From: Christian Oder <myself5@carbonrom.org>
 Date: Sun, 6 Sep 2020 14:54:15 +0200
-Subject: [PATCH 4/4] build_image: Allow disabling custom inode count
+Subject: [PATCH 6/6] build_image: Allow disabling custom inode count
  calculation
 
 This allows us to skip custom inode count calculation by setting
@@ -18,7 +18,7 @@ Change-Id: If03d5edae8378be3b305346176067b01163f6f3d
  1 file changed, 14 insertions(+), 13 deletions(-)
 
 diff --git a/tools/releasetools/build_image.py b/tools/releasetools/build_image.py
-index 9049622efb..ce92c9d6b8 100755
+index 9049622ef..ce92c9d6b 100755
 --- a/tools/releasetools/build_image.py
 +++ b/tools/releasetools/build_image.py
 @@ -298,7 +298,7 @@ def BuildImageMkfs(in_dir, prop_dict, out_file, target_out, fs_config):

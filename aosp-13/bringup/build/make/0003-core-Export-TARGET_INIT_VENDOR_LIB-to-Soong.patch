@@ -1,14 +1,14 @@
-From 74f8a021dffaf2e15a8e87740d1f4bfbbe241e5e Mon Sep 17 00:00:00 2001
+From ca4cc6f009db97e1f75cd1b49f0541d3f47dbd1c Mon Sep 17 00:00:00 2001
 From: me-cafebabe <me_cafebabe@hotmail.com>
 Date: Wed, 7 Sep 2022 07:54:19 +0000
-Subject: [PATCH] core: Export TARGET_INIT_VENDOR_LIB to Soong
+Subject: [PATCH 3/6] core: Export TARGET_INIT_VENDOR_LIB to Soong
 
 ---
  core/soong_config.mk | 2 ++
  1 file changed, 2 insertions(+)
 
 diff --git a/core/soong_config.mk b/core/soong_config.mk
-index d03b687464..3e7ce326a1 100644
+index 16b7faecf..ec4ed7c31 100644
 --- a/core/soong_config.mk
 +++ b/core/soong_config.mk
 @@ -143,6 +143,8 @@ $(call add_json_bool, Malloc_zero_contents,              $(call invert_bool,$(fi
