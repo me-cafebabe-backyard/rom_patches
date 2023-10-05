@@ -1,4 +1,4 @@
-From bc3c78bd582315e9c05ea9bc3e716e63e1b40761 Mon Sep 17 00:00:00 2001
+From a0264e7bad86d9ddbbaad29190f4ea54ae4bbd83 Mon Sep 17 00:00:00 2001
 From: Bruno Martins <bgcngm@gmail.com>
 Date: Mon, 5 Oct 2020 18:22:43 +0100
 Subject: [PATCH 2/3] res: Introduce overlays for biometrics hax
@@ -6,8 +6,8 @@ Subject: [PATCH 2/3] res: Introduce overlays for biometrics hax
 Change-Id: I5037be2fc49680a5092939b5e8b6518a506d7297
 ---
  core/res/res/values/config.xml  | 8 ++++++++
- core/res/res/values/symbols.xml | 9 +++++++++
- 2 files changed, 17 insertions(+)
+ core/res/res/values/symbols.xml | 8 ++++++++
+ 2 files changed, 16 insertions(+)
 
 diff --git a/core/res/res/values/config.xml b/core/res/res/values/config.xml
 index bd0fe40e758d..b25931d104b0 100644
@@ -27,18 +27,10 @@ index bd0fe40e758d..b25931d104b0 100644
 +    <bool name="config_fingerprintPostResetRunnableForAllClients">false</bool>
  </resources>
 diff --git a/core/res/res/values/symbols.xml b/core/res/res/values/symbols.xml
-index 2d040bb66d83..a69c34fb7d11 100644
+index 2d040bb66d83..f7b160a18c64 100644
 --- a/core/res/res/values/symbols.xml
 +++ b/core/res/res/values/symbols.xml
-@@ -5009,6 +5009,7 @@
-   <!-- Whether to show weather on the lockscreen by default. -->
-   <java-symbol type="bool" name="config_lockscreenWeatherEnabledByDefault" />
- 
-+<<<<<<< HEAD
-   <!-- For keyboard notification -->
-   <java-symbol type="string" name="keyboard_layout_notification_selected_title"/>
-   <java-symbol type="string" name="keyboard_layout_notification_one_selected_message"/>
-@@ -5132,4 +5133,12 @@
+@@ -5132,4 +5132,12 @@
  
    <java-symbol type="drawable" name="focus_event_pressed_key_background" />
    <java-symbol type="string" name="lockscreen_too_many_failed_attempts_countdown" />
