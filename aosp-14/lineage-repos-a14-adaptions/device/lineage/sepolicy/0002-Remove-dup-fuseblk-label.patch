@@ -1,0 +1,23 @@
+From 5f2bfe19810cd260667136cb6c32e8a8e998eacf Mon Sep 17 00:00:00 2001
+From: Android Build Server <build@AndroidBuild>
+Date: Thu, 5 Oct 2023 07:52:46 +0000
+Subject: [PATCH 2/2] Remove dup fuseblk label
+
+---
+ common/private/genfs_contexts | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/common/private/genfs_contexts b/common/private/genfs_contexts
+index 79a7736..d096874 100644
+--- a/common/private/genfs_contexts
++++ b/common/private/genfs_contexts
+@@ -1,6 +1,2 @@
+-ifelse(board_excludes_fuseblk_sepolicy, `true', ,
+-genfscon fuseblk / u:object_r:vfat:s0
+-)
+-
+ genfscon sysfs /devices/virtual/timed_output/vibrator u:object_r:sysfs_vibrator:s0
+ genfscon sysfs /module/mmcblk/parameters/perdev_minors u:object_r:sysfs_perdev_minors:s0
+-- 
+2.30.2
+
