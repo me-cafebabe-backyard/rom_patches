@@ -1,0 +1,38 @@
+From 0d18a9cc7fa2cfac9d107d3668eac88cb89d3dfd Mon Sep 17 00:00:00 2001
+From: me-cafebabe <me_cafebabe@hotmail.com>
+Date: Wed, 7 Sep 2022 12:44:34 +0000
+Subject: [PATCH 2/2] init: Use product_variables for specifying vendor init
+ lib
+
+---
+ init/Android.bp | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/init/Android.bp b/init/Android.bp
+index e9d12985d..3386087ae 100644
+--- a/init/Android.bp
++++ b/init/Android.bp
+@@ -227,7 +227,6 @@ cc_library_static {
+     defaults: [
+         "init_defaults",
+         "selinux_policy_version",
+-        "vendor_init_defaults",
+     ],
+     srcs: init_common_sources + init_device_sources,
+     export_include_dirs: ["."],
+@@ -245,6 +244,12 @@ cc_library_static {
+         export_proto_headers: true,
+     },
+ 
++    product_variables: {
++        target_init_vendor_lib: {
++            whole_static_libs: ["%s"],
++        },
++    },
++
+     target: {
+         recovery: {
+             cflags: ["-DRECOVERY"],
+-- 
+2.30.2
+

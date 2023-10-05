@@ -1,0 +1,39 @@
+From a1b64235b46864b9c57c39a729f60fd7a45c9e47 Mon Sep 17 00:00:00 2001
+From: LuK1337 <priv.luk@gmail.com>
+Date: Fri, 11 Sep 2020 15:34:56 +0200
+Subject: [PATCH 5/6] Unset BOARD_EXT4_SHARE_DUP_BLOCKS
+
+* This allows us to remount ext4 partitions read-write
+  on devices with dynamic partitions.
+
+This reverts the following commits:
+
+Revert "Move BOARD_EXT4_SHARE_DUP_BLOCKS to BoardConfigMainlineCommon.mk"
+
+This reverts commit I0eb035ba6edf44719d5de4f09fd97b5783537597.
+
+Revert "enable BOARD_EXT4_SHARE_DUP_BLOCKS for generic_arm64"
+
+This reverts commit 125b6d6eeab8d9b2a343e9ab892fb0e241958b7a.
+
+Change-Id: I3768374d6da59f969ea44c1965f75c934edf3b57
+---
+ target/board/BoardConfigMainlineCommon.mk | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/target/board/BoardConfigMainlineCommon.mk b/target/board/BoardConfigMainlineCommon.mk
+index 00f6e5b0ac..94fcacad11 100644
+--- a/target/board/BoardConfigMainlineCommon.mk
++++ b/target/board/BoardConfigMainlineCommon.mk
+@@ -6,8 +6,6 @@
+ TARGET_NO_BOOTLOADER := true
+ TARGET_NO_RECOVERY := true
+ 
+-BOARD_EXT4_SHARE_DUP_BLOCKS := true
+-
+ TARGET_USERIMAGES_USE_EXT4 := true
+ 
+ # Mainline devices must have /system_ext, /vendor and /product partitions.
+-- 
+2.30.2
+

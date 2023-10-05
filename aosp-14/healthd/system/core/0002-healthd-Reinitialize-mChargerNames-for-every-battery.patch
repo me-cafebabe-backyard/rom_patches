@@ -1,0 +1,81 @@
+From 73233767260abfb31aea2b4d6424a3e3b3f5ed59 Mon Sep 17 00:00:00 2001
+From: Abhijeet Dharmapurikar <adharmap@codeaurora.org>
+Date: Tue, 24 May 2016 15:12:11 -0700
+Subject: [PATCH 2/2] healthd: Reinitialize mChargerNames for every battery
+ update
+
+Booting up the device without usb, the kernel sets the usb power supply
+type as UNKNOWN. The type of usb power supply changes at run-time as
+various chargers are plugged in/out. However, healthd initilizes the
+charger list only at bootup. Change it such that it checks for charger
+type changes with every battery or usb uevent.
+
+While at it, the kernel may have a power supply type which is not known
+to healthd. This is perfectly fine. Update healthd to not print a
+warning.
+
+Change-Id: I2ec9f9a420ca61814d43c316b418ce94de3691bc
+---
+ healthd/BatteryMonitor.cpp | 38 +++++++++++++++++++++++++++++++++++---
+ 1 file changed, 35 insertions(+), 3 deletions(-)
+
+diff --git a/healthd/BatteryMonitor.cpp b/healthd/BatteryMonitor.cpp
+index 1c3ff64b1..4f5efc1eb 100644
+--- a/healthd/BatteryMonitor.cpp
++++ b/healthd/BatteryMonitor.cpp
+@@ -261,10 +261,8 @@ static BatteryMonitor::PowerSupplyType readPowerSupplyType(const String8& path)
+     }
+ 
+     auto ret = mapSysfsString(buf.c_str(), supplyTypeMap);
+-    if (!ret) {
+-        KLOG_WARNING(LOG_TAG, "Unknown power supply type '%s'\n", buf.c_str());
++    if (!ret)
+         *ret = BatteryMonitor::ANDROID_POWER_SUPPLY_TYPE_UNKNOWN;
+-    }
+ 
+     return static_cast<BatteryMonitor::PowerSupplyType>(*ret);
+ }
+@@ -357,6 +355,40 @@ void BatteryMonitor::updateValues(void) {
+ 
+     double MaxPower = 0;
+ 
++    // Rescan for the available charger types
++    std::unique_ptr<DIR, decltype(&closedir)> dir(opendir(POWER_SUPPLY_SYSFS_PATH), closedir);
++    if (dir == NULL) {
++        KLOG_ERROR(LOG_TAG, "Could not open %s\n", POWER_SUPPLY_SYSFS_PATH);
++    } else {
++        struct dirent* entry;
++        String8 path;
++
++        mChargerNames.clear();
++
++        while ((entry = readdir(dir.get()))) {
++            const char* name = entry->d_name;
++
++            if (!strcmp(name, ".") || !strcmp(name, ".."))
++                continue;
++
++            // Look for "type" file in each subdirectory
++            path.clear();
++            path.appendFormat("%s/%s/type", POWER_SUPPLY_SYSFS_PATH, name);
++            switch(readPowerSupplyType(path)) {
++            case ANDROID_POWER_SUPPLY_TYPE_AC:
++            case ANDROID_POWER_SUPPLY_TYPE_USB:
++            case ANDROID_POWER_SUPPLY_TYPE_WIRELESS:
++                path.clear();
++                path.appendFormat("%s/%s/online", POWER_SUPPLY_SYSFS_PATH, name);
++                if (access(path.string(), R_OK) == 0)
++                    mChargerNames.add(String8(name));
++                break;
++            default:
++                break;
++            }
++        }
++    }
++
+     for (size_t i = 0; i < mChargerNames.size(); i++) {
+         String8 path;
+         path.appendFormat("%s/%s/online", POWER_SUPPLY_SYSFS_PATH,
+-- 
+2.30.2
+

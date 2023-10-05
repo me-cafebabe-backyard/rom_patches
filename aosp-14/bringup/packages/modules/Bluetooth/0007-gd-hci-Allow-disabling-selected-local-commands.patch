@@ -1,0 +1,54 @@
+From 4840ec2b54e40dca8a064334656fd1c21c27040b Mon Sep 17 00:00:00 2001
+From: LuK1337 <priv.luk@gmail.com>
+Date: Wed, 26 Jul 2023 22:03:00 +0200
+Subject: [PATCH 7/8] gd: hci: Allow disabling selected local commands
+
+This allows us to disable selected commands in case they behave in
+unexpected ways. e.g. bluetooth.hci.disabled_commands=377 will disable
+LE_EXTENDED_CREATE_CONNECTION.
+
+Change-Id: I1fcc624df9fd07200a8406c51772ccb856a4258e
+---
+ system/gd/hci/controller.cc | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/system/gd/hci/controller.cc b/system/gd/hci/controller.cc
+index c08ecab9d5..5576293017 100644
+--- a/system/gd/hci/controller.cc
++++ b/system/gd/hci/controller.cc
+@@ -16,6 +16,7 @@
+ 
+ #include "hci/controller.h"
+ 
++#include <android-base/strings.h>
+ #include <future>
+ #include <memory>
+ #include <string>
+@@ -36,6 +37,8 @@ constexpr uint8_t kMinEncryptionKeySize = 7;  // #define MIN_ENCRYPTION_KEY_SIZE
+ constexpr bool kDefaultVendorCapabilitiesEnabled = true;
+ static const std::string kPropertyVendorCapabilitiesEnabled =
+     "bluetooth.core.le.vendor_capabilities.enabled";
++static const char kPropertyDisabledCommands[] =
++    "bluetooth.hci.disabled_commands";
+ 
+ using os::Handler;
+ 
+@@ -298,6 +301,15 @@ struct Controller::impl {
+     ErrorCode status = complete_view.GetStatus();
+     ASSERT_LOG(status == ErrorCode::SUCCESS, "Status 0x%02hhx, %s", status, ErrorCodeText(status).c_str());
+     local_supported_commands_ = complete_view.GetSupportedCommands();
++
++    if (auto disabledCommands = os::GetSystemProperty(kPropertyDisabledCommands)) {
++      for (const auto& command : android::base::Split(*disabledCommands, ",")) {
++        uint16_t index = std::stoi(command);
++        uint16_t byte_index = index / 10;
++        uint16_t bit_index = index % 10;
++        local_supported_commands_[byte_index] &= ~(1 << bit_index);
++      }
++    }
+   }
+ 
+   void read_local_extended_features_complete_handler(std::promise<void> promise, CommandCompleteView view) {
+-- 
+2.30.2
+

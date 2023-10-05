@@ -1,0 +1,46 @@
+From 6ed011e22da1b67884717fb8ec22a82279b6d6e3 Mon Sep 17 00:00:00 2001
+From: Gabriele M <moto.falcon.git@gmail.com>
+Date: Wed, 25 Jan 2017 02:09:04 +0100
+Subject: [PATCH 2/4] sepolicy: Allow recovery to alter /
+
+This is needed for /etc/fstab, /adb_keys and volmgr
+
+Change-Id: I53332a57ce7879d7ba63c4ea3e27add01f5a3a90
+---
+ prebuilts/api/34.0/public/domain.te | 4 ++--
+ public/domain.te                    | 4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/prebuilts/api/34.0/public/domain.te b/prebuilts/api/34.0/public/domain.te
+index 17a0c372d..c977c295c 100644
+--- a/prebuilts/api/34.0/public/domain.te
++++ b/prebuilts/api/34.0/public/domain.te
+@@ -487,8 +487,8 @@ neverallow { domain -kernel with_asan(`-asan_extract') } { system_file_type vend
+ # Don't allow mounting on top of /system files or directories
+ neverallow * exec_type:dir_file_class_set mounton;
+ 
+-# Nothing should be writing to files in the rootfs.
+-neverallow * rootfs:file { create write setattr relabelto append unlink link rename };
++# Nothing should be writing to files in the rootfs, except recovery.
++neverallow { domain -recovery } rootfs:file { create write setattr relabelto append unlink link rename };
+ 
+ # Restrict context mounts to specific types marked with
+ # the contextmount_type attribute.
+diff --git a/public/domain.te b/public/domain.te
+index 17a0c372d..c977c295c 100644
+--- a/public/domain.te
++++ b/public/domain.te
+@@ -487,8 +487,8 @@ neverallow { domain -kernel with_asan(`-asan_extract') } { system_file_type vend
+ # Don't allow mounting on top of /system files or directories
+ neverallow * exec_type:dir_file_class_set mounton;
+ 
+-# Nothing should be writing to files in the rootfs.
+-neverallow * rootfs:file { create write setattr relabelto append unlink link rename };
++# Nothing should be writing to files in the rootfs, except recovery.
++neverallow { domain -recovery } rootfs:file { create write setattr relabelto append unlink link rename };
+ 
+ # Restrict context mounts to specific types marked with
+ # the contextmount_type attribute.
+-- 
+2.30.2
+

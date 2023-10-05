@@ -1,0 +1,29 @@
+From 74cc34f39fd2bc599e333c94e39357696b84c33a Mon Sep 17 00:00:00 2001
+From: Abhijeet Dharmapurikar <adharmap@codeaurora.org>
+Date: Mon, 14 Sep 2015 16:35:26 -0700
+Subject: [PATCH 1/2] healthd: Add support for HVDCP_3 chargers
+
+HVDCP_3 is a high voltage DCP charger where the charger's voltage
+can be changed by issuing pulses on the D+/D- lines. Add support to
+recognize it and treat it as an AC power source.
+
+Change-Id: Ib719529904e8b7a676bbdc5f5953f0f9da6df3fa
+---
+ healthd/BatteryMonitor.cpp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/healthd/BatteryMonitor.cpp b/healthd/BatteryMonitor.cpp
+index a7571a260..1c3ff64b1 100644
+--- a/healthd/BatteryMonitor.cpp
++++ b/healthd/BatteryMonitor.cpp
+@@ -244,6 +244,7 @@ static BatteryMonitor::PowerSupplyType readPowerSupplyType(const String8& path)
+             {"USB", BatteryMonitor::ANDROID_POWER_SUPPLY_TYPE_USB},
+             {"USB_DCP", BatteryMonitor::ANDROID_POWER_SUPPLY_TYPE_AC},
+             {"USB_HVDCP", BatteryMonitor::ANDROID_POWER_SUPPLY_TYPE_AC},
++            {"USB_HVDCP3", BatteryMonitor::ANDROID_POWER_SUPPLY_TYPE_AC},
+             {"USB_CDP", BatteryMonitor::ANDROID_POWER_SUPPLY_TYPE_AC},
+             {"USB_ACA", BatteryMonitor::ANDROID_POWER_SUPPLY_TYPE_AC},
+             {"USB_C", BatteryMonitor::ANDROID_POWER_SUPPLY_TYPE_AC},
+-- 
+2.30.2
+

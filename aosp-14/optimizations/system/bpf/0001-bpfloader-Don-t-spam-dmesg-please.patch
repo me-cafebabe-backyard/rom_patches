@@ -1,0 +1,27 @@
+From 2d8ce3eef570d8c88180231f3e3d8ede001710bf Mon Sep 17 00:00:00 2001
+From: me-cafebabe <me.cafebabe@gmail.com>
+Date: Sun, 20 Aug 2023 08:27:00 +0000
+Subject: [PATCH] bpfloader: Don't spam dmesg please
+
+Change-Id: Ic47a58b6113cbab1ba7f85dc390c3bb0cd7883ed
+---
+ bpfloader/BpfLoader.cpp | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/bpfloader/BpfLoader.cpp b/bpfloader/BpfLoader.cpp
+index e53669a..3843ab2 100644
+--- a/bpfloader/BpfLoader.cpp
++++ b/bpfloader/BpfLoader.cpp
+@@ -249,7 +249,8 @@ int writeProcSysFile(const char *filename, const char *value) {
+ 
+ int main(int argc, char** argv) {
+     (void)argc;
+-    android::base::InitLogging(argv, &android::base::KernelLogger);
++    (void)argv;
++    //android::base::InitLogging(argv, &android::base::KernelLogger);
+ 
+     // Ensure we can determine the Android build type.
+     if (!android::bpf::isEng() && !android::bpf::isUser() && !android::bpf::isUserdebug()) {
+-- 
+2.30.2
+
