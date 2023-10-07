@@ -1,0 +1,30 @@
+From 483f3cf277485c9eaeaf5e025836ea0271574a63 Mon Sep 17 00:00:00 2001
+From: HZ <thecodehustler@gmail.com>
+Date: Thu, 6 Oct 2022 21:45:42 +0800
+Subject: [PATCH] Add bluetooth and sdk_sandbox to default key map
+
+Previously the key mapping in releasetool/sign_target_files_apks.py
+is missing the aforementioned keys that introduced in Android 13, so
+it's writing corrupted signatures in plat_mac_permissions.xml.
+
+Test: make target-files-package otatools
+sign_target_files_apks -o -d <CERT_ROOT> ...
+
+Change-Id: If42907cffbd500281876f8f822cbb645583d06ed
+---
+ tools/releasetools/sign_target_files_apks.py | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/tools/releasetools/sign_target_files_apks.py b/tools/releasetools/sign_target_files_apks.py
+index 6f96d8f6a6..4ea029df01 100755
+--- a/tools/releasetools/sign_target_files_apks.py
++++ b/tools/releasetools/sign_target_files_apks.py
+@@ -1150,6 +1150,8 @@ def BuildKeyMap(misc_info, key_mapping_options):
+           devkeydir + "/shared":   d + "/shared",
+           devkeydir + "/platform": d + "/platform",
+           devkeydir + "/networkstack": d + "/networkstack",
++          devkeydir + "/sdk_sandbox" : d + "/sdk_sandbox",
++          devkeydir + "/bluetooth"   : d + "/bluetooth",
+       })
+     else:
+       OPTIONS.key_map[s] = d
