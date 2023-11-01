@@ -1,0 +1,141 @@
+From 4544d19a5352aa18a104a8eb02c4f20e506abaeb Mon Sep 17 00:00:00 2001
+From: Danny Lin <danny@kdrag0n.dev>
+Date: Mon, 11 Oct 2021 19:59:51 -0700
+Subject: [PATCH 1/7] Alter model name to avoid SafetyNet HW attestation
+ enforcement
+
+As of September 2, Google is enforcing SafetyNet's previously
+opportunistic hardware-backed attestation based on device information.
+Append a space to the device model name in order to avoid such
+enforcement.
+
+Also contains:
+	Spoof build fingerprint for Google Play Services
+
+	SafetyNet's CTS profile attestation checks whether Build.FINGERPRINT
+	matches that of the device's stock OS, which has passed CTS testing.
+	Spoof the fingerprint for Google Play Services to help pass SafetyNet.
+
+	We used to set the real system build fingerprint to the stock one, but
+	Android relies on each build having a unique fingerprint in order to
+	clear the correct caches and update persistent state for system changes.
+	On devices that no longer receive updates from the OEM, the build
+	fingerprint never changes and Android doesn't account for updates
+	correctly, which causes issues when updating without wiping data.
+	Only spoofing the fingerprint for Google Play Services fixes this issue.
+
+	Corresponding vendor commit:
+	"Only use stock build fingerprint for Google Play Services"
+
+	NB: This code is under the gmscompat package, but it does not depend on
+	any code from gmscompat.
+
+	Change-Id: I26a2498eb2e2163933303b03f6d516e5fb30fe51
+
+* We don't need to spoof the fingerprint here since we do it globally, but we
+  use the Build field spoofing code it added for model
+
+Change-Id: Ib7779e0aae40cab3730a56785e9231896917ab0a
+---
+ core/java/android/app/Instrumentation.java    |  4 ++
+ .../internal/gmscompat/AttestationHooks.java  | 59 +++++++++++++++++++
+ 2 files changed, 63 insertions(+)
+ create mode 100644 core/java/com/android/internal/gmscompat/AttestationHooks.java
+
+diff --git a/core/java/android/app/Instrumentation.java b/core/java/android/app/Instrumentation.java
+index e31486f18dbf..56ff16f6c358 100644
+--- a/core/java/android/app/Instrumentation.java
++++ b/core/java/android/app/Instrumentation.java
+@@ -60,6 +60,8 @@ import android.view.WindowManagerGlobal;
+ 
+ import com.android.internal.content.ReferrerIntent;
+ 
++import com.android.internal.gmscompat.AttestationHooks;
++
+ import java.io.File;
+ import java.lang.annotation.Retention;
+ import java.lang.annotation.RetentionPolicy;
+@@ -1281,6 +1283,7 @@ public class Instrumentation {
+         Application app = getFactory(context.getPackageName())
+                 .instantiateApplication(cl, className);
+         app.attach(context);
++        AttestationHooks.initApplicationBeforeOnCreate(app);
+         return app;
+     }
+     
+@@ -1298,6 +1301,7 @@ public class Instrumentation {
+             ClassNotFoundException {
+         Application app = (Application)clazz.newInstance();
+         app.attach(context);
++        AttestationHooks.initApplicationBeforeOnCreate(app);
+         return app;
+     }
+ 
+diff --git a/core/java/com/android/internal/gmscompat/AttestationHooks.java b/core/java/com/android/internal/gmscompat/AttestationHooks.java
+new file mode 100644
+index 000000000000..621156eb84b9
+--- /dev/null
++++ b/core/java/com/android/internal/gmscompat/AttestationHooks.java
+@@ -0,0 +1,59 @@
++/*
++ * Copyright (C) 2021 The Android Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package com.android.internal.gmscompat;
++
++import android.app.Application;
++import android.os.Build;
++import android.os.SystemProperties;
++import android.util.Log;
++
++import java.lang.reflect.Field;
++
++/** @hide */
++public final class AttestationHooks {
++    private static final String TAG = "GmsCompat/Attestation";
++    private static final String PACKAGE_GMS = "com.google.android.gms";
++
++    private AttestationHooks() { }
++
++    private static void setBuildField(String key, String value) {
++        try {
++            // Unlock
++            Field field = Build.class.getDeclaredField(key);
++            field.setAccessible(true);
++
++            // Edit
++            field.set(null, value);
++
++            // Lock
++            field.setAccessible(false);
++        } catch (NoSuchFieldException | IllegalAccessException e) {
++            Log.e(TAG, "Failed to spoof Build." + key, e);
++        }
++    }
++
++    private static void spoofBuildGms() {
++        // Alter model name to avoid hardware attestation enforcement
++        setBuildField("MODEL", Build.MODEL + " ");
++    }
++
++    public static void initApplicationBeforeOnCreate(Application app) {
++        if (PACKAGE_GMS.equals(app.getPackageName())) {
++            spoofBuildGms();
++        }
++    }
++}
+-- 
+2.30.2
+
