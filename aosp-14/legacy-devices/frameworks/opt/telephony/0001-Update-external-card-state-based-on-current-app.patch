@@ -1,4 +1,4 @@
-From 67c8242968c87aa305922ab6080ab06dc50058b0 Mon Sep 17 00:00:00 2001
+From d55c91729604e366a38491547ee7c5627891b2ec Mon Sep 17 00:00:00 2001
 From: Wileen Chiu <wileenc@codeaurora.org>
 Date: Tue, 12 Jun 2018 14:32:08 -0700
 Subject: [PATCH 1/9] Update external card state based on current app

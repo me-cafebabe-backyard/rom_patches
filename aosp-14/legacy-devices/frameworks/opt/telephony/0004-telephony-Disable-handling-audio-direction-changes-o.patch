@@ -1,4 +1,4 @@
-From 15c36df027812385eb1f4fde2465e4c886d86ba3 Mon Sep 17 00:00:00 2001
+From c5bb451af958ca6e4afb20067193264f2424e870 Mon Sep 17 00:00:00 2001
 From: Quallenauge <Hamsi2k@freenet.de>
 Date: Wed, 3 Aug 2022 21:16:11 +0100
 Subject: [PATCH 4/9] telephony: Disable handling audio direction changes on

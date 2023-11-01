@@ -1,0 +1,47 @@
+From dc826ac8cd0a381c90ce97f253019bae0df8d04d Mon Sep 17 00:00:00 2001
+From: ExactExampl <exactxmpl@pixelexperience.org>
+Date: Tue, 11 Oct 2022 12:38:00 +0300
+Subject: [PATCH 9/9] Conditionally revert "Block Binder thread until incoming
+ call process completes"
+
+* Legacy IMS packages handling incoming calls in such a way that
+  a blocked binder thread won`t allow to complete call setup,
+  thus we have half dead incoming calls with unattached call session
+  (caller can hear dialing tone whereas recipient got nothing)
+
+This conditionally reverts commit 75c3dc9ba272b43971f519caba0382f9871c7d9d.
+
+[lostark13: Forward port to Android 14]
+
+Co-Authored-By: Lostark13 <tushar9915@gmail.com>
+Change-Id: I55a8f3bbca4a2b9a6bc7511e9fe2d0884a8818e5
+---
+ .../telephony/imsphone/ImsPhoneCallTracker.java      | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
+
+diff --git a/src/java/com/android/internal/telephony/imsphone/ImsPhoneCallTracker.java b/src/java/com/android/internal/telephony/imsphone/ImsPhoneCallTracker.java
+index df96af55ff..7c24e79079 100644
+--- a/src/java/com/android/internal/telephony/imsphone/ImsPhoneCallTracker.java
++++ b/src/java/com/android/internal/telephony/imsphone/ImsPhoneCallTracker.java
+@@ -386,7 +386,17 @@ public class ImsPhoneCallTracker extends CallTracker implements ImsPullCall {
+         @Nullable
+         public IImsCallSessionListener onIncomingCall(
+                 @NonNull IImsCallSession c, @Nullable String callId, @Nullable Bundle extras) {
+-            return executeAndWaitForReturn(()-> processIncomingCall(c, callId, extras));
++            final boolean shouldBlockBinderThreadOnIncomingCalls = SystemProperties.getBoolean(
++                    "ro.telephony.block_binder_thread_on_incoming_calls", true);
++            if (shouldBlockBinderThreadOnIncomingCalls) {
++                return executeAndWaitForReturn(()-> processIncomingCall(c, callId, extras));
++            } else {
++                // for legacy IMS we want to avoid blocking the binder thread, otherwise
++                // we end up with half dead incoming calls with unattached call session
++                TelephonyUtils.runWithCleanCallingIdentity(()-> processIncomingCall(
++                        c, callId, extras), mExecutor);
++                return null;
++            }
+         }
+ 
+         @Override
+-- 
+2.30.2
+
