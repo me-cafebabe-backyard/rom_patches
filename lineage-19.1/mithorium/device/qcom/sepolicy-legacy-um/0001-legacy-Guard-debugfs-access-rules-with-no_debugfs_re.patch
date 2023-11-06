@@ -1,0 +1,269 @@
+From 0b1b978f443552f86c229390b578130fdb70f12b Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Mon, 6 Nov 2023 08:57:53 +0000
+Subject: [PATCH] legacy: Guard debugfs access rules with
+ `no_debugfs_restriction` macro
+
+Change-Id: Ic7391390fcee059150b52e85e33d1e3028762209
+---
+ legacy/vendor/common/audioserver.te           | 2 +-
+ legacy/vendor/common/bluetooth.te             | 2 ++
+ legacy/vendor/common/hal_audio.te             | 2 ++
+ legacy/vendor/common/hal_bluetooth_qti.te     | 4 +++-
+ legacy/vendor/common/hal_graphics_composer.te | 2 ++
+ legacy/vendor/common/hal_memtrack.te          | 2 +-
+ legacy/vendor/common/kernel.te                | 2 ++
+ legacy/vendor/common/mediaserver.te           | 2 ++
+ legacy/vendor/common/mm-qcamerad.te           | 6 ++++--
+ legacy/vendor/common/qvrd.te                  | 2 +-
+ legacy/vendor/common/ridl.te                  | 2 +-
+ legacy/vendor/common/system_app.te            | 4 +++-
+ legacy/vendor/test/dumpstate.te               | 2 ++
+ legacy/vendor/test/energyawareness.te         | 2 +-
+ legacy/vendor/test/init.te                    | 2 ++
+ legacy/vendor/test/system_server.te           | 2 ++
+ legacy/vendor/test/vendor_init.te             | 2 ++
+ 17 files changed, 33 insertions(+), 9 deletions(-)
+
+diff --git a/legacy/vendor/common/audioserver.te b/legacy/vendor/common/audioserver.te
+index 3e52f42d..b8443269 100644
+--- a/legacy/vendor/common/audioserver.te
++++ b/legacy/vendor/common/audioserver.te
+@@ -25,7 +25,7 @@
+ # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+ # IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
+-userdebug_or_eng(`
++no_debugfs_restriction(`
+ allow audioserver qti_debugfs:dir r_dir_perms;
+ allow audioserver qti_debugfs:file rw_file_perms;
+ ')
+diff --git a/legacy/vendor/common/bluetooth.te b/legacy/vendor/common/bluetooth.te
+index 60a7da3e..6f10f61b 100644
+--- a/legacy/vendor/common/bluetooth.te
++++ b/legacy/vendor/common/bluetooth.te
+@@ -41,6 +41,8 @@ allow bluetooth media_rw_data_file:file create_file_perms;
+ #allow proc_sysrq access for crash dump
+ userdebug_or_eng(`
+  allow bluetooth proc_sysrq:file w_file_perms;
++')
++no_debugfs_restriction(`
+  allow bluetooth qti_debugfs:file r_file_perms;
+ ')
+ 
+diff --git a/legacy/vendor/common/hal_audio.te b/legacy/vendor/common/hal_audio.te
+index 91396a33..4b93aef9 100644
+--- a/legacy/vendor/common/hal_audio.te
++++ b/legacy/vendor/common/hal_audio.te
+@@ -40,6 +40,8 @@ vndbinder_use(hal_audio)
+ 
+ userdebug_or_eng(`
+   diag_use(hal_audio)
++')
++no_debugfs_restriction(`
+   #Allow access to debug fs
+   allow hal_audio_default debugfs:dir r_dir_perms;
+   allow hal_audio_default qti_debugfs:dir r_dir_perms;
+diff --git a/legacy/vendor/common/hal_bluetooth_qti.te b/legacy/vendor/common/hal_bluetooth_qti.te
+index 5b4e4aa2..63a7cd7f 100644
+--- a/legacy/vendor/common/hal_bluetooth_qti.te
++++ b/legacy/vendor/common/hal_bluetooth_qti.te
+@@ -69,9 +69,11 @@ allow hal_bluetooth_qti ramdump_vendor_data_file:file create_file_perms;
+ allow hal_bluetooth_qti ramdump_vendor_data_file:dir rw_dir_perms;
+ 
+ allow hal_bluetooth proc_sysrq:file w_file_perms;
++allow hal_bluetooth_qti self:{ socket qipcrtr_socket } create_socket_perms_no_ioctl;
++')
++no_debugfs_restriction(`
+ allow hal_bluetooth_qti qti_debugfs:file r_file_perms;
+ allow hal_bluetooth_qti qti_debugfs:dir rw_dir_perms;
+-allow hal_bluetooth_qti self:{ socket qipcrtr_socket } create_socket_perms_no_ioctl;
+ ')
+ 
+ hal_server_domain(hal_bluetooth_qti, hal_fm)
+diff --git a/legacy/vendor/common/hal_graphics_composer.te b/legacy/vendor/common/hal_graphics_composer.te
+index fb330a1b..a4258d70 100644
+--- a/legacy/vendor/common/hal_graphics_composer.te
++++ b/legacy/vendor/common/hal_graphics_composer.te
+@@ -27,6 +27,8 @@
+ 
+ userdebug_or_eng(`
+     diag_use(hal_graphics_composer)
++')
++no_debugfs_restriction(`
+     # Allow read to /sys/kernel/debug/*
+     allow hal_graphics_composer qti_debugfs:dir r_dir_perms;
+     allow hal_graphics_composer qti_debugfs:file r_file_perms;
+diff --git a/legacy/vendor/common/hal_memtrack.te b/legacy/vendor/common/hal_memtrack.te
+index aecdcd0a..a69d0e80 100644
+--- a/legacy/vendor/common/hal_memtrack.te
++++ b/legacy/vendor/common/hal_memtrack.te
+@@ -26,7 +26,7 @@
+ # # IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
+ #debugfs access to audio
+-userdebug_or_eng(`
++no_debugfs_restriction(`
+ allow hal_memtrack_default qti_debugfs:dir r_dir_perms;
+ allow hal_memtrack_default qti_debugfs:file rw_file_perms;
+ ')
+diff --git a/legacy/vendor/common/kernel.te b/legacy/vendor/common/kernel.te
+index 897a327e..cb0b1134 100755
+--- a/legacy/vendor/common/kernel.te
++++ b/legacy/vendor/common/kernel.te
+@@ -29,6 +29,8 @@ allow kernel block_device:blk_file rw_file_perms;
+ 
+ userdebug_or_eng(`
+   allow kernel self:{ socket qipcrtr_socket } create_socket_perms_no_ioctl;
++')
++no_debugfs_restriction(`
+   r_dir_file(kernel, qti_debugfs);
+   allow kernel debugfs_mmc:dir search;
+ ')
+diff --git a/legacy/vendor/common/mediaserver.te b/legacy/vendor/common/mediaserver.te
+index f7cf2474..6b494817 100644
+--- a/legacy/vendor/common/mediaserver.te
++++ b/legacy/vendor/common/mediaserver.te
+@@ -39,6 +39,8 @@ userdebug_or_eng(`
+   allow mediaserver camera_data_file:dir rw_dir_perms;
+   allow mediaserver camera_data_file:file create_file_perms;
+   # Access to audio
++')
++no_debugfs_restriction(`
+   allow mediaserver qti_debugfs:file rw_file_perms;
+ ')
+ 
+diff --git a/legacy/vendor/common/mm-qcamerad.te b/legacy/vendor/common/mm-qcamerad.te
+index 3fdd867e..ac73964a 100644
+--- a/legacy/vendor/common/mm-qcamerad.te
++++ b/legacy/vendor/common/mm-qcamerad.te
+@@ -31,8 +31,6 @@ init_daemon_domain(mm-qcamerad)
+ 
+ #added to support EZTune for camera
+ userdebug_or_eng(`
+-  allow mm-qcamerad qti_debugfs:dir r_dir_perms;
+-  allow mm-qcamerad qti_debugfs:file read;
+   #allow mm-qcamerad self:tcp_socket create_stream_socket_perms;
+   allow mm-qcamerad node:tcp_socket node_bind;
+ 
+@@ -43,6 +41,10 @@ userdebug_or_eng(`
+   # mm-qcamerad needs to set persist.camera. property
+   set_prop(mm-qcamerad, camera_prop)
+ ')
++no_debugfs_restriction(`
++  allow mm-qcamerad qti_debugfs:dir r_dir_perms;
++  allow mm-qcamerad qti_debugfs:file read;
++')
+ 
+ #Communicate with user land process through domain socket
+ unix_socket_connect(mm-qcamerad, sensors, sensors)
+diff --git a/legacy/vendor/common/qvrd.te b/legacy/vendor/common/qvrd.te
+index d26bce63..0337ac26 100644
+--- a/legacy/vendor/common/qvrd.te
++++ b/legacy/vendor/common/qvrd.te
+@@ -71,7 +71,7 @@ allow vendor_qvrd fwk_sensor_hwservice:hwservice_manager find;
+ hal_client_domain(vendor_qvrd, hal_sensors)
+ 
+ # QVRD
+-userdebug_or_eng(`
++no_debugfs_restriction(`
+ allow vendor_qvrd debugfs:dir r_dir_perms;
+ allow vendor_qvrd qti_debugfs:dir r_dir_perms;
+ allow vendor_qvrd qti_debugfs:file rw_file_perms;
+diff --git a/legacy/vendor/common/ridl.te b/legacy/vendor/common/ridl.te
+index 31f22559..8dba2b68 100644
+--- a/legacy/vendor/common/ridl.te
++++ b/legacy/vendor/common/ridl.te
+@@ -41,7 +41,7 @@ net_domain(RIDL)
+ allow RIDL RIDL_data_file:dir create_dir_perms;
+ allow RIDL RIDL_data_file:file create_file_perms;
+ allow RIDL RIDL_data_file:lnk_file { create read unlink };
+-userdebug_or_eng(`
++no_debugfs_restriction(`
+ allow RIDL qti_debugfs:file read;
+ ')
+ 
+diff --git a/legacy/vendor/common/system_app.te b/legacy/vendor/common/system_app.te
+index d06220b5..6ab1ee14 100644
+--- a/legacy/vendor/common/system_app.te
++++ b/legacy/vendor/common/system_app.te
+@@ -34,7 +34,6 @@ allow system_app {
+ }:service_manager add;
+ 
+ userdebug_or_eng(`
+-  allow system_app qti_debugfs:file r_file_perms;
+   allow system_app su:unix_dgram_socket sendto;
+ 
+   # Access to tombstone segfaults
+@@ -43,6 +42,9 @@ userdebug_or_eng(`
+   diag_use(system_app)
+ 
+ ')
++no_debugfs_restriction(`
++  allow system_app qti_debugfs:file r_file_perms;
++')
+ 
+ allow system_app cnd_data_file:dir w_dir_perms;
+ allow system_app cnd_data_file:file create_file_perms;
+diff --git a/legacy/vendor/test/dumpstate.te b/legacy/vendor/test/dumpstate.te
+index 94a705de..aaa342a6 100644
+--- a/legacy/vendor/test/dumpstate.te
++++ b/legacy/vendor/test/dumpstate.te
+@@ -25,4 +25,6 @@
+ # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+ # IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
++no_debugfs_restriction(`
+ allow dumpstate binder_state:file r_file_perms;
++')
+diff --git a/legacy/vendor/test/energyawareness.te b/legacy/vendor/test/energyawareness.te
+index 0ef47fa2..3878af30 100644
+--- a/legacy/vendor/test/energyawareness.te
++++ b/legacy/vendor/test/energyawareness.te
+@@ -27,7 +27,7 @@
+ 
+ #Access to power costs for testing
+ 
+-userdebug_or_eng(`
++no_debugfs_restriction(`
+ allow energyawareness qti_debugfs:dir r_dir_perms;
+ allow energyawareness qti_debugfs:file rw_file_perms;
+ ')
+diff --git a/legacy/vendor/test/init.te b/legacy/vendor/test/init.te
+index 8c3ff0b4..1020588a 100644
+--- a/legacy/vendor/test/init.te
++++ b/legacy/vendor/test/init.te
+@@ -25,5 +25,7 @@
+ # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+ # IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
++no_debugfs_restriction(`
+ allow init binder_state:file r_file_perms;
++')
+ 
+diff --git a/legacy/vendor/test/system_server.te b/legacy/vendor/test/system_server.te
+index 8accae92..0b0bc23f 100644
+--- a/legacy/vendor/test/system_server.te
++++ b/legacy/vendor/test/system_server.te
+@@ -25,4 +25,6 @@
+ # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+ # IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
++no_debugfs_restriction(`
+ allow system_server binder_state:file r_file_perms;
++')
+diff --git a/legacy/vendor/test/vendor_init.te b/legacy/vendor/test/vendor_init.te
+index e92bb853..20e63ac3 100644
+--- a/legacy/vendor/test/vendor_init.te
++++ b/legacy/vendor/test/vendor_init.te
+@@ -25,5 +25,7 @@
+ # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+ # IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
++no_debugfs_restriction(`
+ allow vendor_init binder_state:file r_file_perms;
++')
+ 
+-- 
+2.39.2
+
