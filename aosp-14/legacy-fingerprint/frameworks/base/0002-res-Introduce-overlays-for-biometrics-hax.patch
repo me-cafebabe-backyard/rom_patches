@@ -1,4 +1,4 @@
-From a0264e7bad86d9ddbbaad29190f4ea54ae4bbd83 Mon Sep 17 00:00:00 2001
+From 932ad2c27e34cfdc9b8891d25161ebe84591c5e3 Mon Sep 17 00:00:00 2001
 From: Bruno Martins <bgcngm@gmail.com>
 Date: Mon, 5 Oct 2020 18:22:43 +0100
 Subject: [PATCH 2/3] res: Introduce overlays for biometrics hax
@@ -10,13 +10,13 @@ Change-Id: I5037be2fc49680a5092939b5e8b6518a506d7297
  2 files changed, 16 insertions(+)
 
 diff --git a/core/res/res/values/config.xml b/core/res/res/values/config.xml
-index bd0fe40e758d..b25931d104b0 100644
+index 70013911904e..6742b9e4c16b 100644
 --- a/core/res/res/values/config.xml
 +++ b/core/res/res/values/config.xml
-@@ -6459,4 +6459,12 @@
-     <!-- Whether the AOSP support for app cloning building blocks is to be enabled for the
-          device. -->
-     <bool name="config_enableAppCloningBuildingBlocks">true</bool>
+@@ -6462,4 +6462,12 @@
+ 
+     <!-- Whether unlocking and waking a device are sequenced -->
+     <bool name="config_orderUnlockAndWake">false</bool>
 +
 +    <!-- Whether to cleanup fingerprints upon connection to the daemon and when
 +         user switches -->
@@ -27,13 +27,13 @@ index bd0fe40e758d..b25931d104b0 100644
 +    <bool name="config_fingerprintPostResetRunnableForAllClients">false</bool>
  </resources>
 diff --git a/core/res/res/values/symbols.xml b/core/res/res/values/symbols.xml
-index 2d040bb66d83..f7b160a18c64 100644
+index 2425d367e1db..2e2ccc2cf715 100644
 --- a/core/res/res/values/symbols.xml
 +++ b/core/res/res/values/symbols.xml
-@@ -5132,4 +5132,12 @@
+@@ -5135,4 +5135,12 @@
  
-   <java-symbol type="drawable" name="focus_event_pressed_key_background" />
-   <java-symbol type="string" name="lockscreen_too_many_failed_attempts_countdown" />
+   <!-- Whether we order unlocking and waking -->
+   <java-symbol type="bool" name="config_orderUnlockAndWake" />
 +
 +    <!-- Whether to cleanup fingerprints upon connection to the daemon and when
 +         user switches -->

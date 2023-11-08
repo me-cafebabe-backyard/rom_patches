@@ -1,4 +1,4 @@
-From 7bec0ff7e4078d46a852f706be7d44c4c60c0e04 Mon Sep 17 00:00:00 2001
+From 797fc3cb1d1c492b50bf5e380b817630357eb331 Mon Sep 17 00:00:00 2001
 From: me-cafebabe <me_cafebabe@hotmail.com>
 Date: Sat, 20 Aug 2022 14:53:35 +0000
 Subject: [PATCH 3/3] Biometrics: Load fingerprint cleanup overlay from
