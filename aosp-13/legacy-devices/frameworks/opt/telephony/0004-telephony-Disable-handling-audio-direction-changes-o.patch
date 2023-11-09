@@ -1,7 +1,7 @@
-From 6705d3dc921d769803b213199084fe5f642d9faa Mon Sep 17 00:00:00 2001
+From 01ca572d0e2a2579f5374acf6df4df3dc0a1e1f4 Mon Sep 17 00:00:00 2001
 From: Quallenauge <Hamsi2k@freenet.de>
 Date: Wed, 3 Aug 2022 21:16:11 +0100
-Subject: [PATCH 4/9] telephony: Disable handling audio direction changes on
+Subject: [PATCH 04/10] telephony: Disable handling audio direction changes on
  IMS calls.
 
 I6f84e2b90e572c0973dcf04ce1e0c8e5e3524467 (AOSP) introduces
@@ -48,5 +48,5 @@ index 5968ba6fa1..a47ae91484 100644
              return;
          }
 -- 
-2.39.2
+2.30.2
 

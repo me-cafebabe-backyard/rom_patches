@@ -1,7 +1,7 @@
-From 87119c1d67c5b3d79c9d8eccd6612f9a6771e138 Mon Sep 17 00:00:00 2001
+From 9625fca78774aeeb1d4bdd88a810e67e910fcf00 Mon Sep 17 00:00:00 2001
 From: Paul Keith <javelinanddart@gmail.com>
 Date: Sat, 12 Aug 2023 22:43:33 +0200
-Subject: [PATCH 8/9] RadioMessagingProxy: Fix sending CDMA IMS SMS
+Subject: [PATCH 08/10] RadioMessagingProxy: Fix sending CDMA IMS SMS
 
 When cdmaPdu is not null, we need to set the message technology to
 THREE_GPP2 so that dispatchImsCdmaSms() is chosen in libril. If we

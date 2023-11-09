@@ -1,7 +1,7 @@
-From 37b8123d156590f98245fb5b4d2f4ccd5b457b0e Mon Sep 17 00:00:00 2001
+From 791b851d01e938edba434dfebabc1b09a401a08e Mon Sep 17 00:00:00 2001
 From: Quallenauge <Hamsi2k@freenet.de>
 Date: Tue, 8 Feb 2022 22:18:04 +0100
-Subject: [PATCH 2/9] Restore support with RadioConfig@1.0 dsds clients.
+Subject: [PATCH 02/10] Restore support with RadioConfig@1.0 dsds clients.
 
 Add capability NET_CAPABILITY_NOT_VCN_MANAGED to the
 list of "supported" capabilities on

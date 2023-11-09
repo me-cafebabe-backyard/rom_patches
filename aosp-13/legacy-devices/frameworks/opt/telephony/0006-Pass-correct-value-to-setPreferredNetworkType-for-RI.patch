@@ -1,7 +1,7 @@
-From 64e5fd3098667c159482248d85385e69e82954be Mon Sep 17 00:00:00 2001
+From b8216f9e2c98e7d566f04226e5a2ea2a67a6d700 Mon Sep 17 00:00:00 2001
 From: LuK1337 <priv.luk@gmail.com>
 Date: Fri, 21 Oct 2022 20:55:05 +0200
-Subject: [PATCH 6/9] Pass correct value to setPreferredNetworkType() for RIL
+Subject: [PATCH 06/10] Pass correct value to setPreferredNetworkType() for RIL
  version < 1.4
 
 Change-Id: Id14be66a2ea4e85b6504bc03fd7d2f038185c17d
@@ -49,5 +49,5 @@ index b88103510a..661fa56954 100644
      }
  
 -- 
-2.39.2
+2.30.2
 

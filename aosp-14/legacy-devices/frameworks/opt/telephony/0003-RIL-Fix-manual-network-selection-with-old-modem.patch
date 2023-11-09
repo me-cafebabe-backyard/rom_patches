@@ -1,7 +1,7 @@
-From 8fedcbe852c7ab2ede9efeb57b3f5e521734edc8 Mon Sep 17 00:00:00 2001
+From 84c229d6fb5df215ea5b73dec8e079711e0a2f71 Mon Sep 17 00:00:00 2001
 From: faust93 <monumentum@gmail.com>
 Date: Wed, 19 Sep 2018 14:26:54 +0800
-Subject: [PATCH 3/9] RIL: Fix manual network selection with old modem
+Subject: [PATCH 03/10] RIL: Fix manual network selection with old modem
 
  * Old modem sends and applies mccmnc+network type, but new aosp
    telephony uses only digits.
