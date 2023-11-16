@@ -1,0 +1,750 @@
+From 1d654e438715f750e443146aa04536d7b18af628 Mon Sep 17 00:00:00 2001
+From: Michael Bestas <mkbestas@lineageos.org>
+Date: Tue, 30 May 2023 03:23:53 +0300
+Subject: [PATCH] sepolicy: Guard debugfs rules
+
+Allow building with PRODUCT_SET_DEBUGFS_RESTRICTIONS set.
+
+Change-Id: I0d0703ea21f1f812c06247a3db2bc755e8904149
+---
+ SEPolicy.mk                                   |  6 +++-
+ legacy/vendor/common/audioserver.te           |  8 +++--
+ legacy/vendor/common/bluetooth.te             |  7 ++++-
+ legacy/vendor/common/debugfs/file.te          | 30 +++++++++++++++++++
+ legacy/vendor/common/debugfs/file_contexts    | 28 +++++++++++++++++
+ legacy/vendor/common/debugfs/genfs_contexts   | 28 +++++++++++++++++
+ legacy/vendor/common/domain.te                |  6 +++-
+ legacy/vendor/common/file.te                  |  4 ---
+ legacy/vendor/common/file_contexts            |  1 -
+ legacy/vendor/common/genfs_contexts           |  1 -
+ legacy/vendor/common/hal_audio.te             | 12 +++++---
+ legacy/vendor/common/hal_bluetooth_qti.te     |  9 ++++--
+ legacy/vendor/common/hal_graphics_composer.te |  7 ++++-
+ legacy/vendor/common/hal_memtrack.te          |  8 +++--
+ legacy/vendor/common/hal_sensors.te           |  6 ++++
+ legacy/vendor/common/kernel.te                |  9 ++++--
+ legacy/vendor/common/mediaserver.te           |  8 +++--
+ legacy/vendor/common/mm-qcamerad.te           |  9 ++++--
+ legacy/vendor/common/perfdump_app.te          | 16 +++++-----
+ legacy/vendor/common/qlogd.te                 |  7 ++++-
+ legacy/vendor/common/qti_logkit_app.te        |  1 -
+ legacy/vendor/common/qvrd.te                  | 10 ++++---
+ legacy/vendor/common/ridl.te                  |  7 +++--
+ legacy/vendor/common/system_app.te            |  7 ++++-
+ legacy/vendor/test/debugfs/file.te            | 30 +++++++++++++++++++
+ legacy/vendor/test/debugfs/file_contexts      | 29 ++++++++++++++++++
+ .../vendor/test/{ => debugfs}/genfs_contexts  |  0
+ legacy/vendor/test/dumpstate.te               |  6 +++-
+ legacy/vendor/test/energyawareness.te         |  8 +++--
+ legacy/vendor/test/file.te                    |  4 ---
+ legacy/vendor/test/file_contexts              |  3 --
+ legacy/vendor/test/init.te                    |  7 +++--
+ legacy/vendor/test/system_server.te           |  6 +++-
+ legacy/vendor/test/vendor_init.te             |  7 +++--
+ 34 files changed, 275 insertions(+), 60 deletions(-)
+ create mode 100644 legacy/vendor/common/debugfs/file.te
+ create mode 100644 legacy/vendor/common/debugfs/file_contexts
+ create mode 100644 legacy/vendor/common/debugfs/genfs_contexts
+ create mode 100644 legacy/vendor/test/debugfs/file.te
+ create mode 100644 legacy/vendor/test/debugfs/file_contexts
+ rename legacy/vendor/test/{ => debugfs}/genfs_contexts (100%)
+
+diff --git a/SEPolicy.mk b/SEPolicy.mk
+index ec89bc101..e399db0df 100644
+--- a/SEPolicy.mk
++++ b/SEPolicy.mk
+@@ -44,7 +44,11 @@ ifneq (,$(filter sdm660 msm8937 msm8953 msm8996 msm8998, $(TARGET_BOARD_PLATFORM
+       BOARD_VENDOR_SEPOLICY_DIRS += $(SEPOLICY_PATH)/legacy/vendor/$(TARGET_SEPOLICY_DIR)
+     endif
+     ifneq (,$(filter userdebug eng, $(TARGET_BUILD_VARIANT)))
+-    BOARD_VENDOR_SEPOLICY_DIRS += $(SEPOLICY_PATH)/legacy/vendor/test
++      ifneq ($(PRODUCT_SET_DEBUGFS_RESTRICTIONS),true)
++        BOARD_VENDOR_SEPOLICY_DIRS += $(SEPOLICY_PATH)/legacy/vendor/common/debugfs
++        BOARD_VENDOR_SEPOLICY_DIRS += $(SEPOLICY_PATH)/legacy/vendor/test/debugfs
++      endif
++      BOARD_VENDOR_SEPOLICY_DIRS += $(SEPOLICY_PATH)/legacy/vendor/test
+     endif
+ endif
+ 
+diff --git a/legacy/vendor/common/audioserver.te b/legacy/vendor/common/audioserver.te
+index 3e52f42d0..a476ef9d5 100644
+--- a/legacy/vendor/common/audioserver.te
++++ b/legacy/vendor/common/audioserver.te
+@@ -25,9 +25,11 @@
+ # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+ # IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
+-userdebug_or_eng(`
+-allow audioserver qti_debugfs:dir r_dir_perms;
+-allow audioserver qti_debugfs:file rw_file_perms;
++no_debugfs_restriction(`
++  userdebug_or_eng(`
++    allow audioserver qti_debugfs:dir r_dir_perms;
++    allow audioserver qti_debugfs:file rw_file_perms;
++  ')
+ ')
+ 
+ # Allow audioserver to read soundcard state under /proc/asound
+diff --git a/legacy/vendor/common/bluetooth.te b/legacy/vendor/common/bluetooth.te
+index 60a7da3e0..4dfd9012e 100644
+--- a/legacy/vendor/common/bluetooth.te
++++ b/legacy/vendor/common/bluetooth.te
+@@ -41,7 +41,12 @@ allow bluetooth media_rw_data_file:file create_file_perms;
+ #allow proc_sysrq access for crash dump
+ userdebug_or_eng(`
+  allow bluetooth proc_sysrq:file w_file_perms;
+- allow bluetooth qti_debugfs:file r_file_perms;
++')
++
++no_debugfs_restriction(`
++  userdebug_or_eng(`
++    allow bluetooth qti_debugfs:file r_file_perms;
++  ')
+ ')
+ 
+ allow bluetooth {
+diff --git a/legacy/vendor/common/debugfs/file.te b/legacy/vendor/common/debugfs/file.te
+new file mode 100644
+index 000000000..67240ebbd
+--- /dev/null
++++ b/legacy/vendor/common/debugfs/file.te
+@@ -0,0 +1,30 @@
++# Copyright (c) 2019, The Linux Foundation. All rights reserved.
++#
++# Redistribution and use in source and binary forms, with or without
++# modification, are permitted provided that the following conditions are
++# met:
++#     * Redistributions of source code must retain the above copyright
++#       notice, this list of conditions and the following disclaimer.
++#     * Redistributions in binary form must reproduce the above
++#       copyright notice, this list of conditions and the following
++#       disclaimer in the documentation and/or other materials provided
++#       with the distribution.
++#     * Neither the name of The Linux Foundation nor the names of its
++#       contributors may be used to endorse or promote products derived
++#       from this software without specific prior written permission.
++#
++# THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED
++# WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
++# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT
++# ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
++# BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
++# BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
++# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
++# OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
++# IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++
++# path to debugfs use this whic should be only used
++# in debug builds
++type qti_debugfs, fs_type, debugfs_type;
+diff --git a/legacy/vendor/common/debugfs/file_contexts b/legacy/vendor/common/debugfs/file_contexts
+new file mode 100644
+index 000000000..77d028d66
+--- /dev/null
++++ b/legacy/vendor/common/debugfs/file_contexts
+@@ -0,0 +1,28 @@
++# Copyright (c) 2019-2021, The Linux Foundation. All rights reserved.
++#
++# Redistribution and use in source and binary forms, with or without
++# modification, are permitted provided that the following conditions are
++# met:
++#     * Redistributions of source code must retain the above copyright
++#       notice, this list of conditions and the following disclaimer.
++#     * Redistributions in binary form must reproduce the above
++#       copyright notice, this list of conditions and the following
++#       disclaimer in the documentation and/or other materials provided
++#       with the distribution.
++#     * Neither the name of The Linux Foundation nor the names of its
++#       contributors may be used to endorse or promote products derived
++#       from this software without specific prior written permission.
++#
++# THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED
++# WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
++# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT
++# ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
++# BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
++# BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
++# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
++# OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
++# IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++
++/sys/kernel/debug/ipc_logging(/.*)?                                 u:object_r:qti_debugfs:s0
+diff --git a/legacy/vendor/common/debugfs/genfs_contexts b/legacy/vendor/common/debugfs/genfs_contexts
+new file mode 100644
+index 000000000..f33d4b321
+--- /dev/null
++++ b/legacy/vendor/common/debugfs/genfs_contexts
+@@ -0,0 +1,28 @@
++# Copyright (c) 2019, The Linux Foundation. All rights reserved.
++#
++# Redistribution and use in source and binary forms, with or without
++# modification, are permitted provided that the following conditions are
++# met:
++#     * Redistributions of source code must retain the above copyright
++#       notice, this list of conditions and the following disclaimer.
++#     * Redistributions in binary form must reproduce the above
++#       copyright notice, this list of conditions and the following
++#       disclaimer in the documentation and/or other materials provided
++#       with the distribution.
++#     * Neither the name of The Linux Foundation nor the names of its
++#       contributors may be used to endorse or promote products derived
++#       from this software without specific prior written permission.
++#
++# THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED
++# WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
++# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT
++# ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
++# BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
++# BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
++# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
++# OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
++# IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++
++genfscon debugfs /kgsl/proc u:object_r:qti_debugfs:s0
+diff --git a/legacy/vendor/common/domain.te b/legacy/vendor/common/domain.te
+index c0c3bf69d..1475a3048 100644
+--- a/legacy/vendor/common/domain.te
++++ b/legacy/vendor/common/domain.te
+@@ -74,7 +74,11 @@ allowxperm domain domain:icmp_socket ioctl { unpriv_sock_ioctls unpriv_tty_ioctl
+ get_prop(domain, vendor_security_patch_level_prop)
+ get_prop(domain, vendor_public_vendor_default_prop)
+ 
+-allow domain qti_debugfs:dir search;
++no_debugfs_restriction(`
++  userdebug_or_eng(`
++    allow domain qti_debugfs:dir search;
++  ')
++')
+ 
+ # allow all context to read sysfs_kgsl
+ allow { domain - isolated_app } sysfs_kgsl:dir search;
+diff --git a/legacy/vendor/common/file.te b/legacy/vendor/common/file.te
+index 23b8f122d..7baddc650 100644
+--- a/legacy/vendor/common/file.te
++++ b/legacy/vendor/common/file.te
+@@ -304,10 +304,6 @@ type sysfs_laser, fs_type, sysfs_type;
+ # qcc-trd data files
+ type vendor_qcc_trd_data_file, file_type, data_file_type;
+ 
+-# path to debugfs use this whic should be only used
+-# in debug builds
+-type qti_debugfs, fs_type, debugfs_type;
+-
+ # vendor radio files
+ type vendor_radio_data_file, file_type, data_file_type;
+ 
+diff --git a/legacy/vendor/common/file_contexts b/legacy/vendor/common/file_contexts
+index 276cd1f22..e09e6ce0b 100644
+--- a/legacy/vendor/common/file_contexts
++++ b/legacy/vendor/common/file_contexts
+@@ -526,7 +526,6 @@
+ /sys/module/vmpressure(/.*)?                                        u:object_r:sysfs_vmpressure:s0
+ /sys/board_properties/virtualkeys.synaptics_dsx                     u:object_r:sysfs_virtualkeys:s0
+ /sys/board_properties/virtualkeys.ft5x06_ts                         u:object_r:sysfs_virtualkeys:s0
+-/sys/kernel/debug/ipc_logging(/.*)?                                 u:object_r:qti_debugfs:s0
+ 
+ ###################################
+ # data files-- only vendor paths should be added
+diff --git a/legacy/vendor/common/genfs_contexts b/legacy/vendor/common/genfs_contexts
+index cce796f9e..da2c6745f 100755
+--- a/legacy/vendor/common/genfs_contexts
++++ b/legacy/vendor/common/genfs_contexts
+@@ -53,7 +53,6 @@ genfscon sysfs /devices/soc/soc:qcom,memlat-cpu2/devfreq u:object_r:sysfs_devfre
+ genfscon sysfs /devices/soc/soc:qcom,memlat-cpu4/devfreq u:object_r:sysfs_devfreq:s0
+ genfscon sysfs /devices/soc/soc:qcom,memlat-cpu6/devfreq u:object_r:sysfs_devfreq:s0
+ genfscon sysfs /devices/soc/soc:qcom,mincpubw/devfreq u:object_r:sysfs_devfreq:s0
+-genfscon debugfs /kgsl/proc u:object_r:qti_debugfs:s0
+ genfscon sysfs /kernel/wcd_cpe0 u:object_r:sysfs_audio:s0
+ genfscon sysfs /devices/virtual/thermal u:object_r:sysfs_thermal:s0
+ genfscon sysfs /devices/virtual/kgsl/kgsl/proc u:object_r:sysfs_kgsl_proc:s0
+diff --git a/legacy/vendor/common/hal_audio.te b/legacy/vendor/common/hal_audio.te
+index 91396a33e..d5e42ddfc 100644
+--- a/legacy/vendor/common/hal_audio.te
++++ b/legacy/vendor/common/hal_audio.te
+@@ -40,10 +40,14 @@ vndbinder_use(hal_audio)
+ 
+ userdebug_or_eng(`
+   diag_use(hal_audio)
+-  #Allow access to debug fs
+-  allow hal_audio_default debugfs:dir r_dir_perms;
+-  allow hal_audio_default qti_debugfs:dir r_dir_perms;
+-  allow hal_audio_default qti_debugfs:file rw_file_perms;
++')
++
++no_debugfs_restriction(`
++  userdebug_or_eng(`
++    allow hal_audio_default debugfs:dir r_dir_perms;
++    allow hal_audio_default qti_debugfs:dir r_dir_perms;
++    allow hal_audio_default qti_debugfs:file rw_file_perms;
++  ')
+ ')
+ 
+ #Allow access to firmware
+diff --git a/legacy/vendor/common/hal_bluetooth_qti.te b/legacy/vendor/common/hal_bluetooth_qti.te
+index 5b4e4aa28..d653fb22d 100644
+--- a/legacy/vendor/common/hal_bluetooth_qti.te
++++ b/legacy/vendor/common/hal_bluetooth_qti.te
+@@ -69,11 +69,16 @@ allow hal_bluetooth_qti ramdump_vendor_data_file:file create_file_perms;
+ allow hal_bluetooth_qti ramdump_vendor_data_file:dir rw_dir_perms;
+ 
+ allow hal_bluetooth proc_sysrq:file w_file_perms;
+-allow hal_bluetooth_qti qti_debugfs:file r_file_perms;
+-allow hal_bluetooth_qti qti_debugfs:dir rw_dir_perms;
+ allow hal_bluetooth_qti self:{ socket qipcrtr_socket } create_socket_perms_no_ioctl;
+ ')
+ 
++no_debugfs_restriction(`
++  userdebug_or_eng(`
++    allow hal_bluetooth_qti qti_debugfs:file r_file_perms;
++    allow hal_bluetooth_qti qti_debugfs:dir rw_dir_perms;
++  ')
++')
++
+ hal_server_domain(hal_bluetooth_qti, hal_fm)
+ hal_server_domain(hal_bluetooth_qti, hal_btconfigstore)
+ 
+diff --git a/legacy/vendor/common/hal_graphics_composer.te b/legacy/vendor/common/hal_graphics_composer.te
+index fb330a1bc..c343abe4e 100644
+--- a/legacy/vendor/common/hal_graphics_composer.te
++++ b/legacy/vendor/common/hal_graphics_composer.te
+@@ -27,10 +27,15 @@
+ 
+ userdebug_or_eng(`
+     diag_use(hal_graphics_composer)
+-    # Allow read to /sys/kernel/debug/*
++')
++
++no_debugfs_restriction(`
++  userdebug_or_eng(`
+     allow hal_graphics_composer qti_debugfs:dir r_dir_perms;
+     allow hal_graphics_composer qti_debugfs:file r_file_perms;
++  ')
+ ')
++
+ hal_client_domain(hal_graphics_composer_default, hal_graphics_allocator);
+ get_prop(hal_graphics_composer, vendor_display_prop)
+ allow hal_graphics_composer_default self:netlink_kobject_uevent_socket create_socket_perms_no_ioctl;
+diff --git a/legacy/vendor/common/hal_memtrack.te b/legacy/vendor/common/hal_memtrack.te
+index aecdcd0a6..7c0cffaef 100644
+--- a/legacy/vendor/common/hal_memtrack.te
++++ b/legacy/vendor/common/hal_memtrack.te
+@@ -26,9 +26,11 @@
+ # # IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
+ #debugfs access to audio
+-userdebug_or_eng(`
+-allow hal_memtrack_default qti_debugfs:dir r_dir_perms;
+-allow hal_memtrack_default qti_debugfs:file rw_file_perms;
++no_debugfs_restriction(`
++  userdebug_or_eng(`
++    allow hal_memtrack_default qti_debugfs:dir r_dir_perms;
++    allow hal_memtrack_default qti_debugfs:file rw_file_perms;
++  ')
+ ')
+ 
+ #Acess to kgsl memory /sys/class/kgsl/kgsl/proc/<pid>/mtrack
+diff --git a/legacy/vendor/common/hal_sensors.te b/legacy/vendor/common/hal_sensors.te
+index a9a25c43f..fe972ee91 100644
+--- a/legacy/vendor/common/hal_sensors.te
++++ b/legacy/vendor/common/hal_sensors.te
+@@ -29,8 +29,14 @@
+ userdebug_or_eng(`
+     diag_use(hal_sensors)
+     get_prop(hal_sensors_default, vendor_sensors_dbg_prop)
++')
++
++no_debugfs_restriction(`
++  userdebug_or_eng(`
+     allow hal_sensors debugfs_tracing:file { open write };
++  ')
+ ')
++
+ set_prop(hal_sensors, vendor_slpi_prop);
+ allow hal_sensors self:{ socket qipcrtr_socket } create_socket_perms;
+ allowxperm hal_sensors self:{ socket qipcrtr_socket } ioctl msm_sock_ipc_ioctls;
+diff --git a/legacy/vendor/common/kernel.te b/legacy/vendor/common/kernel.te
+index 897a327e3..4abe02090 100755
+--- a/legacy/vendor/common/kernel.te
++++ b/legacy/vendor/common/kernel.te
+@@ -29,8 +29,13 @@ allow kernel block_device:blk_file rw_file_perms;
+ 
+ userdebug_or_eng(`
+   allow kernel self:{ socket qipcrtr_socket } create_socket_perms_no_ioctl;
+-  r_dir_file(kernel, qti_debugfs);
+-  allow kernel debugfs_mmc:dir search;
++')
++
++no_debugfs_restriction(`
++  userdebug_or_eng(`
++    r_dir_file(kernel, qti_debugfs);
++    allow kernel debugfs_mmc:dir search;
++  ')
+ ')
+ 
+ # Access firmware_file
+diff --git a/legacy/vendor/common/mediaserver.te b/legacy/vendor/common/mediaserver.te
+index f7cf24743..f63f3c16c 100644
+--- a/legacy/vendor/common/mediaserver.te
++++ b/legacy/vendor/common/mediaserver.te
+@@ -38,8 +38,12 @@ allow mediaserver camera_data_file:sock_file w_file_perms;
+ userdebug_or_eng(`
+   allow mediaserver camera_data_file:dir rw_dir_perms;
+   allow mediaserver camera_data_file:file create_file_perms;
+-  # Access to audio
+-  allow mediaserver qti_debugfs:file rw_file_perms;
++')
++
++no_debugfs_restriction(`
++  userdebug_or_eng(`
++    allow mediaserver qti_debugfs:file rw_file_perms;
++  ')
+ ')
+ 
+ # allow poweroffhandler to binder mediaserver
+diff --git a/legacy/vendor/common/mm-qcamerad.te b/legacy/vendor/common/mm-qcamerad.te
+index 3fdd867ea..81f1f4330 100644
+--- a/legacy/vendor/common/mm-qcamerad.te
++++ b/legacy/vendor/common/mm-qcamerad.te
+@@ -31,8 +31,6 @@ init_daemon_domain(mm-qcamerad)
+ 
+ #added to support EZTune for camera
+ userdebug_or_eng(`
+-  allow mm-qcamerad qti_debugfs:dir r_dir_perms;
+-  allow mm-qcamerad qti_debugfs:file read;
+   #allow mm-qcamerad self:tcp_socket create_stream_socket_perms;
+   allow mm-qcamerad node:tcp_socket node_bind;
+ 
+@@ -44,6 +42,13 @@ userdebug_or_eng(`
+   set_prop(mm-qcamerad, camera_prop)
+ ')
+ 
++no_debugfs_restriction(`
++  userdebug_or_eng(`
++    allow mm-qcamerad qti_debugfs:dir r_dir_perms;
++    allow mm-qcamerad qti_debugfs:file read;
++  ')
++')
++
+ #Communicate with user land process through domain socket
+ unix_socket_connect(mm-qcamerad, sensors, sensors)
+ 
+diff --git a/legacy/vendor/common/perfdump_app.te b/legacy/vendor/common/perfdump_app.te
+index fb2260200..2ed123242 100644
+--- a/legacy/vendor/common/perfdump_app.te
++++ b/legacy/vendor/common/perfdump_app.te
+@@ -32,15 +32,17 @@ allow perfdump_app system_app_data_file:dir create_dir_perms;
+ allow perfdump_app system_app_data_file:file create_file_perms;
+ 
+ # systrace support
+-allow perfdump_app debugfs_tracing:dir r_dir_perms;
+-allow perfdump_app debugfs_tracing:file rw_file_perms;
++no_debugfs_restriction(`
++  userdebug_or_eng(`
++    allow perfdump_app debugfs_tracing:dir r_dir_perms;
++    allow perfdump_app debugfs_tracing:file rw_file_perms;
+ 
+-userdebug_or_eng(`
+-  allow perfdump_app debugfs_tracing_debug:dir r_dir_perms;
+-  allow perfdump_app debugfs_tracing_debug:file rw_file_perms;
+-')
++    allow perfdump_app debugfs_tracing_debug:dir r_dir_perms;
++    allow perfdump_app debugfs_tracing_debug:file rw_file_perms;
+ 
+-allow perfdump_app debugfs_trace_marker:file getattr;
++    allow perfdump_app debugfs_trace_marker:file getattr;
++  ')
++')
+ 
+ # perfdump sets debug.atrace.* properties
+ set_prop(perfdump_app, debug_prop)
+diff --git a/legacy/vendor/common/qlogd.te b/legacy/vendor/common/qlogd.te
+index fdf08e202..9b509da39 100644
+--- a/legacy/vendor/common/qlogd.te
++++ b/legacy/vendor/common/qlogd.te
+@@ -65,13 +65,18 @@ allow qlogd kernel:system syslog_mod;
+ 
+ # need for qdss log and odl from UI
+ userdebug_or_eng(`
+-  allow qlogd { debugfs_tracing qdss_device }:file r_file_perms;
+   allow qlogd { qdss_device }:file r_file_perms;
+   r_dir_file(qlogd, storage_file)
+   r_dir_file(qlogd, mnt_user_file)
+   diag_use(qlogd)
+ ')
+ 
++no_debugfs_restriction(`
++  userdebug_or_eng(`
++    allow qlogd debugfs_tracing:file r_file_perms;
++  ')
++')
++
+ # need for capture adb logs
+ unix_socket_connect(qlogd, logdr, logd)
+ 
+diff --git a/legacy/vendor/common/qti_logkit_app.te b/legacy/vendor/common/qti_logkit_app.te
+index 4804b42db..e3fefa7b4 100644
+--- a/legacy/vendor/common/qti_logkit_app.te
++++ b/legacy/vendor/common/qti_logkit_app.te
+@@ -39,7 +39,6 @@ allow qti_logkit_app surfaceflinger_service:service_manager find;
+ net_domain(qti_logkit_app)
+ 
+ userdebug_or_eng(`
+-  # allow qti_logkit_app debugfs:file r_file_perms;
+   allow qti_logkit_app su:unix_dgram_socket sendto;
+   allow qti_logkit_app mnt_vendor_file:dir r_dir_perms;
+   allow qti_logkit_app sensors_persist_file:dir r_dir_perms;
+diff --git a/legacy/vendor/common/qvrd.te b/legacy/vendor/common/qvrd.te
+index d26bce63b..4b6cc02b4 100644
+--- a/legacy/vendor/common/qvrd.te
++++ b/legacy/vendor/common/qvrd.te
+@@ -71,10 +71,12 @@ allow vendor_qvrd fwk_sensor_hwservice:hwservice_manager find;
+ hal_client_domain(vendor_qvrd, hal_sensors)
+ 
+ # QVRD
+-userdebug_or_eng(`
+-allow vendor_qvrd debugfs:dir r_dir_perms;
+-allow vendor_qvrd qti_debugfs:dir r_dir_perms;
+-allow vendor_qvrd qti_debugfs:file rw_file_perms;
++no_debugfs_restriction(`
++  userdebug_or_eng(`
++    allow vendor_qvrd debugfs:dir r_dir_perms;
++    allow vendor_qvrd qti_debugfs:dir r_dir_perms;
++    allow vendor_qvrd qti_debugfs:file rw_file_perms;
++  ')
+ ')
+ 
+ # Allow access to kgsl sysfs nodes for performance optimization
+diff --git a/legacy/vendor/common/ridl.te b/legacy/vendor/common/ridl.te
+index 31f225599..3c9280f14 100644
+--- a/legacy/vendor/common/ridl.te
++++ b/legacy/vendor/common/ridl.te
+@@ -41,8 +41,11 @@ net_domain(RIDL)
+ allow RIDL RIDL_data_file:dir create_dir_perms;
+ allow RIDL RIDL_data_file:file create_file_perms;
+ allow RIDL RIDL_data_file:lnk_file { create read unlink };
+-userdebug_or_eng(`
+-allow RIDL qti_debugfs:file read;
++
++no_debugfs_restriction(`
++  userdebug_or_eng(`
++    allow RIDL qti_debugfs:file read;
++  ')
+ ')
+ 
+ # ver_info.txt
+diff --git a/legacy/vendor/common/system_app.te b/legacy/vendor/common/system_app.te
+index d06220b5f..3610f9245 100644
+--- a/legacy/vendor/common/system_app.te
++++ b/legacy/vendor/common/system_app.te
+@@ -34,7 +34,6 @@ allow system_app {
+ }:service_manager add;
+ 
+ userdebug_or_eng(`
+-  allow system_app qti_debugfs:file r_file_perms;
+   allow system_app su:unix_dgram_socket sendto;
+ 
+   # Access to tombstone segfaults
+@@ -44,6 +43,12 @@ userdebug_or_eng(`
+ 
+ ')
+ 
++no_debugfs_restriction(`
++  userdebug_or_eng(`
++    allow system_app qti_debugfs:file r_file_perms;
++  ')
++')
++
+ allow system_app cnd_data_file:dir w_dir_perms;
+ allow system_app cnd_data_file:file create_file_perms;
+ allow system_app bluetooth:unix_stream_socket ioctl;
+diff --git a/legacy/vendor/test/debugfs/file.te b/legacy/vendor/test/debugfs/file.te
+new file mode 100644
+index 000000000..dd3feab37
+--- /dev/null
++++ b/legacy/vendor/test/debugfs/file.te
+@@ -0,0 +1,30 @@
++# Copyright (c) 2019, The Linux Foundation. All rights reserved.
++#
++# Redistribution and use in source and binary forms, with or without
++# modification, are permitted provided that the following conditions are
++# met:
++#     * Redistributions of source code must retain the above copyright
++#       notice, this list of conditions and the following disclaimer.
++#     * Redistributions in binary form must reproduce the above
++#       copyright notice, this list of conditions and the following
++#       disclaimer in the documentation and/or other materials provided
++#       with the distribution.
++#     * Neither the name of The Linux Foundation nor the names of its
++#       contributors may be used to endorse or promote products derived
++#       from this software without specific prior written permission.
++#
++# THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED
++# WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
++# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT
++# ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
++# BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
++# BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
++# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
++# OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
++# IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++
++# /sys/kernel/debug/binder/state file
++# read by system_server only in userdebug builds
++type binder_state, file_type, debugfs_type;
+diff --git a/legacy/vendor/test/debugfs/file_contexts b/legacy/vendor/test/debugfs/file_contexts
+new file mode 100644
+index 000000000..d6ce18eab
+--- /dev/null
++++ b/legacy/vendor/test/debugfs/file_contexts
+@@ -0,0 +1,29 @@
++# Copyright (c) 2019, The Linux Foundation. All rights reserved.
++#
++# Redistribution and use in source and binary forms, with or without
++# modification, are permitted provided that the following conditions are
++# met:
++#     * Redistributions of source code must retain the above copyright
++#       notice, this list of conditions and the following disclaimer.
++#     * Redistributions in binary form must reproduce the above
++#       copyright notice, this list of conditions and the following
++#       disclaimer in the documentation and/or other materials provided
++#       with the distribution.
++#     * Neither the name of The Linux Foundation nor the names of its
++#       contributors may be used to endorse or promote products derived
++#       from this software without specific prior written permission.
++#
++# THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED
++# WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
++# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT
++# ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
++# BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
++# BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
++# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
++# OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
++# IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++
++/sys/kernel/debug/dsi_dual_samsung_cmd(/.*)?                    u:object_r:qti_debugfs:s0
++/sys/kernel/debug/binder/state                                  u:object_r:binder_state:s0
+diff --git a/legacy/vendor/test/genfs_contexts b/legacy/vendor/test/debugfs/genfs_contexts
+similarity index 100%
+rename from legacy/vendor/test/genfs_contexts
+rename to legacy/vendor/test/debugfs/genfs_contexts
+diff --git a/legacy/vendor/test/dumpstate.te b/legacy/vendor/test/dumpstate.te
+index 94a705de8..244a36a7f 100644
+--- a/legacy/vendor/test/dumpstate.te
++++ b/legacy/vendor/test/dumpstate.te
+@@ -25,4 +25,8 @@
+ # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+ # IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
+-allow dumpstate binder_state:file r_file_perms;
++no_debugfs_restriction(`
++  userdebug_or_eng(`
++    allow dumpstate binder_state:file r_file_perms;
++  ')
++')
+diff --git a/legacy/vendor/test/energyawareness.te b/legacy/vendor/test/energyawareness.te
+index 0ef47fa20..2d5ee4299 100644
+--- a/legacy/vendor/test/energyawareness.te
++++ b/legacy/vendor/test/energyawareness.te
+@@ -27,7 +27,9 @@
+ 
+ #Access to power costs for testing
+ 
+-userdebug_or_eng(`
+-allow energyawareness qti_debugfs:dir r_dir_perms;
+-allow energyawareness qti_debugfs:file rw_file_perms;
++no_debugfs_restriction(`
++  userdebug_or_eng(`
++    allow energyawareness qti_debugfs:dir r_dir_perms;
++    allow energyawareness qti_debugfs:file rw_file_perms;
++  ')
+ ')
+diff --git a/legacy/vendor/test/file.te b/legacy/vendor/test/file.te
+index a909ad941..2a8e55a83 100644
+--- a/legacy/vendor/test/file.te
++++ b/legacy/vendor/test/file.te
+@@ -31,9 +31,5 @@ type vendor_gles_data_file, file_type, data_file_type;
+ # To allow GPU application to read "/data/misc/gpu" path
+ type system_gles_data_file, core_data_file_type, file_type, data_file_type;
+ 
+-# /sys/kernel/debug/binder/state file
+-# read by system_server only in userdebug builds
+-type binder_state, file_type, debugfs_type;
+-
+ # sensors data file type for script access by test apps
+ type sensors_data_file, file_type, data_file_type, core_data_file_type;
+\ No newline at end of file
+diff --git a/legacy/vendor/test/file_contexts b/legacy/vendor/test/file_contexts
+index 36c633bcf..53b7b2af8 100644
+--- a/legacy/vendor/test/file_contexts
++++ b/legacy/vendor/test/file_contexts
+@@ -93,7 +93,6 @@
+ /(vendor|system/vendor)/bin/sns.*               u:object_r:sensors_test_exec:s0
+ #for testscripts support
+ /(vendor|system/vendor)/bin/init\.qcom\.vendor\.testscripts\.sh u:object_r:vendor-qti-testscripts_exec:s0
+-/sys/kernel/debug/dsi_dual_samsung_cmd(/.*)?                    u:object_r:qti_debugfs:s0
+ 
+ #Context for GPU applications
+ /data/vendor/gpu(/.*)?                                          u:object_r:vendor_gles_data_file:s0
+@@ -101,7 +100,5 @@
+ #Used only in debug build to enable gpu config settings
+ /data/misc/gpu(/.*)?                                            u:object_r:system_gles_data_file:s0
+ 
+-/sys/kernel/debug/binder/state                                  u:object_r:binder_state:s0
+-
+ # Sensors scripts for test app
+ /data/sensors/scripts(/.*)?                                     u:object_r:sensors_data_file:s0
+diff --git a/legacy/vendor/test/init.te b/legacy/vendor/test/init.te
+index 8c3ff0b47..20206e048 100644
+--- a/legacy/vendor/test/init.te
++++ b/legacy/vendor/test/init.te
+@@ -25,5 +25,8 @@
+ # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+ # IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
+-allow init binder_state:file r_file_perms;
+-
++no_debugfs_restriction(`
++  userdebug_or_eng(`
++    allow init binder_state:file r_file_perms;
++  ')
++')
+diff --git a/legacy/vendor/test/system_server.te b/legacy/vendor/test/system_server.te
+index 8accae92b..3679b2626 100644
+--- a/legacy/vendor/test/system_server.te
++++ b/legacy/vendor/test/system_server.te
+@@ -25,4 +25,8 @@
+ # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+ # IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
+-allow system_server binder_state:file r_file_perms;
++no_debugfs_restriction(`
++  userdebug_or_eng(`
++    allow system_server binder_state:file r_file_perms;
++  ')
++')
+diff --git a/legacy/vendor/test/vendor_init.te b/legacy/vendor/test/vendor_init.te
+index e92bb8536..9e4a393bf 100644
+--- a/legacy/vendor/test/vendor_init.te
++++ b/legacy/vendor/test/vendor_init.te
+@@ -25,5 +25,8 @@
+ # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+ # IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
+-allow vendor_init binder_state:file r_file_perms;
+-
++no_debugfs_restriction(`
++  userdebug_or_eng(`
++    allow vendor_init binder_state:file r_file_perms;
++  ')
++')
