@@ -1,7 +1,7 @@
-From 472af355839a47070ae443a4c734db64501f69a0 Mon Sep 17 00:00:00 2001
+From 7c6fa915e636533273169e0fdddbf0e9f21deb9c Mon Sep 17 00:00:00 2001
 From: Wileen Chiu <wileenc@codeaurora.org>
 Date: Tue, 12 Jun 2018 14:32:08 -0700
-Subject: [PATCH 01/10] Update external card state based on current app
+Subject: [PATCH 01/11] Update external card state based on current app
 
 - Before setting and broadcasting READY
 state, Telephony checks all supported

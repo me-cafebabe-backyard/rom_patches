@@ -1,7 +1,7 @@
-From 9625fca78774aeeb1d4bdd88a810e67e910fcf00 Mon Sep 17 00:00:00 2001
+From c03d688dd2b3b00511cb43fb7d7f7d0ea12bf200 Mon Sep 17 00:00:00 2001
 From: Paul Keith <javelinanddart@gmail.com>
 Date: Sat, 12 Aug 2023 22:43:33 +0200
-Subject: [PATCH 08/10] RadioMessagingProxy: Fix sending CDMA IMS SMS
+Subject: [PATCH 08/11] RadioMessagingProxy: Fix sending CDMA IMS SMS
 
 When cdmaPdu is not null, we need to set the message technology to
 THREE_GPP2 so that dispatchImsCdmaSms() is chosen in libril. If we
@@ -16,14 +16,24 @@ Fixes: https://gitlab.com/LineageOS/issues/android/-/issues/5391
 Fixes: https://gitlab.com/LineageOS/issues/android/-/issues/5612
 Change-Id: If287c6fa1712a624531e11dd09aeaf7a6c7914c6
 ---
- .../com/android/internal/telephony/RadioMessagingProxy.java     | 2 ++
- 1 file changed, 2 insertions(+)
+ .../com/android/internal/telephony/RadioMessagingProxy.java | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
 
 diff --git a/src/java/com/android/internal/telephony/RadioMessagingProxy.java b/src/java/com/android/internal/telephony/RadioMessagingProxy.java
-index 69ccf3612a..dc80459824 100644
+index 69ccf3612a..0430a2ddd5 100644
 --- a/src/java/com/android/internal/telephony/RadioMessagingProxy.java
 +++ b/src/java/com/android/internal/telephony/RadioMessagingProxy.java
-@@ -308,6 +308,7 @@ public class RadioMessagingProxy extends RadioServiceProxy {
+@@ -299,15 +299,16 @@ public class RadioMessagingProxy extends RadioServiceProxy {
+         if (isAidl()) {
+             android.hardware.radio.messaging.ImsSmsMessage msg =
+                     new android.hardware.radio.messaging.ImsSmsMessage();
+-            msg.tech = android.hardware.radio.RadioTechnologyFamily.THREE_GPP;
+             msg.retry = (byte) retry >= 1;
+             msg.messageRef = messageRef;
+             if (gsmPdu != null) {
++                msg.tech = android.hardware.radio.RadioTechnologyFamily.THREE_GPP;
+                 msg.gsmMessage = new android.hardware.radio.messaging.GsmSmsMessage[]{
+                         RILUtils.convertToHalGsmSmsMessageAidl(smscPdu, gsmPdu)};
                  msg.cdmaMessage = new android.hardware.radio.messaging.CdmaSmsMessage[0];
              }
              if (cdmaPdu != null) {
@@ -31,11 +41,19 @@ index 69ccf3612a..dc80459824 100644
                  msg.gsmMessage = new android.hardware.radio.messaging.GsmSmsMessage[0];
                  msg.cdmaMessage = new android.hardware.radio.messaging.CdmaSmsMessage[]{
                          RILUtils.convertToHalCdmaSmsMessageAidl(cdmaPdu)};
-@@ -323,6 +324,7 @@ public class RadioMessagingProxy extends RadioServiceProxy {
+@@ -316,13 +317,14 @@ public class RadioMessagingProxy extends RadioServiceProxy {
+         } else {
+             android.hardware.radio.V1_0.ImsSmsMessage msg =
+                     new android.hardware.radio.V1_0.ImsSmsMessage();
+-            msg.tech = android.hardware.radio.V1_0.RadioTechnologyFamily.THREE_GPP;
+             msg.retry = (byte) retry >= 1;
+             msg.messageRef = messageRef;
+             if (gsmPdu != null) {
++                msg.tech = android.hardware.radio.V1_0.RadioTechnologyFamily.THREE_GPP;
                  msg.gsmMessage.add(RILUtils.convertToHalGsmSmsMessage(smscPdu, gsmPdu));
              }
              if (cdmaPdu != null) {
-+                msg.tech = android.hardware.radio.RadioTechnologyFamily.THREE_GPP2;
++                msg.tech = android.hardware.radio.V1_0.RadioTechnologyFamily.THREE_GPP2;
                  msg.cdmaMessage.add(RILUtils.convertToHalCdmaSmsMessage(cdmaPdu));
              }
              mRadioProxy.sendImsSms(serial, msg);
