@@ -1,0 +1,34 @@
+From 6be998f8ac3363bcd809cfb54ed45143ebba315f Mon Sep 17 00:00:00 2001
+From: Davide Garberi <dade.garberi@gmail.com>
+Date: Wed, 8 Nov 2023 21:36:02 +0100
+Subject: [PATCH 8/8] gmscompat: Use new info
+
+Change-Id: I3cb0c55d28249b73ecc53be83bed030304c782d9
+---
+ .../android/internal/gmscompat/AttestationHooks.java   | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/core/java/com/android/internal/gmscompat/AttestationHooks.java b/core/java/com/android/internal/gmscompat/AttestationHooks.java
+index b10cb04cb4f..04a536d8073 100644
+--- a/core/java/com/android/internal/gmscompat/AttestationHooks.java
++++ b/core/java/com/android/internal/gmscompat/AttestationHooks.java
+@@ -70,11 +70,11 @@ public final class AttestationHooks {
+ 
+     private static void spoofBuildGms() {
+         // Alter model name and fingerprint to avoid hardware attestation enforcement
+-        setBuildField("FINGERPRINT", "google/marlin/marlin:7.1.2/NJH47F/4146041:user/release-keys");
+-        setBuildField("PRODUCT", "marlin");
+-        setBuildField("DEVICE", "marlin");
+-        setBuildField("MODEL", "Pixel XL");
+-        setVersionField("DEVICE_INITIAL_SDK_INT", Build.VERSION_CODES.N_MR1);
++        setBuildField("DEVICE", "bullhead");
++        setBuildField("FINGERPRINT", "google/bullhead/bullhead:8.0.0/OPR6.170623.013/4283548:user/release-keys");
++        setBuildField("MODEL", "Nexus 5X");
++        setBuildField("PRODUCT", "bullhead");
++        setVersionField("DEVICE_INITIAL_SDK_INT", Build.VERSION_CODES.N);
+     }
+ 
+     public static void initApplicationBeforeOnCreate(Application app) {
+-- 
+2.30.2
+

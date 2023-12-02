@@ -1,7 +1,7 @@
-From eabd78b76df7f8ad1e77b4b19e5ba1b8065152dc Mon Sep 17 00:00:00 2001
+From e7c80a1b342513aa8a076036acc169fc2a14a509 Mon Sep 17 00:00:00 2001
 From: Anirudh Gupta <anirudhgupta109@aosip.dev>
 Date: Wed, 4 Jan 2023 18:20:56 +0000
-Subject: [PATCH 3/7] AttestationHooks: Set shipping level to 32 for devices
+Subject: [PATCH 3/8] AttestationHooks: Set shipping level to 32 for devices
  >=33
 
 If ro.product.first_api_level is 33, it's forced to use HW attestation.

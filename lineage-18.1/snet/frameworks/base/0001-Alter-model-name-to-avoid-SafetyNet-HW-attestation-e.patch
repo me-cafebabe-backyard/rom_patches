@@ -1,7 +1,7 @@
-From d639be53a69d16d108d583c9a26164c397144f7c Mon Sep 17 00:00:00 2001
+From a2ce1c663a7d5f298fde88d44813985c5b656aae Mon Sep 17 00:00:00 2001
 From: Danny Lin <danny@kdrag0n.dev>
 Date: Mon, 11 Oct 2021 19:59:51 -0700
-Subject: [PATCH 1/9] Alter model name to avoid SafetyNet HW attestation
+Subject: [PATCH 1/8] Alter model name to avoid SafetyNet HW attestation
  enforcement
 
 As of September 2, Google is enforcing SafetyNet's previously
@@ -43,7 +43,7 @@ Change-Id: Ib7779e0aae40cab3730a56785e9231896917ab0a
  create mode 100644 core/java/com/android/internal/gmscompat/AttestationHooks.java
 
 diff --git a/core/java/android/app/Instrumentation.java b/core/java/android/app/Instrumentation.java
-index 721525d9af9d..09dcad811d4d 100644
+index 721525d9af9..09dcad811d4 100644
 --- a/core/java/android/app/Instrumentation.java
 +++ b/core/java/android/app/Instrumentation.java
 @@ -57,6 +57,8 @@ import android.view.WindowManagerGlobal;
@@ -73,7 +73,7 @@ index 721525d9af9d..09dcad811d4d 100644
  
 diff --git a/core/java/com/android/internal/gmscompat/AttestationHooks.java b/core/java/com/android/internal/gmscompat/AttestationHooks.java
 new file mode 100644
-index 000000000000..621156eb84b9
+index 00000000000..621156eb84b
 --- /dev/null
 +++ b/core/java/com/android/internal/gmscompat/AttestationHooks.java
 @@ -0,0 +1,59 @@
@@ -137,5 +137,5 @@ index 000000000000..621156eb84b9
 +    }
 +}
 -- 
-2.39.2
+2.30.2
 
