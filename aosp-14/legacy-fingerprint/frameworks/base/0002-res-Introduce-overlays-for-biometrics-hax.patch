@@ -1,4 +1,4 @@
-From 932ad2c27e34cfdc9b8891d25161ebe84591c5e3 Mon Sep 17 00:00:00 2001
+From 38873a80555b4b081349f1d2a9db44cd9de57baa Mon Sep 17 00:00:00 2001
 From: Bruno Martins <bgcngm@gmail.com>
 Date: Mon, 5 Oct 2020 18:22:43 +0100
 Subject: [PATCH 2/3] res: Introduce overlays for biometrics hax
@@ -10,13 +10,13 @@ Change-Id: I5037be2fc49680a5092939b5e8b6518a506d7297
  2 files changed, 16 insertions(+)
 
 diff --git a/core/res/res/values/config.xml b/core/res/res/values/config.xml
-index 70013911904e..6742b9e4c16b 100644
+index 4b922e2a3643..633f6530f444 100644
 --- a/core/res/res/values/config.xml
 +++ b/core/res/res/values/config.xml
-@@ -6462,4 +6462,12 @@
- 
-     <!-- Whether unlocking and waking a device are sequenced -->
-     <bool name="config_orderUnlockAndWake">false</bool>
+@@ -6596,4 +6596,12 @@
+     <!-- Enables or disables the "Share" action item shown in the context menu that appears upon
+         long-pressing on selected text. Enabled by default. -->
+     <bool name="config_textShareSupported">true</bool>
 +
 +    <!-- Whether to cleanup fingerprints upon connection to the daemon and when
 +         user switches -->
@@ -27,10 +27,10 @@ index 70013911904e..6742b9e4c16b 100644
 +    <bool name="config_fingerprintPostResetRunnableForAllClients">false</bool>
  </resources>
 diff --git a/core/res/res/values/symbols.xml b/core/res/res/values/symbols.xml
-index 2425d367e1db..2e2ccc2cf715 100644
+index bee5799938f2..181d1c7280e4 100644
 --- a/core/res/res/values/symbols.xml
 +++ b/core/res/res/values/symbols.xml
-@@ -5135,4 +5135,12 @@
+@@ -5176,4 +5176,12 @@
  
    <!-- Whether we order unlocking and waking -->
    <java-symbol type="bool" name="config_orderUnlockAndWake" />
