@@ -1,0 +1,50 @@
+From d80fb4d919b16bffd2ad01169c7fe4a3763d45b8 Mon Sep 17 00:00:00 2001
+From: jhenrique09 <jhsv09@gmail.com>
+Date: Tue, 23 Aug 2022 17:11:54 -0300
+Subject: [PATCH 5/5] init: Spoof more props
+
+Change-Id: Ic0ddbd6a0dd40c877248f7864082eddab2b32366
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ init/property_service.cpp | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/init/property_service.cpp b/init/property_service.cpp
+index 3e2341fb2..541270b78 100644
+--- a/init/property_service.cpp
++++ b/init/property_service.cpp
+@@ -1394,7 +1394,6 @@ static void ProcessBootconfig() {
+ }
+ 
+ static void SetSafetyNetProps() {
+-
+     InitPropertySet("ro.boot.flash.locked", "1");
+     InitPropertySet("ro.boot.vbmeta.device_state", "locked");
+     InitPropertySet("ro.boot.verifiedbootstate", "green");
+@@ -1403,15 +1402,22 @@ static void SetSafetyNetProps() {
+     InitPropertySet("ro.warranty_bit", "0");
+     InitPropertySet("ro.debuggable", "0");
+     InitPropertySet("ro.secure", "1");
++    InitPropertySet("ro.bootimage.build.type", "user");
+     InitPropertySet("ro.build.type", "user");
+     InitPropertySet("ro.build.keys", "release-keys");
+     InitPropertySet("ro.build.tags", "release-keys");
+     InitPropertySet("ro.system.build.tags", "release-keys");
++    InitPropertySet("ro.product.build.type", "user");
++    InitPropertySet("ro.odm.build.type", "user");
++    InitPropertySet("ro.system.build.type", "user");
++    InitPropertySet("ro.system_ext.build.type", "user");
++    InitPropertySet("ro.vendor.build.type", "user");
++    InitPropertySet("ro.vendor_dlkm.build.type", "user");
+     InitPropertySet("ro.vendor.boot.warranty_bit", "0");
+     InitPropertySet("ro.vendor.warranty_bit", "0");
+     InitPropertySet("vendor.boot.vbmeta.device_state", "locked");
+     InitPropertySet("vendor.boot.verifiedbootstate", "green");
+-
++    InitPropertySet("oplusboot.verifiedbootstate", "green");
+ }
+ 
+ void PropertyInit() {
+-- 
+2.39.2
+

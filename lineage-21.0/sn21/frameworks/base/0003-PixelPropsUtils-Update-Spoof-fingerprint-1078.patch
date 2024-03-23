@@ -1,0 +1,42 @@
+From f4eff99faef62e343ed3f5855a71f40a254b938b Mon Sep 17 00:00:00 2001
+From: Ionut Gherman <ghermanionut96@gmail.com>
+Date: Sat, 2 Mar 2024 11:02:13 +0200
+Subject: [PATCH 3/4] PixelPropsUtils: Update Spoof fingerprint (#1078)
+
+* Updating props since latest changes from Google was causing Play Integrity to fail
+Change-Id: Ib38bacd4fdfa31f96f95925bbaab943941745f2c
+Signed-off-by: Ionut Gherman <ghermanionut96@gmail.com>
+---
+ .../internal/util/crdroid/PixelPropsUtils.java   | 16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/core/java/com/android/internal/util/crdroid/PixelPropsUtils.java b/core/java/com/android/internal/util/crdroid/PixelPropsUtils.java
+index e0e36b2d4e16..baa4c0246a66 100644
+--- a/core/java/com/android/internal/util/crdroid/PixelPropsUtils.java
++++ b/core/java/com/android/internal/util/crdroid/PixelPropsUtils.java
+@@ -402,14 +402,14 @@ public class PixelPropsUtils {
+ 
+     private static void spoofBuildGms() {
+         // Alter build parameters to avoid hardware attestation enforcement
+-        setPropValue("BRAND", "Hisense");
+-        setPropValue("MANUFACTURER", "Hisense");
+-        setPropValue("DEVICE", "HS6735MT");
+-        setPropValue("ID", "MRA58K");
+-        setPropValue("FINGERPRINT", "Hisense/F30/HS6735MT:6.0/MRA58K/L1228.6.01.01:user/release-keys");
+-        setPropValue("MODEL", "Hisense F30");
+-        setPropValue("PRODUCT", "F30");
+-        setVersionFieldString("SECURITY_PATCH", "2016-02-01");
++        setPropValue("BRAND", "motorola");
++        setPropValue("MANUFACTURER", "motorola");
++        setPropValue("DEVICE", "griffin");
++        setPropValue("ID", "MCC24.246-37");
++        setPropValue("FINGERPRINT", "motorola/griffin_retcn/griffin:6.0.1/MCC24.246-37/42:user/release-keys");
++        setPropValue("MODEL", "XT1650-05");
++        setPropValue("PRODUCT", "griffin_retcn");
++        setVersionFieldString("SECURITY_PATCH", "2016-07-01");
+     }
+ 
+     private static boolean isCallerSafetyNet() {
+-- 
+2.39.2
+
