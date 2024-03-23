@@ -1,4 +1,4 @@
-From d378ac434bd179b87a56dfd45b8000307533e9c1 Mon Sep 17 00:00:00 2001
+From 548094b20856010bbfbb5ac6208fcd87c7bc8fb2 Mon Sep 17 00:00:00 2001
 From: Andrzej Perczak <linux@andrzejperczak.com>
 Date: Thu, 23 Jun 2022 17:23:43 +0200
 Subject: [PATCH] soong: cc: Enable global O3
@@ -14,18 +14,18 @@ Signed-off-by: Andrzej Perczak <linux@andrzejperczak.com>
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/cc/config/global.go b/cc/config/global.go
-index 3caf32792..4a64ad5bf 100644
+index 85ebd6076..451bb03eb 100644
 --- a/cc/config/global.go
 +++ b/cc/config/global.go
-@@ -47,7 +47,7 @@ var (
- 		"-fno-exceptions",
- 		"-Wno-multichar",
- 
+@@ -30,7 +30,7 @@ var (
+ 	// will save bytes in build.ninja so they aren't repeated for every file
+ 	commonGlobalCflags = []string{
+ 		// Enable some optimization by default.
 -		"-O2",
 +		"-O3",
- 		"-g",
- 		"-fdebug-default-version=5",
  
+ 		// Warnings enabled by default. Reference:
+ 		// https://clang.llvm.org/docs/DiagnosticsReference.html
 -- 
-2.30.2
+2.39.2
 
