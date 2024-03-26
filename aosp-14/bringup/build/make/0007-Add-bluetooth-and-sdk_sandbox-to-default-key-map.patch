@@ -1,7 +1,7 @@
 From 7e2f3c6163fc24403ac9f7d619b386cfbe43f311 Mon Sep 17 00:00:00 2001
 From: HZ <thecodehustler@gmail.com>
 Date: Thu, 6 Oct 2022 21:45:42 +0800
-Subject: [PATCH 7/7] Add bluetooth and sdk_sandbox to default key map
+Subject: [PATCH 7/8] Add bluetooth and sdk_sandbox to default key map
 
 Previously the key mapping in releasetool/sign_target_files_apks.py
 is missing the aforementioned keys that introduced in Android 13, so

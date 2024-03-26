@@ -1,0 +1,28 @@
+From 4e7f0120d65c40873a5a172f8c2367aeeb8a070d Mon Sep 17 00:00:00 2001
+From: me-cafebabe <me.cafebabe@gmail.com>
+Date: Tue, 7 Mar 2023 11:10:19 +0800
+Subject: [PATCH] fixup! liblp: Allow to flash on bigger block device
+
+Change-Id: I7db20a6a309ad659d5feccac5825b26c28dc849e
+---
+ fs_mgr/liblp/builder.cpp | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/fs_mgr/liblp/builder.cpp b/fs_mgr/liblp/builder.cpp
+index 6cb2c5172..8d4d69990 100644
+--- a/fs_mgr/liblp/builder.cpp
++++ b/fs_mgr/liblp/builder.cpp
+@@ -1043,8 +1043,8 @@ bool MetadataBuilder::UpdateBlockDeviceInfo(size_t index, const BlockDeviceInfo&
+     CHECK(index < block_devices_.size());
+ 
+     LpMetadataBlockDevice& block_device = block_devices_[index];
+-    if (device_info.size != block_device.size) {
+-        LERROR << "Device size does not match (got " << device_info.size << ", expected "
++    if (device_info.size < block_device.size) {
++        LERROR << "Device size does not fit (got " << device_info.size << ", expected "
+                << block_device.size << ")";
+         return false;
+     }
+-- 
+2.39.2
+

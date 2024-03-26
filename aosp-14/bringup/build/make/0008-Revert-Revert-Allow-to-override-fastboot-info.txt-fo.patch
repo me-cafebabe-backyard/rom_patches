@@ -1,0 +1,50 @@
+From bd5e9f41de396f1e1100b9a19b16dbd21877595b Mon Sep 17 00:00:00 2001
+From: Dmitrii Merkurev <dimorinny@google.com>
+Date: Thu, 14 Dec 2023 02:59:47 +0000
+Subject: [PATCH 8/8] Revert "Revert "Allow to override fastboot-info.txt for
+ specific..."
+
+Revert submission 2871792-revert-2871156-fastboot_info-UVHXWCTZZB
+
+Reason for revert: Some images weren't available in Android.mk
+
+Reverted changes: /q/submissionid:2871792-revert-2871156-fastboot_info-UVHXWCTZZB
+
+Bug: 315866782
+Test: confirmed bluejay abtd build has correct fastboot-info.txt
+
+Change-Id: Id75d879119744ab97225e5a551e8d32a1b09a356
+Signed-off-by: Dmitrii Merkurev <dimorinny@google.com>
+---
+ core/Makefile | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/core/Makefile b/core/Makefile
+index b1730e3820..b66327776f 100644
+--- a/core/Makefile
++++ b/core/Makefile
+@@ -5626,7 +5626,12 @@ endif # build_otatools_package
+ FASTBOOT_INFO_VERSION = 1
+ 
+ INSTALLED_FASTBOOT_INFO_TARGET := $(PRODUCT_OUT)/fastboot-info.txt
+-
++ifdef TARGET_BOARD_FASTBOOT_INFO_FILE
++$(INSTALLED_FASTBOOT_INFO_TARGET): $(TARGET_BOARD_FASTBOOT_INFO_FILE)
++	rm -f $@
++	$(call pretty,"Target fastboot-info.txt: $@")
++	$(hide) cp $< $@
++else
+ $(INSTALLED_FASTBOOT_INFO_TARGET):
+ 	rm -f $@
+ 	$(call pretty,"Target fastboot-info.txt: $@")
+@@ -5685,6 +5690,7 @@ endif
+ ifeq ($(BOARD_USES_METADATA_PARTITION),true)
+ 	$(hide) echo "if-wipe erase metadata" >> $@
+ endif
++endif
+ 
+ # -----------------------------------------------------------------
+ #  misc_info.txt
+-- 
+2.39.2
+

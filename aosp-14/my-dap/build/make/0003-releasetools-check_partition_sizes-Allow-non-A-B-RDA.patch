@@ -1,0 +1,35 @@
+From 2d6b1004f5161f48419a67537bfa4f32b9fc4d13 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Mon, 18 Mar 2024 17:13:22 +0800
+Subject: [PATCH 3/4] releasetools: check_partition_sizes: Allow non-A/B RDAP
+
+Change-Id: I8313c8bf89cc8524b21189bf54281e3986346535
+---
+ tools/releasetools/check_partition_sizes.py | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/tools/releasetools/check_partition_sizes.py b/tools/releasetools/check_partition_sizes.py
+index 738d77d63e..8b26555fe1 100644
+--- a/tools/releasetools/check_partition_sizes.py
++++ b/tools/releasetools/check_partition_sizes.py
+@@ -179,11 +179,14 @@ class DynamicPartitionSizeChecker(object):
+       raise RuntimeError("check_partition_sizes should only be executed on "
+                          "builds with dynamic partitions enabled")
+ 
+-    # Retrofit dynamic partitions: 1 slot per "super", 2 "super"s on the device
++    # Retrofit dynamic partitions:
++    # 1 slot per "super"
++    # 1 "super" on the device (non-A/B)
++    # 2 "super"s on the device (A/B)
+     if dap == Dap.RDAP:
+-      if slot != DeviceType.AB:
++      if slot != DeviceType.NONE and slot != DeviceType.AB:
+         raise RuntimeError("Device with retrofit dynamic partitions must use "
+-                           "regular (non-Virtual) A/B")
++                           "non-A/B or regular (non-Virtual) A/B")
+       return 1
+ 
+     # Launch DAP: 1 super on the device
+-- 
+2.39.2
+

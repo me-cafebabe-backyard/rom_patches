@@ -1,0 +1,195 @@
+From 159a3d8ee8833956a676568228ec86cc1eb440d1 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Sun, 24 Mar 2024 01:39:24 +0800
+Subject: [PATCH] updater: Support loading dynamic partition metadata from OTA
+
+* Provides an alternative option when dynamic partition metadata
+  could not be loaded from the device (like when migrating from
+  standard partitions to dynamic partitions)
+
+Change-Id: I73381abd5b0cc1af37172a784735e25aae9c5958
+---
+ .../include/edify/updater_runtime_interface.h |  3 +-
+ updater/dynamic_partitions.cpp                | 17 ++++++--
+ updater/include/updater/simulator_runtime.h   |  3 +-
+ updater/include/updater/updater_runtime.h     |  4 +-
+ updater/simulator_runtime.cpp                 |  3 +-
+ .../updater_runtime_dynamic_partitions.cpp    | 40 +++++++++++++++----
+ 6 files changed, 56 insertions(+), 14 deletions(-)
+
+diff --git a/edify/include/edify/updater_runtime_interface.h b/edify/include/edify/updater_runtime_interface.h
+index bdd6aecc..3c6e7746 100644
+--- a/edify/include/edify/updater_runtime_interface.h
++++ b/edify/include/edify/updater_runtime_interface.h
+@@ -70,7 +70,8 @@ class UpdaterRuntimeInterface {
+   // Dynamic partition related functions.
+   virtual bool MapPartitionOnDeviceMapper(const std::string& partition_name, std::string* path) = 0;
+   virtual bool UnmapPartitionOnDeviceMapper(const std::string& partition_name) = 0;
+-  virtual bool UpdateDynamicPartitions(const std::string_view op_list_value) = 0;
++  virtual bool UpdateDynamicPartitions(const std::string_view op_list_value,
++                                       const std::string_view super_empty_value) = 0;
+ 
+   // On devices supports A/B, add current slot suffix to arg. Otherwise, return |arg| as is.
+   virtual std::string AddSlotSuffix(const std::string_view arg) const = 0;
+diff --git a/updater/dynamic_partitions.cpp b/updater/dynamic_partitions.cpp
+index a340116f..b94bd0e5 100644
+--- a/updater/dynamic_partitions.cpp
++++ b/updater/dynamic_partitions.cpp
+@@ -88,8 +88,10 @@ static constexpr char kMetadataUpdatedMarker[] = "/dynamic_partition_metadata.UP
+ 
+ Value* UpdateDynamicPartitionsFn(const char* name, State* state,
+                                  const std::vector<std::unique_ptr<Expr>>& argv) {
+-  if (argv.size() != 1) {
+-    ErrorAbort(state, kArgsParsingFailure, "%s expects 1 arguments, got %zu", name, argv.size());
++  const std::string_view empty_string_view{};
++  if (argv.size() != 1 && argv.size() != 2) {
++    ErrorAbort(state, kArgsParsingFailure, "%s expects 1 or 2 arguments, got %zu", name,
++               argv.size());
+     return StringValue("");
+   }
+   std::vector<std::unique_ptr<Value>> args;
+@@ -102,6 +104,14 @@ Value* UpdateDynamicPartitionsFn(const char* name, State* state,
+     return StringValue("");
+   }
+ 
++  const std::unique_ptr<Value>& super_empty_value = args[1];
++  if (argv.size() > 1) {
++    if (super_empty_value->type != Value::Type::BLOB) {
++      ErrorAbort(state, kArgsParsingFailure, "super_empty argument to %s must be blob", name);
++      return StringValue("");
++    }
++  }
++
+   std::string updated_marker = Paths::Get().stash_directory_base() + kMetadataUpdatedMarker;
+   if (state->is_retry) {
+     struct stat sb;
+@@ -121,7 +131,8 @@ Value* UpdateDynamicPartitionsFn(const char* name, State* state,
+   }
+ 
+   auto updater_runtime = state->updater->GetRuntime();
+-  if (!updater_runtime->UpdateDynamicPartitions(op_list_value->data)) {
++  if (!updater_runtime->UpdateDynamicPartitions(
++          op_list_value->data, argv.size() > 1 ? super_empty_value->data : empty_string_view)) {
+     return StringValue("");
+   }
+ 
+diff --git a/updater/include/updater/simulator_runtime.h b/updater/include/updater/simulator_runtime.h
+index fa878db3..419f01eb 100644
+--- a/updater/include/updater/simulator_runtime.h
++++ b/updater/include/updater/simulator_runtime.h
+@@ -52,7 +52,8 @@ class SimulatorRuntime : public UpdaterRuntimeInterface {
+ 
+   bool MapPartitionOnDeviceMapper(const std::string& partition_name, std::string* path) override;
+   bool UnmapPartitionOnDeviceMapper(const std::string& partition_name) override;
+-  bool UpdateDynamicPartitions(const std::string_view op_list_value) override;
++  bool UpdateDynamicPartitions(const std::string_view op_list_value,
++                               const std::string_view super_empty_value) override;
+   std::string AddSlotSuffix(const std::string_view arg) const override;
+ 
+  private:
+diff --git a/updater/include/updater/updater_runtime.h b/updater/include/updater/updater_runtime.h
+index b943dfcf..478d2385 100644
+--- a/updater/include/updater/updater_runtime.h
++++ b/updater/include/updater/updater_runtime.h
+@@ -22,6 +22,7 @@
+ #include <utility>
+ #include <vector>
+ 
++#include "edify/expr.h"
+ #include "edify/updater_runtime_interface.h"
+ 
+ struct selabel_handle;
+@@ -55,7 +56,8 @@ class UpdaterRuntime : public UpdaterRuntimeInterface {
+ 
+   bool MapPartitionOnDeviceMapper(const std::string& partition_name, std::string* path) override;
+   bool UnmapPartitionOnDeviceMapper(const std::string& partition_name) override;
+-  bool UpdateDynamicPartitions(const std::string_view op_list_value) override;
++  bool UpdateDynamicPartitions(const std::string_view op_list_value,
++                               const std::string_view super_empty_value) override;
+   std::string AddSlotSuffix(const std::string_view arg) const override;
+ 
+  private:
+diff --git a/updater/simulator_runtime.cpp b/updater/simulator_runtime.cpp
+index 57dfb32d..e670a3f7 100644
+--- a/updater/simulator_runtime.cpp
++++ b/updater/simulator_runtime.cpp
+@@ -113,7 +113,8 @@ bool SimulatorRuntime::UnmapPartitionOnDeviceMapper(const std::string& partition
+   return true;
+ }
+ 
+-bool SimulatorRuntime::UpdateDynamicPartitions(const std::string_view op_list_value) {
++bool SimulatorRuntime::UpdateDynamicPartitions(const std::string_view op_list_value,
++                                               const std::string_view /* super_empty_value */) {
+   const std::unordered_set<std::string> commands{
+     "resize",    "remove",       "add",          "move",
+     "add_group", "resize_group", "remove_group", "remove_all_groups",
+diff --git a/updater/updater_runtime_dynamic_partitions.cpp b/updater/updater_runtime_dynamic_partitions.cpp
+index 6570cfff..e671a30b 100644
+--- a/updater/updater_runtime_dynamic_partitions.cpp
++++ b/updater/updater_runtime_dynamic_partitions.cpp
+@@ -41,6 +41,7 @@ using android::fs_mgr::LpMetadata;
+ using android::fs_mgr::MetadataBuilder;
+ using android::fs_mgr::Partition;
+ using android::fs_mgr::PartitionOpener;
++using android::fs_mgr::ReadFromImageBlob;
+ using android::fs_mgr::SlotNumberForSlotSuffix;
+ 
+ static constexpr std::chrono::milliseconds kMapTimeout{ 1000 };
+@@ -298,12 +299,30 @@ bool PerformOpRemoveAllGroups(const OpParameters& params) {
+ 
+ }  // namespace
+ 
+-bool UpdaterRuntime::UpdateDynamicPartitions(const std::string_view op_list_value) {
++bool UpdaterRuntime::UpdateDynamicPartitions(const std::string_view op_list_value,
++                                             const std::string_view super_empty_value) {
++  bool flash_metadata = false;
++  const auto partition_opener = PartitionOpener();
+   auto super_device = GetSuperDevice();
+-  auto builder = MetadataBuilder::New(PartitionOpener(), super_device, 0);
++  auto builder = MetadataBuilder::New(partition_opener, super_device, 0);
+   if (builder == nullptr) {
+-    LOG(ERROR) << "Failed to load dynamic partition metadata.";
+-    return false;
++    LOG(ERROR) << "Failed to load dynamic partition metadata from device.";
++    if (super_empty_value.size()) {
++      LOG(INFO) << "Trying to load dynamic partition metadata from OTA.";
++      const auto metadata = ReadFromImageBlob(super_empty_value.data(), super_empty_value.size());
++      if (metadata == nullptr) {
++        LOG(ERROR) << "Failed to parse dynamic partition metadata from OTA.";
++        return false;
++      }
++      builder = MetadataBuilder::New(*metadata, &partition_opener);
++      if (builder == nullptr) {
++        LOG(ERROR) << "Failed to initialize dynamic partition metadata from OTA.";
++        return false;
++      }
++      flash_metadata = true;
++    } else {
++      return false;
++    }
+   }
+ 
+   static const OpMap op_map{
+@@ -347,9 +366,16 @@ bool UpdaterRuntime::UpdateDynamicPartitions(const std::string_view op_list_valu
+     return false;
+   }
+ 
+-  if (!UpdatePartitionTable(super_device, *metadata, 0)) {
+-    LOG(ERROR) << "Failed to write metadata.";
+-    return false;
++  if (flash_metadata) {
++    if (!FlashPartitionTable(super_device, *metadata)) {
++      LOG(ERROR) << "Failed to flash metadata.";
++      return false;
++    }
++  } else {
++    if (!UpdatePartitionTable(super_device, *metadata, 0)) {
++      LOG(ERROR) << "Failed to write metadata.";
++      return false;
++    }
+   }
+ 
+   return true;
+-- 
+2.39.2
+

@@ -1,7 +1,7 @@
 From ca3e5e2c02d0067611f444402c16614271858d47 Mon Sep 17 00:00:00 2001
 From: me-cafebabe <me_cafebabe@hotmail.com>
 Date: Wed, 7 Sep 2022 07:54:19 +0000
-Subject: [PATCH 3/7] core: Export TARGET_INIT_VENDOR_LIB to Soong
+Subject: [PATCH 3/8] core: Export TARGET_INIT_VENDOR_LIB to Soong
 
 ---
  core/soong_config.mk | 2 ++

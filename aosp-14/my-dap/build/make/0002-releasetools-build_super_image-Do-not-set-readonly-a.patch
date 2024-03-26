@@ -1,0 +1,28 @@
+From 4434155d245187e2a6fd0fd796068b103f0bc2df Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Sun, 7 Jan 2024 03:15:46 +0800
+Subject: [PATCH 2/4] releasetools: build_super_image: Do not set readonly attr
+
+* Makes logical partitions writable when flashed to the device
+
+Change-Id: Id473acaedab9400870700bc317a140fd73a58456
+---
+ tools/releasetools/build_super_image.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tools/releasetools/build_super_image.py b/tools/releasetools/build_super_image.py
+index ac61e609d3..20032142b7 100755
+--- a/tools/releasetools/build_super_image.py
++++ b/tools/releasetools/build_super_image.py
+@@ -62,7 +62,7 @@ def GetArgumentsForImage(partition, group, image=None):
+   image_size = sparse_img.GetImagePartitionSize(image) if image else 0
+ 
+   cmd = ["--partition",
+-         "{}:readonly:{}:{}".format(partition, image_size, group)]
++         "{}:none:{}:{}".format(partition, image_size, group)]
+   if image:
+     cmd += ["--image", "{}={}".format(partition, image)]
+ 
+-- 
+2.39.2
+
