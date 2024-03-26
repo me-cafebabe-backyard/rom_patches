@@ -1,4 +1,4 @@
-From a4046c1113b5e115e0cf29b77a485a47646d2378 Mon Sep 17 00:00:00 2001
+From 9bb8912f264527261dc908c01599c2fd466a8c1d Mon Sep 17 00:00:00 2001
 From: Quallenauge <Hamsi2k@freenet.de>
 Date: Tue, 8 Feb 2022 22:18:04 +0100
 Subject: [PATCH 02/11] Restore support with RadioConfig@1.0 dsds clients.
@@ -40,10 +40,10 @@ Change-Id: Ib920cbc8da35032cd659dea92de9bb5bf19dccd6
  1 file changed, 1 insertion(+)
 
 diff --git a/src/java/com/android/internal/telephony/data/PhoneSwitcher.java b/src/java/com/android/internal/telephony/data/PhoneSwitcher.java
-index 5e13f6b74e..916de771a5 100644
+index 2c84f5e98c..60cc3653eb 100644
 --- a/src/java/com/android/internal/telephony/data/PhoneSwitcher.java
 +++ b/src/java/com/android/internal/telephony/data/PhoneSwitcher.java
-@@ -600,6 +600,7 @@ public class PhoneSwitcher extends Handler {
+@@ -587,6 +587,7 @@ public class PhoneSwitcher extends Handler {
                  .addCapability(NetworkCapabilities.NET_CAPABILITY_MCX)
                  .addCapability(NetworkCapabilities.NET_CAPABILITY_PRIORITIZE_LATENCY)
                  .addCapability(NetworkCapabilities.NET_CAPABILITY_PRIORITIZE_BANDWIDTH)
@@ -52,5 +52,5 @@ index 5e13f6b74e..916de771a5 100644
                  .addEnterpriseId(NetworkCapabilities.NET_ENTERPRISE_ID_2)
                  .addEnterpriseId(NetworkCapabilities.NET_ENTERPRISE_ID_3)
 -- 
-2.30.2
+2.39.2
 

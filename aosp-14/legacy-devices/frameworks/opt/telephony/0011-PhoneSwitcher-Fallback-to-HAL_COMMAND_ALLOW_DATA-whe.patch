@@ -1,0 +1,35 @@
+From f8fec41449e41adbf71839144cbea4ee61dc6f5a Mon Sep 17 00:00:00 2001
+From: LuK1337 <priv.luk@gmail.com>
+Date: Fri, 8 Mar 2024 23:49:28 +0100
+Subject: [PATCH 11/11] PhoneSwitcher: Fallback to HAL_COMMAND_ALLOW_DATA when
+ DDS switch fails
+
+SET_PREFERRED_DATA_MODEM is not supported on some legacy devices and
+returns RADIO_NOT_AVAILABLE error msg, when that happens, fallback to
+ALLOW_DATA.
+
+Test: Use DDS switch on Sony nile phone using qcrild
+Change-Id: I73bff53d420275fd329efff9685d11ce8cbe83b2
+---
+ .../com/android/internal/telephony/data/PhoneSwitcher.java   | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/src/java/com/android/internal/telephony/data/PhoneSwitcher.java b/src/java/com/android/internal/telephony/data/PhoneSwitcher.java
+index 60cc3653eb..cf899bf8f1 100644
+--- a/src/java/com/android/internal/telephony/data/PhoneSwitcher.java
++++ b/src/java/com/android/internal/telephony/data/PhoneSwitcher.java
+@@ -1894,6 +1894,11 @@ public class PhoneSwitcher extends Handler {
+                     hold the retry until sim gets ready */
+                     logl("onDdsSwitchResponse: Wait for SIM to get READY");
+                     return;
++                } else if (error == CommandException.Error.RADIO_NOT_AVAILABLE) {
++                    logl("onDdsSwitchResponse: Falling back to HAL_COMMAND_ALLOW_DATA");
++                    mHalCommandToUse = HAL_COMMAND_ALLOW_DATA;
++                    sendRilCommands(phoneId);
++                    return;
+                 }
+             }
+             logl("onDdsSwitchResponse: Scheduling DDS switch retry");
+-- 
+2.39.2
+

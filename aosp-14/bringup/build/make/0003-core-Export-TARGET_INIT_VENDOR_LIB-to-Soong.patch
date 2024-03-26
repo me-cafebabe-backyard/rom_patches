@@ -1,19 +1,19 @@
-From 9e1feca8ebdd283f8b76ccd816d86792a4914248 Mon Sep 17 00:00:00 2001
+From ca3e5e2c02d0067611f444402c16614271858d47 Mon Sep 17 00:00:00 2001
 From: me-cafebabe <me_cafebabe@hotmail.com>
 Date: Wed, 7 Sep 2022 07:54:19 +0000
-Subject: [PATCH 3/6] core: Export TARGET_INIT_VENDOR_LIB to Soong
+Subject: [PATCH 3/7] core: Export TARGET_INIT_VENDOR_LIB to Soong
 
 ---
  core/soong_config.mk | 2 ++
  1 file changed, 2 insertions(+)
 
 diff --git a/core/soong_config.mk b/core/soong_config.mk
-index a149e2a77a..0e6a89e95c 100644
+index 193ac18735..d5d5527aa7 100644
 --- a/core/soong_config.mk
 +++ b/core/soong_config.mk
-@@ -159,6 +159,8 @@ $(call add_json_bool, Malloc_pattern_fill_contents,      $(MALLOC_PATTERN_FILL_C
- $(call add_json_str,  Override_rs_driver,                $(OVERRIDE_RS_DRIVER))
+@@ -161,6 +161,8 @@ $(call add_json_str,  Override_rs_driver,                $(OVERRIDE_RS_DRIVER))
  $(call add_json_str,  DeviceMaxPageSizeSupported,        $(TARGET_MAX_PAGE_SIZE_SUPPORTED))
+ $(call add_json_bool, DeviceNoBionicPageSizeMacro,       $(filter true,$(TARGET_NO_BIONIC_PAGE_SIZE_MACRO)))
  
 +$(call add_json_str,  Target_init_vendor_lib,            $(TARGET_INIT_VENDOR_LIB))
 +
@@ -21,5 +21,5 @@ index a149e2a77a..0e6a89e95c 100644
  $(call add_json_list, ModulesLoadedByPrivilegedModules,  $(PRODUCT_LOADED_BY_PRIVILEGED_MODULES))
  
 -- 
-2.30.2
+2.39.2
 

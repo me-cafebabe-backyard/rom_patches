@@ -1,7 +1,7 @@
-From e81bac23914a83cab7a4e58b128cc84a7e87f0af Mon Sep 17 00:00:00 2001
+From e8fdd0d0ebef13e16090ffa40448db34349a04ed Mon Sep 17 00:00:00 2001
 From: Steve Kondik <shade@chemlab.org>
 Date: Wed, 21 Apr 2010 11:39:48 -0400
-Subject: [PATCH 1/6] Allow override of device asserts, including multi-device
+Subject: [PATCH 1/7] Allow override of device asserts, including multi-device
  support.
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -30,24 +30,24 @@ Signed-off-by: André Pinela <sheffzor@gmail.com>
  3 files changed, 11 insertions(+), 6 deletions(-)
 
 diff --git a/core/Makefile b/core/Makefile
-index 80abd1936b..5d3e09615d 100644
+index 82310d119e..b1730e3820 100644
 --- a/core/Makefile
 +++ b/core/Makefile
-@@ -5523,6 +5523,9 @@ endif
- ifeq ($(TARGET_FLATTEN_APEX),false)
- 	$(hide) echo "target_flatten_apex=false" >> $@
+@@ -5927,6 +5927,9 @@ endif
+ ifeq ($(BUILDING_WITH_VSDK),true)
+ 	$(hide) echo "building_with_vsdk=true" >> $@
  endif
 +ifneq ($(TARGET_OTA_ASSERT_DEVICE),)
 +	$(hide) echo "ota_override_device=$(TARGET_OTA_ASSERT_DEVICE)" >> $@
 +endif
  
- $(call declare-0p-target,$(INSTALLED_MISC_INFO_TARGET))
+ $(call declare-0p-target,$(INSTALLED_FASTBOOT_INFO_TARGET))
  
 diff --git a/tools/releasetools/common.py b/tools/releasetools/common.py
-index 06964cafd4..98048bc9c3 100644
+index 7451ccc1b2..d831afb74b 100644
 --- a/tools/releasetools/common.py
 +++ b/tools/releasetools/common.py
-@@ -433,7 +433,7 @@ class BuildInfo(object):
+@@ -445,7 +445,7 @@ class BuildInfo(object):
            "system_other"] = self._partition_fingerprints["system"]
  
      # These two should be computed only after setting self._oem_props.
@@ -80,5 +80,5 @@ index 033c02e60c..f8247ee196 100644
    def AssertSomeBootloader(self, *bootloaders):
      """Asert that the bootloader version is one of *bootloaders."""
 -- 
-2.30.2
+2.39.2
 

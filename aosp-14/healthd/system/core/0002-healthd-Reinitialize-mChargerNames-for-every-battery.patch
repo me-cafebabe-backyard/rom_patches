@@ -1,7 +1,7 @@
-From 73233767260abfb31aea2b4d6424a3e3b3f5ed59 Mon Sep 17 00:00:00 2001
+From f6ccf055b4538b86fd928eb23837416fadb5ef18 Mon Sep 17 00:00:00 2001
 From: Abhijeet Dharmapurikar <adharmap@codeaurora.org>
 Date: Tue, 24 May 2016 15:12:11 -0700
-Subject: [PATCH 2/2] healthd: Reinitialize mChargerNames for every battery
+Subject: [PATCH 2/3] healthd: Reinitialize mChargerNames for every battery
  update
 
 Booting up the device without usb, the kernel sets the usb power supply
@@ -16,14 +16,14 @@ warning.
 
 Change-Id: I2ec9f9a420ca61814d43c316b418ce94de3691bc
 ---
- healthd/BatteryMonitor.cpp | 38 +++++++++++++++++++++++++++++++++++---
- 1 file changed, 35 insertions(+), 3 deletions(-)
+ healthd/BatteryMonitor.cpp | 50 +++++++++++++++++++++++++++++++++++---
+ 1 file changed, 47 insertions(+), 3 deletions(-)
 
 diff --git a/healthd/BatteryMonitor.cpp b/healthd/BatteryMonitor.cpp
-index 1c3ff64b1..4f5efc1eb 100644
+index daa96259c..b284dab8f 100644
 --- a/healthd/BatteryMonitor.cpp
 +++ b/healthd/BatteryMonitor.cpp
-@@ -261,10 +261,8 @@ static BatteryMonitor::PowerSupplyType readPowerSupplyType(const String8& path)
+@@ -323,10 +323,8 @@ static BatteryMonitor::PowerSupplyType readPowerSupplyType(const String8& path)
      }
  
      auto ret = mapSysfsString(buf.c_str(), supplyTypeMap);
@@ -35,7 +35,7 @@ index 1c3ff64b1..4f5efc1eb 100644
  
      return static_cast<BatteryMonitor::PowerSupplyType>(*ret);
  }
-@@ -357,6 +355,40 @@ void BatteryMonitor::updateValues(void) {
+@@ -445,6 +443,52 @@ void BatteryMonitor::updateValues(void) {
  
      double MaxPower = 0;
  
@@ -62,6 +62,7 @@ index 1c3ff64b1..4f5efc1eb 100644
 +            case ANDROID_POWER_SUPPLY_TYPE_AC:
 +            case ANDROID_POWER_SUPPLY_TYPE_USB:
 +            case ANDROID_POWER_SUPPLY_TYPE_WIRELESS:
++            case ANDROID_POWER_SUPPLY_TYPE_DOCK:
 +                path.clear();
 +                path.appendFormat("%s/%s/online", POWER_SUPPLY_SYSFS_PATH, name);
 +                if (access(path.string(), R_OK) == 0)
@@ -70,12 +71,23 @@ index 1c3ff64b1..4f5efc1eb 100644
 +            default:
 +                break;
 +            }
++
++            // Look for "is_dock" file
++            path.clear();
++            path.appendFormat("%s/%s/is_dock", POWER_SUPPLY_SYSFS_PATH, name);
++            if (access(path.string(), R_OK) == 0) {
++                path.clear();
++                path.appendFormat("%s/%s/online", POWER_SUPPLY_SYSFS_PATH, name);
++                if (access(path.string(), R_OK) == 0)
++                    mChargerNames.add(String8(name));
++
++            }
 +        }
 +    }
 +
      for (size_t i = 0; i < mChargerNames.size(); i++) {
          String8 path;
-         path.appendFormat("%s/%s/online", POWER_SUPPLY_SYSFS_PATH,
+         path.appendFormat("%s/%s/online", POWER_SUPPLY_SYSFS_PATH, mChargerNames[i].c_str());
 -- 
-2.30.2
+2.39.2
 

@@ -1,7 +1,7 @@
-From b76129e4b6171048d9a01b2eec80c75fdb550f70 Mon Sep 17 00:00:00 2001
+From 7fbad683f19cb476f7fdb30f223f0806cd9b956c Mon Sep 17 00:00:00 2001
 From: Geel <dev.xxseva44@gmail.com>
 Date: Tue, 15 Aug 2023 00:45:52 -0400
-Subject: [PATCH 8/8] btm: allow BTM_VSC_CHIP_CAPABILITY_RSP_LEN_M_RELEASE to
+Subject: [PATCH 6/7] btm: allow BTM_VSC_CHIP_CAPABILITY_RSP_LEN_M_RELEASE to
  be adjustable
 
 Some BCM firmwares shipped with LGE devices will not pass a check involving the BTM_VSC_CHIP_CAPABILITY_RSP_LEN_M_RELEASE capability.
@@ -21,10 +21,10 @@ Change-Id: I1fccfd0f8877bdc878e7a2068f654369b136956e
  1 file changed, 4 insertions(+)
 
 diff --git a/system/stack/btm/btm_ble_gap.cc b/system/stack/btm/btm_ble_gap.cc
-index 55987afeda..f2cd7053d1 100644
+index a88d83ac08..5ef6dc9af4 100644
 --- a/system/stack/btm/btm_ble_gap.cc
 +++ b/system/stack/btm/btm_ble_gap.cc
-@@ -77,7 +77,11 @@ extern const tBLE_BD_ADDR convert_to_address_with_type(
+@@ -77,7 +77,11 @@ void btm_ble_adv_filter_init(void);
  #define BTM_VSC_CHIP_CAPABILITY_RSP_LEN 9
  #define BTM_VSC_CHIP_CAPABILITY_RSP_LEN_L_RELEASE \
    BTM_VSC_CHIP_CAPABILITY_RSP_LEN
@@ -37,5 +37,5 @@ index 55987afeda..f2cd7053d1 100644
  
  /* Sysprop paths for scan parameters */
 -- 
-2.30.2
+2.39.2
 

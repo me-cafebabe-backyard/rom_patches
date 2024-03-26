@@ -1,7 +1,7 @@
-From a1b64235b46864b9c57c39a729f60fd7a45c9e47 Mon Sep 17 00:00:00 2001
+From 2b9b85d72bf9d0442c713183185f2eeddc69d8e7 Mon Sep 17 00:00:00 2001
 From: LuK1337 <priv.luk@gmail.com>
 Date: Fri, 11 Sep 2020 15:34:56 +0200
-Subject: [PATCH 5/6] Unset BOARD_EXT4_SHARE_DUP_BLOCKS
+Subject: [PATCH 5/7] Unset BOARD_EXT4_SHARE_DUP_BLOCKS
 
 * This allows us to remount ext4 partitions read-write
   on devices with dynamic partitions.
@@ -22,7 +22,7 @@ Change-Id: I3768374d6da59f969ea44c1965f75c934edf3b57
  1 file changed, 2 deletions(-)
 
 diff --git a/target/board/BoardConfigMainlineCommon.mk b/target/board/BoardConfigMainlineCommon.mk
-index 00f6e5b0ac..94fcacad11 100644
+index 01ebe56ba6..b396aa864b 100644
 --- a/target/board/BoardConfigMainlineCommon.mk
 +++ b/target/board/BoardConfigMainlineCommon.mk
 @@ -6,8 +6,6 @@
@@ -35,5 +35,5 @@ index 00f6e5b0ac..94fcacad11 100644
  
  # Mainline devices must have /system_ext, /vendor and /product partitions.
 -- 
-2.30.2
+2.39.2
 

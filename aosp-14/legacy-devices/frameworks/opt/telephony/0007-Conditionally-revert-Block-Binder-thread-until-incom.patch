@@ -1,7 +1,7 @@
-From 6f83b8307ba64707aea346f3161b67e3980c2aab Mon Sep 17 00:00:00 2001
+From ac7cae74e999e667ac7281293a3d07b4aa39b7fe Mon Sep 17 00:00:00 2001
 From: ExactExampl <exactxmpl@pixelexperience.org>
 Date: Tue, 11 Oct 2022 12:38:00 +0300
-Subject: [PATCH 09/11] Conditionally revert "Block Binder thread until
+Subject: [PATCH 07/11] Conditionally revert "Block Binder thread until
  incoming call process completes"
 
 * Legacy IMS packages handling incoming calls in such a way that
@@ -20,10 +20,10 @@ Change-Id: I55a8f3bbca4a2b9a6bc7511e9fe2d0884a8818e5
  1 file changed, 11 insertions(+), 1 deletion(-)
 
 diff --git a/src/java/com/android/internal/telephony/imsphone/ImsPhoneCallTracker.java b/src/java/com/android/internal/telephony/imsphone/ImsPhoneCallTracker.java
-index df96af55ff..7c24e79079 100644
+index e397bdc397..ab11fe1fc1 100644
 --- a/src/java/com/android/internal/telephony/imsphone/ImsPhoneCallTracker.java
 +++ b/src/java/com/android/internal/telephony/imsphone/ImsPhoneCallTracker.java
-@@ -386,7 +386,17 @@ public class ImsPhoneCallTracker extends CallTracker implements ImsPullCall {
+@@ -390,7 +390,17 @@ public class ImsPhoneCallTracker extends CallTracker implements ImsPullCall {
          @Nullable
          public IImsCallSessionListener onIncomingCall(
                  @NonNull IImsCallSession c, @Nullable String callId, @Nullable Bundle extras) {
@@ -43,5 +43,5 @@ index df96af55ff..7c24e79079 100644
  
          @Override
 -- 
-2.30.2
+2.39.2
 

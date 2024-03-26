@@ -1,7 +1,7 @@
-From 82174c646ef9e2e68abccd0a344d5aa5334f9a85 Mon Sep 17 00:00:00 2001
+From 114e8033d56f5f7613475e97058da98364a496e4 Mon Sep 17 00:00:00 2001
 From: "Angelo G. Del Regno" <kholk11@gmail.com>
 Date: Sun, 30 Apr 2017 20:19:08 +0200
-Subject: [PATCH 6/9] stagefright: Fix buffer handle retrieval in
+Subject: [PATCH 06/10] stagefright: Fix buffer handle retrieval in
  signalBufferReturned
 
 In commit 3e32878 the stagefright code was restructured to fix
@@ -49,5 +49,5 @@ index 3ba18b6631..d7370551e0 100644
                      mSlots[id].mGraphicBuffer->handle);
  
 -- 
-2.30.2
+2.39.2
 

@@ -1,7 +1,7 @@
-From e5f02a82b6f245dfc1f252d4489e4a4697dbe2df Mon Sep 17 00:00:00 2001
+From a62cd753dd4d628b9395994c3e1e7084ac35a83b Mon Sep 17 00:00:00 2001
 From: myfluxi <myfluxi@users.noreply.github.com>
 Date: Thu, 16 Apr 2020 12:53:23 +0000
-Subject: [PATCH 8/9] audioflinger: Fix audio for WifiDisplay
+Subject: [PATCH 08/10] audioflinger: Fix audio for WifiDisplay
 
 AudioFlinger is not able to determine the correct
 pid/tid for WifiDisplay and thus we do not pass checks
@@ -17,10 +17,10 @@ Change-Id: Ifa46d8e77a43027645cad02a04263b58e134c3ad
  1 file changed, 5 insertions(+), 3 deletions(-)
 
 diff --git a/services/audiopolicy/service/AudioPolicyInterfaceImpl.cpp b/services/audiopolicy/service/AudioPolicyInterfaceImpl.cpp
-index 2e7b3ffb84..fda6821c47 100644
+index 509b673430..deecab6e2b 100644
 --- a/services/audiopolicy/service/AudioPolicyInterfaceImpl.cpp
 +++ b/services/audiopolicy/service/AudioPolicyInterfaceImpl.cpp
-@@ -635,7 +635,8 @@ Status AudioPolicyService::getInputForAttr(const media::AudioAttributesInternal&
+@@ -636,7 +636,8 @@ Status AudioPolicyService::getInputForAttr(const media::audio::common::AudioAttr
      // type is API_INPUT_MIX_EXT_POLICY_REROUTE and by AudioService if a media projection
      // is used and input type is API_INPUT_MIX_PUBLIC_CAPTURE_PLAYBACK
      // - ECHO_REFERENCE source is controlled by captureAudioOutputAllowed()
@@ -30,7 +30,7 @@ index 2e7b3ffb84..fda6821c47 100644
              || inputSource == AUDIO_SOURCE_FM_TUNER
              || inputSource == AUDIO_SOURCE_REMOTE_SUBMIX
              || inputSource == AUDIO_SOURCE_ECHO_REFERENCE)) {
-@@ -718,7 +719,7 @@ Status AudioPolicyService::getInputForAttr(const media::AudioAttributesInternal&
+@@ -719,7 +720,7 @@ Status AudioPolicyService::getInputForAttr(const media::audio::common::AudioAttr
                  // FIXME: use the same permission as for remote submix for now.
                  FALLTHROUGH_INTENDED;
              case AudioPolicyInterface::API_INPUT_MIX_CAPTURE:
@@ -39,7 +39,7 @@ index 2e7b3ffb84..fda6821c47 100644
                      ALOGE("%s permission denied: capture not allowed", __func__);
                      status = PERMISSION_DENIED;
                  }
-@@ -806,7 +807,8 @@ Status AudioPolicyService::startInput(int32_t portIdAidl)
+@@ -807,7 +808,8 @@ Status AudioPolicyService::startInput(int32_t portIdAidl)
      msg << "Audio recording on session " << client->session;
  
      // check calling permissions
@@ -50,5 +50,5 @@ index 2e7b3ffb84..fda6821c47 100644
              || client->attributes.source == AUDIO_SOURCE_FM_TUNER
              || client->attributes.source == AUDIO_SOURCE_REMOTE_SUBMIX
 -- 
-2.30.2
+2.39.2
 

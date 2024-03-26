@@ -1,0 +1,40 @@
+From b9dae751d3f21f3ef2c0606c5a948936d71a9288 Mon Sep 17 00:00:00 2001
+From: Brian Delwiche <delwiche@google.com>
+Date: Thu, 3 Nov 2022 23:31:24 +0000
+Subject: [PATCH 7/7] Fix OPP comparison
+
+isBluetoothShareUri_correctlyCheckUri (under
+com.android.bluetooth.opp.BluetoothOppUtilityTest) is failing
+on null input due to an incorrect comparison in
+isBluetoothShareUri.  Change the comparison to one which can
+cope with null input.
+
+Bug: 257190999
+Test: atest: BluetoothOppUtilityTest
+Tag: #security
+Ignore-AOSP-First: Security
+Change-Id: I61118f22577de7b975fb0df8dac8583e91f7b8c7
+(cherry picked from commit c9b53b958e30e8ec1ac883d02abfb20435076c49)
+Merged-In: I61118f22577de7b975fb0df8dac8583e91f7b8c7
+(cherry picked from commit bbbbdb523e76a588fd82e6379f9879dfa58134ac)
+Merged-In: I61118f22577de7b975fb0df8dac8583e91f7b8c7
+---
+ .../app/src/com/android/bluetooth/opp/BluetoothOppUtility.java  | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/android/app/src/com/android/bluetooth/opp/BluetoothOppUtility.java b/android/app/src/com/android/bluetooth/opp/BluetoothOppUtility.java
+index eb1452df93..c03e91171f 100644
+--- a/android/app/src/com/android/bluetooth/opp/BluetoothOppUtility.java
++++ b/android/app/src/com/android/bluetooth/opp/BluetoothOppUtility.java
+@@ -84,7 +84,7 @@ public class BluetoothOppUtility {
+ 
+     public static boolean isBluetoothShareUri(Uri uri) {
+         if (uri.toString().startsWith(BluetoothShare.CONTENT_URI.toString())
+-                && !uri.getAuthority().equals(BluetoothShare.CONTENT_URI.getAuthority())) {
++                && !Objects.equals(uri.getAuthority(), BluetoothShare.CONTENT_URI.getAuthority())) {
+             EventLog.writeEvent(0x534e4554, "225880741", -1, "");
+         }
+         return Objects.equals(uri.getAuthority(), BluetoothShare.CONTENT_URI.getAuthority());
+-- 
+2.39.2
+

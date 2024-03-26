@@ -1,7 +1,7 @@
-From b728f1e59a30f2759a43b8f87043e3d40b012970 Mon Sep 17 00:00:00 2001
+From 859e5d6c15973d0ed9e2e3318c9437bf4a829414 Mon Sep 17 00:00:00 2001
 From: Nico <nicorg2529@gmail.com>
 Date: Fri, 1 Nov 2019 15:41:51 +0000
-Subject: [PATCH 9/9] Partial revert "Move unused classes out of stagefright
+Subject: [PATCH 09/10] Partial revert "Move unused classes out of stagefright
  foundataion"
 
 This imports the old foundation code in the standard platform stagefright.
@@ -1449,7 +1449,7 @@ index 0000000000..e3b77ec99a
 +
 +}  // namespace android
 diff --git a/media/libstagefright/Android.bp b/media/libstagefright/Android.bp
-index 798fdb981b..de0c70d202 100644
+index a63d16a210..67ab1889ee 100644
 --- a/media/libstagefright/Android.bp
 +++ b/media/libstagefright/Android.bp
 @@ -232,6 +232,7 @@ cc_library {
@@ -2044,5 +2044,5 @@ index c25a675ee2..47047f8f7b 100644
  #include <netinet/in.h>
  
 -- 
-2.30.2
+2.39.2
 

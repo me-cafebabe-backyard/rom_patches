@@ -1,0 +1,30 @@
+From 5bcda06d71e38412fbb224fb3c635f08ad8d9699 Mon Sep 17 00:00:00 2001
+From: LuK1337 <priv.luk@gmail.com>
+Date: Mon, 11 Mar 2024 13:10:13 +0100
+Subject: [PATCH 10/11] fixup! RIL: Fix manual network selection with old modem
+
+Change-Id: If2611e29a086b0b5b701d2f4b13d4b5bd8c60298
+---
+ src/java/com/android/internal/telephony/RIL.java | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/src/java/com/android/internal/telephony/RIL.java b/src/java/com/android/internal/telephony/RIL.java
+index 60928c9001..d34201117a 100644
+--- a/src/java/com/android/internal/telephony/RIL.java
++++ b/src/java/com/android/internal/telephony/RIL.java
+@@ -2424,9 +2424,11 @@ public class RIL extends BaseCommands implements CommandsInterface {
+                     + " operatorNumeric = " + operatorNumeric + ", ran = " + ran);
+         }
+ 
++        final String operatorNumericCopy = operatorNumeric;
++
+         radioServiceInvokeHelper(HAL_SERVICE_NETWORK, rr, "setNetworkSelectionModeManual", () -> {
+             networkProxy.setNetworkSelectionModeManual(rr.mSerial,
+-                    RILUtils.convertNullToEmptyString(operatorNumeric), ran);
++                    RILUtils.convertNullToEmptyString(operatorNumericCopy), ran);
+         });
+     }
+ 
+-- 
+2.39.2
+

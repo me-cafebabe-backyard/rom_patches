@@ -1,4 +1,4 @@
-From d301d3a10927cfcd6573b9e437897fd9943fd22d Mon Sep 17 00:00:00 2001
+From 21764f05429d854ba33ad61e16e9a6fc146b8598 Mon Sep 17 00:00:00 2001
 From: Quallenauge <Hamsi2k@freenet.de>
 Date: Wed, 3 Aug 2022 21:16:11 +0100
 Subject: [PATCH 04/11] telephony: Disable handling audio direction changes on
@@ -17,7 +17,7 @@ Change-Id: I29331b7e8ea8f048f4567518b2173c6d7e503a6c
  1 file changed, 9 insertions(+), 4 deletions(-)
 
 diff --git a/src/java/com/android/internal/telephony/imsphone/ImsPhoneCallTracker.java b/src/java/com/android/internal/telephony/imsphone/ImsPhoneCallTracker.java
-index c3ee0f6060..df96af55ff 100644
+index e95433c2ee..e397bdc397 100644
 --- a/src/java/com/android/internal/telephony/imsphone/ImsPhoneCallTracker.java
 +++ b/src/java/com/android/internal/telephony/imsphone/ImsPhoneCallTracker.java
 @@ -70,6 +70,7 @@ import android.os.Registrant;
@@ -28,7 +28,7 @@ index c3ee0f6060..df96af55ff 100644
  import android.preference.PreferenceManager;
  import android.provider.Settings;
  import android.sysprop.TelephonyProperties;
-@@ -3072,10 +3073,14 @@ public class ImsPhoneCallTracker extends CallTracker implements ImsPullCall {
+@@ -3101,10 +3102,14 @@ public class ImsPhoneCallTracker extends CallTracker implements ImsPullCall {
          if (ignoreState) {
              conn.updateAddressDisplay(imsCall);
              conn.updateExtras(imsCall);
@@ -48,5 +48,5 @@ index c3ee0f6060..df96af55ff 100644
              // IMS call profile might be changed while call state is maintained. In this case, it's
              // required to notify to CallAttributesListener.
 -- 
-2.30.2
+2.39.2
 

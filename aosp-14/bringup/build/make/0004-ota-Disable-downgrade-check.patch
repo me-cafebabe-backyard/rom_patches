@@ -1,7 +1,7 @@
-From 9a90b3a1d36569585cd6271d0bb41a9dcc60b2dc Mon Sep 17 00:00:00 2001
+From 558bf18ee6e97c7ec7164f647cbcdf9bf9c77bf5 Mon Sep 17 00:00:00 2001
 From: Andrew Dodd <atd7@cornell.edu>
 Date: Mon, 2 Dec 2013 23:15:30 -0500
-Subject: [PATCH 4/6] ota: Disable downgrade check
+Subject: [PATCH 4/7] ota: Disable downgrade check
 
 We want users to be able to downgrade their packages.
 
@@ -11,10 +11,10 @@ Change-Id: I6bcbd4ee2a02640fe0855b0f1f197a02e914c927
  1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/tools/releasetools/non_ab_ota.py b/tools/releasetools/non_ab_ota.py
-index c4fd809447..757022117a 100644
+index 667891c65e..68aebeda6f 100644
 --- a/tools/releasetools/non_ab_ota.py
 +++ b/tools/releasetools/non_ab_ota.py
-@@ -142,9 +142,9 @@ def WriteFullOTAPackage(input_zip, output_file):
+@@ -143,9 +143,9 @@ def WriteFullOTAPackage(input_zip, output_file):
    assert HasRecoveryPatch(input_zip, info_dict=OPTIONS.info_dict)
  
    # Assertions (e.g. downgrade check, device properties check).
@@ -28,5 +28,5 @@ index c4fd809447..757022117a 100644
    target_info.WriteDeviceAssertions(script, OPTIONS.oem_no_mount)
    device_specific.FullOTA_Assertions()
 -- 
-2.30.2
+2.39.2
 

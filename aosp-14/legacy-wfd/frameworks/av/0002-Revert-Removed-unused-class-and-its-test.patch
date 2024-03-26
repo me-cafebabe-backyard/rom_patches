@@ -1,7 +1,7 @@
-From bb2153cc62cedd14d8516c2908b6f1498b61eddd Mon Sep 17 00:00:00 2001
+From 93dd2ecc2e6b67fa9e45df4504b6eeec35f3247e Mon Sep 17 00:00:00 2001
 From: Vladimir Oltean <olteanv@gmail.com>
 Date: Wed, 9 Jan 2019 02:50:08 +0200
-Subject: [PATCH 2/9] Revert "Removed unused class and its test"
+Subject: [PATCH 02/10] Revert "Removed unused class and its test"
 
 This adds back the SurfaceMediaSource class, needed for WFD.
 
@@ -26,7 +26,7 @@ Signed-off-by: DennySPb <dennyspb@gmail.com>
  create mode 100644 media/libstagefright/tests/SurfaceMediaSource_test.cpp
 
 diff --git a/media/libstagefright/Android.bp b/media/libstagefright/Android.bp
-index a26fcbe4df..798fdb981b 100644
+index 0af9d12248..a63d16a210 100644
 --- a/media/libstagefright/Android.bp
 +++ b/media/libstagefright/Android.bp
 @@ -267,6 +267,7 @@ cc_library {
@@ -1937,5 +1937,5 @@ index 0000000000..1b1c3b8cdb
 +}
 +} // namespace android
 -- 
-2.30.2
+2.39.2
 

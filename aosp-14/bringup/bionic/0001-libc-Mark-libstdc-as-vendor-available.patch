@@ -1,4 +1,4 @@
-From 119be66cd467e08d13c27e3b86e7a7b7b362a623 Mon Sep 17 00:00:00 2001
+From 7fd006bff40ce0387f75f0dbe40f84b1cac779a7 Mon Sep 17 00:00:00 2001
 From: Rashed Abdel-Tawab <rashed@linux.com>
 Date: Sun, 15 Apr 2018 10:18:26 -0700
 Subject: [PATCH 1/2] libc: Mark libstdc++ as vendor available
@@ -12,17 +12,17 @@ Change-Id: I2349478ec0507e3a5136fe89f15e7dc4bfc1a03e
  1 file changed, 1 insertion(+)
 
 diff --git a/libc/Android.bp b/libc/Android.bp
-index f5f5f7cee..b2526500c 100644
+index 6f36aadff..f652a33db 100644
 --- a/libc/Android.bp
 +++ b/libc/Android.bp
-@@ -2070,6 +2070,7 @@ cc_library {
-     name: "libstdc++",
-     static_ndk_lib: true,
-     static_libs: ["libasync_safe"],
+@@ -2098,6 +2098,7 @@ cc_library {
+     apex_available: [
+         "//apex_available:platform",
+     ],
 +    vendor_available: true,
  
      static: {
          system_shared_libs: [],
 -- 
-2.30.2
+2.39.2
 

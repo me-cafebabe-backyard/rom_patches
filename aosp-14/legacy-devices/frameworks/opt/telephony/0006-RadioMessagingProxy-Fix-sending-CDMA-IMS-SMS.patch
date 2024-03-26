@@ -1,7 +1,7 @@
-From c03d688dd2b3b00511cb43fb7d7f7d0ea12bf200 Mon Sep 17 00:00:00 2001
+From f650cc50876e1abd93cf0ea088af221218d7cf8f Mon Sep 17 00:00:00 2001
 From: Paul Keith <javelinanddart@gmail.com>
 Date: Sat, 12 Aug 2023 22:43:33 +0200
-Subject: [PATCH 08/11] RadioMessagingProxy: Fix sending CDMA IMS SMS
+Subject: [PATCH 06/11] RadioMessagingProxy: Fix sending CDMA IMS SMS
 
 When cdmaPdu is not null, we need to set the message technology to
 THREE_GPP2 so that dispatchImsCdmaSms() is chosen in libril. If we
@@ -20,7 +20,7 @@ Change-Id: If287c6fa1712a624531e11dd09aeaf7a6c7914c6
  1 file changed, 4 insertions(+), 2 deletions(-)
 
 diff --git a/src/java/com/android/internal/telephony/RadioMessagingProxy.java b/src/java/com/android/internal/telephony/RadioMessagingProxy.java
-index 69ccf3612a..0430a2ddd5 100644
+index c652284a11..424e4ac2f4 100644
 --- a/src/java/com/android/internal/telephony/RadioMessagingProxy.java
 +++ b/src/java/com/android/internal/telephony/RadioMessagingProxy.java
 @@ -299,15 +299,16 @@ public class RadioMessagingProxy extends RadioServiceProxy {
@@ -58,5 +58,5 @@ index 69ccf3612a..0430a2ddd5 100644
              }
              mRadioProxy.sendImsSms(serial, msg);
 -- 
-2.30.2
+2.39.2
 

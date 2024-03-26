@@ -1,7 +1,7 @@
-From ac34f043ad924c9c6372c8103ee5a0bf39d96cf0 Mon Sep 17 00:00:00 2001
+From 84b1a7562604d0d6e1e17ceb20fe03663f5cb671 Mon Sep 17 00:00:00 2001
 From: Vladimir Oltean <olteanv@gmail.com>
 Date: Wed, 9 Jan 2019 01:13:10 +0200
-Subject: [PATCH 1/9] Revert "stagefright: remove Miracast sender code"
+Subject: [PATCH 01/10] Revert "stagefright: remove Miracast sender code"
 
 This reverts commit d0a98fa05f0f6719b93d000c4638230af06e0b99.
 
@@ -655,10 +655,10 @@ index 6070673cfa..d35472bc28 100644
  
      // Connects to a remote display.
 diff --git a/media/libmediaplayerservice/Android.bp b/media/libmediaplayerservice/Android.bp
-index 266cb17356..77f1552829 100644
+index 718f7826c3..47afbfa92e 100644
 --- a/media/libmediaplayerservice/Android.bp
 +++ b/media/libmediaplayerservice/Android.bp
-@@ -22,11 +22,13 @@ cc_library {
+@@ -23,11 +23,13 @@ filegroup {
      srcs: [
          "ActivityManager.cpp",
          "DeathNotifier.cpp",
@@ -672,7 +672,7 @@ index 266cb17356..77f1552829 100644
          "StagefrightRecorder.cpp",
          "TestPlayerStub.cpp",
      ],
-@@ -62,6 +64,7 @@ cc_library {
+@@ -72,6 +74,7 @@ cc_defaults {
          "libnetd_client",
          "libpowermanager",
          "libstagefright",
@@ -680,7 +680,7 @@ index 266cb17356..77f1552829 100644
          "libstagefright_foundation",
          "libstagefright_httplive",
          "libutils",
-@@ -92,6 +95,10 @@ cc_library {
+@@ -120,6 +123,10 @@ cc_library {
          "libmediautils_headers",
      ],
  
@@ -688,9 +688,9 @@ index 266cb17356..77f1552829 100644
 +        "frameworks/av/media/libstagefright/wifi-display",
 +    ],
 +
-     local_include_dirs: ["include"],
- 
      export_include_dirs: [
+         ".",
+     ],
 diff --git a/media/libmediaplayerservice/HDCP.cpp b/media/libmediaplayerservice/HDCP.cpp
 new file mode 100644
 index 0000000000..afe39367fb
@@ -945,7 +945,7 @@ index 0000000000..83c61b56c0
 +#endif  // HDCP_H_
 +
 diff --git a/media/libmediaplayerservice/MediaPlayerService.cpp b/media/libmediaplayerservice/MediaPlayerService.cpp
-index 9e9e9d842a..14bf40c2c8 100644
+index 10a1da7ce6..8af0a7a000 100644
 --- a/media/libmediaplayerservice/MediaPlayerService.cpp
 +++ b/media/libmediaplayerservice/MediaPlayerService.cpp
 @@ -84,6 +84,8 @@
@@ -957,7 +957,7 @@ index 9e9e9d842a..14bf40c2c8 100644
  
  static const int kDumpLockRetries = 50;
  static const int kDumpLockSleepUs = 20000;
-@@ -519,13 +521,18 @@ sp<IMediaCodecList> MediaPlayerService::getCodecList() const {
+@@ -523,13 +525,18 @@ sp<IMediaCodecList> MediaPlayerService::getCodecList() const {
      return MediaCodecList::getLocalInstance();
  }
  
@@ -982,7 +982,7 @@ index 9e9e9d842a..14bf40c2c8 100644
  
  status_t MediaPlayerService::AudioOutput::dump(int fd, const Vector<String16>& args) const
 diff --git a/media/libmediaplayerservice/MediaPlayerService.h b/media/libmediaplayerservice/MediaPlayerService.h
-index 52c2f79504..1f33530e34 100644
+index cb544bd26e..1cdb773b5b 100644
 --- a/media/libmediaplayerservice/MediaPlayerService.h
 +++ b/media/libmediaplayerservice/MediaPlayerService.h
 @@ -251,6 +251,7 @@ public:
@@ -9757,5 +9757,5 @@ index 0000000000..c25a675ee2
 +
 +#endif  // WIFI_DISPLAY_SOURCE_H_
 -- 
-2.30.2
+2.39.2
 

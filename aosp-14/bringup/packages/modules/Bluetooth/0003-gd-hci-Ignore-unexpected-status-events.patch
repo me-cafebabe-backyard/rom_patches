@@ -1,7 +1,7 @@
-From 06eda3335b6656a10daa676b16bc66d37599da14 Mon Sep 17 00:00:00 2001
+From 8a9a6ea1d3c551dd61dba2c0c4b26b89dbbd9d60 Mon Sep 17 00:00:00 2001
 From: Peter Cai <peter@typeblog.net>
 Date: Fri, 26 Aug 2022 11:23:30 +0200
-Subject: [PATCH 5/8] gd: hci: Ignore unexpected status events
+Subject: [PATCH 3/7] gd: hci: Ignore unexpected status events
 
 For some reason, on some old devices, the controller will report a
 remote to support SNIFF_SUBRATING even when it does not. Just ignore the
@@ -13,10 +13,10 @@ Change-Id: Ifb9a65fd77f21d15a8dc1ced9240194d38218ef6
  1 file changed, 7 insertions(+), 8 deletions(-)
 
 diff --git a/system/gd/hci/hci_layer.cc b/system/gd/hci/hci_layer.cc
-index c3312a557c..3e8ab78371 100644
+index 0889aa69e9..0b61fd4a4a 100644
 --- a/system/gd/hci/hci_layer.cc
 +++ b/system/gd/hci/hci_layer.cc
-@@ -211,14 +211,13 @@ struct HciLayer::impl {
+@@ -213,14 +213,13 @@ struct HciLayer::impl {
        command_queue_.front().GetCallback<CommandCompleteView>()->Invoke(
            std::move(command_complete_view));
      } else {
@@ -39,5 +39,5 @@ index c3312a557c..3e8ab78371 100644
  
      command_queue_.pop_front();
 -- 
-2.30.2
+2.39.2
 

@@ -1,0 +1,27 @@
+From d6d7c84ae9ff8086ee30dbc1462288dec3b76b94 Mon Sep 17 00:00:00 2001
+From: Michael Bestas <mkbestas@lineageos.org>
+Date: Sun, 10 Mar 2024 19:20:20 +0200
+Subject: [PATCH 10/10] fixup! Revert "stagefright: remove Miracast sender
+ code"
+
+Change-Id: Ia6948e6c6d71f437fa118185a9df8bcd4ce47575
+---
+ media/libmediaplayerservice/MediaPlayerService.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/media/libmediaplayerservice/MediaPlayerService.cpp b/media/libmediaplayerservice/MediaPlayerService.cpp
+index 8af0a7a000..3d5e9cbde5 100644
+--- a/media/libmediaplayerservice/MediaPlayerService.cpp
++++ b/media/libmediaplayerservice/MediaPlayerService.cpp
+@@ -536,7 +536,7 @@ sp<IRemoteDisplay> MediaPlayerService::listenForRemoteDisplay(
+         return NULL;
+     }
+ 
+-    return new RemoteDisplay(opPackageName, client, iface.string());
++    return new RemoteDisplay(opPackageName, client, iface.c_str());
+ }
+ 
+ status_t MediaPlayerService::AudioOutput::dump(int fd, const Vector<String16>& args) const
+-- 
+2.39.2
+

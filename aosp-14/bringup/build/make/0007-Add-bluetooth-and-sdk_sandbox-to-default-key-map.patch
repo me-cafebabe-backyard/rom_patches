@@ -1,7 +1,7 @@
-From 483f3cf277485c9eaeaf5e025836ea0271574a63 Mon Sep 17 00:00:00 2001
+From 7e2f3c6163fc24403ac9f7d619b386cfbe43f311 Mon Sep 17 00:00:00 2001
 From: HZ <thecodehustler@gmail.com>
 Date: Thu, 6 Oct 2022 21:45:42 +0800
-Subject: [PATCH] Add bluetooth and sdk_sandbox to default key map
+Subject: [PATCH 7/7] Add bluetooth and sdk_sandbox to default key map
 
 Previously the key mapping in releasetool/sign_target_files_apks.py
 is missing the aforementioned keys that introduced in Android 13, so
@@ -16,10 +16,10 @@ Change-Id: If42907cffbd500281876f8f822cbb645583d06ed
  1 file changed, 2 insertions(+)
 
 diff --git a/tools/releasetools/sign_target_files_apks.py b/tools/releasetools/sign_target_files_apks.py
-index 6f96d8f6a6..4ea029df01 100755
+index 4356394742..35e48fb548 100755
 --- a/tools/releasetools/sign_target_files_apks.py
 +++ b/tools/releasetools/sign_target_files_apks.py
-@@ -1150,6 +1150,8 @@ def BuildKeyMap(misc_info, key_mapping_options):
+@@ -1137,6 +1137,8 @@ def BuildKeyMap(misc_info, key_mapping_options):
            devkeydir + "/shared":   d + "/shared",
            devkeydir + "/platform": d + "/platform",
            devkeydir + "/networkstack": d + "/networkstack",
@@ -28,3 +28,6 @@ index 6f96d8f6a6..4ea029df01 100755
        })
      else:
        OPTIONS.key_map[s] = d
+-- 
+2.39.2
+

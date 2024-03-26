@@ -1,7 +1,7 @@
-From 22f73ad5afe6b64a1ceb3ace754b3aa47cd76cf6 Mon Sep 17 00:00:00 2001
+From 8296ad15217e96a5cfd5ed50cf24b5a893e1a61e Mon Sep 17 00:00:00 2001
 From: Vladimir Oltean <olteanv@gmail.com>
 Date: Wed, 9 Jan 2019 01:43:08 +0200
-Subject: [PATCH 4/9] libstagefright_wfd: compilation fixes
+Subject: [PATCH 04/10] libstagefright_wfd: compilation fixes
 
 * Among others, adapt to the ABuffer API changes in
   "f03606d9 Move MediaBufferXXX from foundation to libmediaextractor"
@@ -497,5 +497,5 @@ index 4695e5d289..159b113dcf 100644
  #include <binder/IServiceManager.h>
  #include <gui/IGraphicBufferProducer.h>
 -- 
-2.30.2
+2.39.2
 

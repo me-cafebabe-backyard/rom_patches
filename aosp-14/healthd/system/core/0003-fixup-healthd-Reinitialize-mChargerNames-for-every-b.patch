@@ -1,0 +1,40 @@
+From 43bf6c800368d3cd76208fd8140c1911ccf3233e Mon Sep 17 00:00:00 2001
+From: Michael Bestas <mkbestas@lineageos.org>
+Date: Sun, 10 Mar 2024 18:47:36 +0200
+Subject: [PATCH 3/3] fixup! healthd: Reinitialize mChargerNames for every
+ battery update
+
+Change-Id: I725578f0c445de8e177a1b02bd81a548ccde1493
+---
+ healthd/BatteryMonitor.cpp | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/healthd/BatteryMonitor.cpp b/healthd/BatteryMonitor.cpp
+index b284dab8f..61172093d 100644
+--- a/healthd/BatteryMonitor.cpp
++++ b/healthd/BatteryMonitor.cpp
+@@ -469,7 +469,7 @@ void BatteryMonitor::updateValues(void) {
+             case ANDROID_POWER_SUPPLY_TYPE_DOCK:
+                 path.clear();
+                 path.appendFormat("%s/%s/online", POWER_SUPPLY_SYSFS_PATH, name);
+-                if (access(path.string(), R_OK) == 0)
++                if (access(path.c_str(), R_OK) == 0)
+                     mChargerNames.add(String8(name));
+                 break;
+             default:
+@@ -479,10 +479,10 @@ void BatteryMonitor::updateValues(void) {
+             // Look for "is_dock" file
+             path.clear();
+             path.appendFormat("%s/%s/is_dock", POWER_SUPPLY_SYSFS_PATH, name);
+-            if (access(path.string(), R_OK) == 0) {
++            if (access(path.c_str(), R_OK) == 0) {
+                 path.clear();
+                 path.appendFormat("%s/%s/online", POWER_SUPPLY_SYSFS_PATH, name);
+-                if (access(path.string(), R_OK) == 0)
++                if (access(path.c_str(), R_OK) == 0)
+                     mChargerNames.add(String8(name));
+ 
+             }
+-- 
+2.39.2
+

@@ -1,4 +1,4 @@
-From a53bd21ff647db2013153e9b5fca0f461c888c22 Mon Sep 17 00:00:00 2001
+From 5fa958ce41c8affadb9eff7f52ad6842c896f459 Mon Sep 17 00:00:00 2001
 From: Dileep Marchya <dmarchya@codeaurora.org>
 Date: Fri, 25 May 2018 11:39:56 +0530
 Subject: [PATCH] libhardware: Add new display types.
@@ -11,13 +11,13 @@ Subject: [PATCH] libhardware: Add new display types.
 CRs-Fixed: 2274419
 Change-Id: I9a0f5167a777a1d903eb98c5aa7ee0b229d08640
 ---
- include/hardware/hwcomposer_defs.h | 15 ++++++++++++---
+ include_all/hardware/hwcomposer_defs.h | 15 ++++++++++++---
  1 file changed, 12 insertions(+), 3 deletions(-)
 
-diff --git a/include/hardware/hwcomposer_defs.h b/include/hardware/hwcomposer_defs.h
+diff --git a/include_all/hardware/hwcomposer_defs.h b/include_all/hardware/hwcomposer_defs.h
 index 3823765f..c4d8a44c 100644
---- a/include/hardware/hwcomposer_defs.h
-+++ b/include/hardware/hwcomposer_defs.h
+--- a/include_all/hardware/hwcomposer_defs.h
++++ b/include_all/hardware/hwcomposer_defs.h
 @@ -299,10 +299,19 @@ enum {
  enum {
      HWC_DISPLAY_PRIMARY     = 0,
@@ -42,5 +42,5 @@ index 3823765f..c4d8a44c 100644
  
  enum {
 -- 
-2.30.2
+2.39.2
 

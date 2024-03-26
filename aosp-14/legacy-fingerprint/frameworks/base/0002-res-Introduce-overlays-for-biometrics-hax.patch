@@ -1,4 +1,4 @@
-From 38873a80555b4b081349f1d2a9db44cd9de57baa Mon Sep 17 00:00:00 2001
+From 8879643de495b9e51c2160b548a04c99c784fdd5 Mon Sep 17 00:00:00 2001
 From: Bruno Martins <bgcngm@gmail.com>
 Date: Mon, 5 Oct 2020 18:22:43 +0100
 Subject: [PATCH 2/3] res: Introduce overlays for biometrics hax
@@ -10,13 +10,13 @@ Change-Id: I5037be2fc49680a5092939b5e8b6518a506d7297
  2 files changed, 16 insertions(+)
 
 diff --git a/core/res/res/values/config.xml b/core/res/res/values/config.xml
-index 4b922e2a3643..633f6530f444 100644
+index bf8e55fd986f..4a16c57983b5 100644
 --- a/core/res/res/values/config.xml
 +++ b/core/res/res/values/config.xml
-@@ -6596,4 +6596,12 @@
-     <!-- Enables or disables the "Share" action item shown in the context menu that appears upon
-         long-pressing on selected text. Enabled by default. -->
-     <bool name="config_textShareSupported">true</bool>
+@@ -6859,4 +6859,12 @@
+ 
+     <!-- Whether the media player is shown on the quick settings -->
+     <bool name="config_quickSettingsShowMediaPlayer">true</bool>
 +
 +    <!-- Whether to cleanup fingerprints upon connection to the daemon and when
 +         user switches -->
@@ -27,13 +27,13 @@ index 4b922e2a3643..633f6530f444 100644
 +    <bool name="config_fingerprintPostResetRunnableForAllClients">false</bool>
  </resources>
 diff --git a/core/res/res/values/symbols.xml b/core/res/res/values/symbols.xml
-index bee5799938f2..181d1c7280e4 100644
+index fd6158d02b8f..0523011f196b 100644
 --- a/core/res/res/values/symbols.xml
 +++ b/core/res/res/values/symbols.xml
-@@ -5176,4 +5176,12 @@
+@@ -5301,4 +5301,12 @@
+   <java-symbol type="bool" name="config_viewBasedRotaryEncoderHapticsEnabled" />
  
-   <!-- Whether we order unlocking and waking -->
-   <java-symbol type="bool" name="config_orderUnlockAndWake" />
+   <java-symbol type="bool" name="config_quickSettingsShowMediaPlayer" />
 +
 +    <!-- Whether to cleanup fingerprints upon connection to the daemon and when
 +         user switches -->
@@ -44,5 +44,5 @@ index bee5799938f2..181d1c7280e4 100644
 +    <java-symbol type="bool" name="config_fingerprintPostResetRunnableForAllClients" />
  </resources>
 -- 
-2.30.2
+2.39.2
 

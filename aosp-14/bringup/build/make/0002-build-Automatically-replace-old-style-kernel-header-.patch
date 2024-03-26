@@ -1,7 +1,7 @@
-From d622860fa70e59f77dac80b30df021b164ae3b00 Mon Sep 17 00:00:00 2001
+From b20480f0ca8b069165334118f3a4fe550c450a41 Mon Sep 17 00:00:00 2001
 From: Rashed Abdel-Tawab <rashed@linux.com>
 Date: Thu, 20 Sep 2018 08:25:23 -0700
-Subject: [PATCH 2/6] build: Automatically replace old-style kernel header
+Subject: [PATCH 2/7] build: Automatically replace old-style kernel header
  includes with new header lib
 
 This is a combination of 3 commits.
@@ -48,7 +48,7 @@ Change-Id: I716955534e50831e6568ca01e480aa8b90075d92
  1 file changed, 20 insertions(+)
 
 diff --git a/core/binary.mk b/core/binary.mk
-index 579e6b54a0..40c556843b 100644
+index 7998a5ac34..dac32e0d0c 100644
 --- a/core/binary.mk
 +++ b/core/binary.mk
 @@ -44,6 +44,26 @@ endif
@@ -79,5 +79,5 @@ index 579e6b54a0..40c556843b 100644
  # Because the same LOCAL_ variables may be used to define modules for both 1st arch and 2nd arch,
  # we can't modify them in place.
 -- 
-2.30.2
+2.39.2
 

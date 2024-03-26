@@ -1,7 +1,7 @@
-From 434a5b0bb09745fc34babdedc733e23fda044dd5 Mon Sep 17 00:00:00 2001
+From f158c7a9ad0bb9016a3094ebc54d148fb91d61cf Mon Sep 17 00:00:00 2001
 From: LuK1337 <priv.luk@gmail.com>
 Date: Wed, 1 Nov 2023 21:40:05 +0100
-Subject: [PATCH 10/11] Make UiccSlot::getPrintableIccIds() skip null values
+Subject: [PATCH 08/11] Make UiccSlot::getPrintableIccIds() skip null values
 
 collect() requires non-null values.
 
@@ -23,5 +23,5 @@ index db10271a2f..6c69863c29 100644
                          e -> SubscriptionInfo.getPrintableId(e.getValue())));
          return printableIccIds;
 -- 
-2.30.2
+2.39.2
 

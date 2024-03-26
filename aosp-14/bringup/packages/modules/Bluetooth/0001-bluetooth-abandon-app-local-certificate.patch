@@ -1,7 +1,7 @@
-From 2bf88236e0d26e8c5fb4017b6baac716d48be6d3 Mon Sep 17 00:00:00 2001
+From d9b0cbe906d1b0fef1fd6c695ced03d8265e8707 Mon Sep 17 00:00:00 2001
 From: Ji Luo <ji.luo@nxp.com>
 Date: Thu, 25 Aug 2022 14:52:09 +0800
-Subject: [PATCH 1/8] bluetooth: abandon app local certificate
+Subject: [PATCH 1/7] bluetooth: abandon app local certificate
 
 bluetooth app is signed with local certificate ':com.android.bluetooth.certificate'
 which is located at 'android/app/certs/*' and is aligned with the certificate in
@@ -22,20 +22,34 @@ Test: Bluetooth on&off.
 Signed-off-by: Ji Luo <ji.luo@nxp.com>
 Change-Id: I286aed5a3b895272f5ffc077ecd1d76351e02af7
 ---
+ android/BluetoothLegacyMigration/Android.bp   |   2 +-
  android/app/Android.bp                        |   7 +--
  android/app/certs/com.android.bluetooth.pk8   | Bin 2374 -> 0 bytes
  .../app/certs/com.android.bluetooth.x509.pem  |  36 ------------
  android/app/certs/key.pem                     |  52 ------------------
- 4 files changed, 1 insertion(+), 94 deletions(-)
+ framework/tests/stress/Android.bp             |   2 +-
+ 6 files changed, 3 insertions(+), 96 deletions(-)
  delete mode 100644 android/app/certs/com.android.bluetooth.pk8
  delete mode 100644 android/app/certs/com.android.bluetooth.x509.pem
  delete mode 100644 android/app/certs/key.pem
 
+diff --git a/android/BluetoothLegacyMigration/Android.bp b/android/BluetoothLegacyMigration/Android.bp
+index b755fa0895..786264efd5 100644
+--- a/android/BluetoothLegacyMigration/Android.bp
++++ b/android/BluetoothLegacyMigration/Android.bp
+@@ -9,6 +9,6 @@ android_app {
+     srcs: [ "BluetoothLegacyMigration.kt" ],
+ 
+     // Must match Bluetooth.apk certificate because of sharedUserId
+-    certificate: ":com.android.bluetooth.certificate",
++    certificate: "bluetooth",
+     platform_apis: true,
+ }
 diff --git a/android/app/Android.bp b/android/app/Android.bp
-index b2506e20c8..4e5e6845a0 100644
+index 07c57d7ef1..1d43cfefa3 100644
 --- a/android/app/Android.bp
 +++ b/android/app/Android.bp
-@@ -166,7 +166,7 @@ android_app {
+@@ -220,7 +220,7 @@ android_app {
          "--custom-package",
          "com.android.bluetooth",
      ],
@@ -43,8 +57,8 @@ index b2506e20c8..4e5e6845a0 100644
 +    certificate: "bluetooth",
  
      jarjar_rules: ":bluetooth-jarjar-rules",
- 
-@@ -289,8 +289,3 @@ genrule {
+     privapp_allowlist: ":privapp_allowlist_com.android.bluetooth.xml",
+@@ -367,8 +367,3 @@ genrule {
          " --minApiLevel 34",
      out: ["com/android/bluetooth/BtRestrictedStatsLog.java"],
  }
@@ -208,6 +222,17 @@ index 5f7d1bc525..0000000000
 -KjtGoLgVf02wncdxGmWNcvPLfRkin+r9V4fp2b06evB2Gq07vxcDzky3P1Hgyixj
 -MGM6YXLym/x1WxR7mOQvAwpSJ093EA==
 ------END PRIVATE KEY-----
+diff --git a/framework/tests/stress/Android.bp b/framework/tests/stress/Android.bp
+index 7742c57952..16f8135102 100644
+--- a/framework/tests/stress/Android.bp
++++ b/framework/tests/stress/Android.bp
+@@ -28,5 +28,5 @@ android_test {
+     test_suites: [
+         "general-tests",
+     ],
+-    certificate: ":com.android.bluetooth.certificate",
++    certificate: "bluetooth",
+ }
 -- 
-2.30.2
+2.39.2
 

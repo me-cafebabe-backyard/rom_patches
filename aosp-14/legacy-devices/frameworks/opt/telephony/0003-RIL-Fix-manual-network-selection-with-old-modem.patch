@@ -1,4 +1,4 @@
-From 9be781ded4cf6e9255bb2b336d7c46ebffc6f70a Mon Sep 17 00:00:00 2001
+From 23b9f6a0dbc835ebcc6d641d85d2e5e37defec14 Mon Sep 17 00:00:00 2001
 From: faust93 <monumentum@gmail.com>
 Date: Wed, 19 Sep 2018 14:26:54 +0800
 Subject: [PATCH 03/11] RIL: Fix manual network selection with old modem
@@ -14,10 +14,10 @@ Change-Id: I1015e6c0d6afdc0c03d70e9491d49331703eddcc
  2 files changed, 14 insertions(+), 1 deletion(-)
 
 diff --git a/src/java/com/android/internal/telephony/RIL.java b/src/java/com/android/internal/telephony/RIL.java
-index 5ecdfcbbd4..08a84f5909 100644
+index 5177adb3b9..60928c9001 100644
 --- a/src/java/com/android/internal/telephony/RIL.java
 +++ b/src/java/com/android/internal/telephony/RIL.java
-@@ -222,6 +222,8 @@ public class RIL extends BaseCommands implements CommandsInterface {
+@@ -203,6 +203,8 @@ public class RIL extends BaseCommands implements CommandsInterface {
  
      final Integer mPhoneId;
  
@@ -26,7 +26,7 @@ index 5ecdfcbbd4..08a84f5909 100644
      private static final String PROPERTY_IS_VONR_ENABLED = "persist.radio.is_vonr_enabled_";
  
      public static final int MIN_SERVICE_IDX = HAL_SERVICE_RADIO;
-@@ -1132,6 +1134,9 @@ public class RIL extends BaseCommands implements CommandsInterface {
+@@ -1019,6 +1021,9 @@ public class RIL extends BaseCommands implements CommandsInterface {
              if (proxies == null) throw ex;
          }
  
@@ -36,22 +36,22 @@ index 5ecdfcbbd4..08a84f5909 100644
          TelephonyManager tm = (TelephonyManager) context.getSystemService(
                  Context.TELEPHONY_SERVICE);
          mIsCellularSupported = tm.isVoiceCapable() || tm.isSmsCapable() || tm.isDataCapable();
-@@ -2557,6 +2562,10 @@ public class RIL extends BaseCommands implements CommandsInterface {
-             RILRequest rr = obtainRequest(RIL_REQUEST_SET_NETWORK_SELECTION_MANUAL, result,
-                     mRILDefaultWorkSource);
+@@ -2410,6 +2415,10 @@ public class RIL extends BaseCommands implements CommandsInterface {
+         RILRequest rr = obtainRequest(RIL_REQUEST_SET_NETWORK_SELECTION_MANUAL, result,
+                 mRILDefaultWorkSource);
  
-+            if (mUseOldMncMccFormat && !TextUtils.isEmpty(operatorNumeric)) {
-+                operatorNumeric += "+";
-+            }
++        if (mUseOldMncMccFormat && !TextUtils.isEmpty(operatorNumeric)) {
++            operatorNumeric += "+";
++        }
 +
-             if (RILJ_LOGD) {
-                 riljLog(rr.serialString() + "> " + RILUtils.requestToString(rr.mRequest)
-                         + " operatorNumeric = " + operatorNumeric + ", ran = " + ran);
+         if (RILJ_LOGD) {
+             riljLog(rr.serialString() + "> " + RILUtils.requestToString(rr.mRequest)
+                     + " operatorNumeric = " + operatorNumeric + ", ran = " + ran);
 diff --git a/src/java/com/android/internal/telephony/RadioResponse.java b/src/java/com/android/internal/telephony/RadioResponse.java
-index 0bc29583fb..8a52dfbbb2 100644
+index ada45ec0f7..127d876557 100644
 --- a/src/java/com/android/internal/telephony/RadioResponse.java
 +++ b/src/java/com/android/internal/telephony/RadioResponse.java
-@@ -2450,8 +2450,12 @@ public class RadioResponse extends IRadioResponse.Stub {
+@@ -2330,8 +2330,12 @@ public class RadioResponse extends IRadioResponse.Stub {
          if (rr != null) {
              ArrayList<OperatorInfo> ret = new ArrayList<OperatorInfo>();
              for (int i = 0; i < networkInfos.size(); i++) {
@@ -66,5 +66,5 @@ index 0bc29583fb..8a52dfbbb2 100644
              }
              if (responseInfo.error == RadioError.NONE) {
 -- 
-2.30.2
+2.39.2
 

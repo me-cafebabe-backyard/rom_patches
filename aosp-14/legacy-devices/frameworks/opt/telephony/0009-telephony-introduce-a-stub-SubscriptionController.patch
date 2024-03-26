@@ -1,7 +1,7 @@
-From 4fd508c74392595a6c617ad287721f22af1072b3 Mon Sep 17 00:00:00 2001
+From 88f51ed1f356161a32182a0f1602160cf1c54023 Mon Sep 17 00:00:00 2001
 From: ExactExampl <64069095+ExactExampl@users.noreply.github.com>
 Date: Sat, 18 Nov 2023 13:16:20 +0200
-Subject: [PATCH 11/11] telephony: introduce a stub SubscriptionController
+Subject: [PATCH 09/11] telephony: introduce a stub SubscriptionController
 
 This is a completely standalone alternative to SubscriptionController
 that was replaced with SubscriptionManagerService in commit
@@ -88,5 +88,5 @@ index 0000000000..7fc093617c
 +    }
 +}
 -- 
-2.30.2
+2.39.2
 

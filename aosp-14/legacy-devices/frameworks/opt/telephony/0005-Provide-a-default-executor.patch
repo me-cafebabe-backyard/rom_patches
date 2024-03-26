@@ -1,7 +1,7 @@
-From d84c01bf0a0741673c10ef64f9ca92e83bec919a Mon Sep 17 00:00:00 2001
+From f434116177287058cdeb19a3ca1f820cd7627a80 Mon Sep 17 00:00:00 2001
 From: Christian Hoffmann <chrmhoffmann@gmail.com>
 Date: Sun, 23 Oct 2022 22:17:26 +0200
-Subject: [PATCH 07/11] Provide a default executor
+Subject: [PATCH 05/11] Provide a default executor
 
 Change-Id: Ia9729142227f55665e122c8fa05296e5e146178b
 ---
@@ -50,5 +50,5 @@ index d9dfd79549..3625e45dea 100644
          mCompatFeature = compatFeature;
      }
 -- 
-2.30.2
+2.39.2
 
