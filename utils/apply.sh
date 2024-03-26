@@ -6,7 +6,7 @@ TOPDIR=$(pwd)
 if [ $# -gt 0 ]; then
 	CATEGORIES="$@"
 else
-	CATEGORIES="$(find -L $MY_PATH -mindepth 1 -maxdepth 1 -type d|sed s\|$MY_PATH/\|\|g|grep -vE 'debug|android-x86|security-patch-fix|feature-removal')"
+	CATEGORIES="$(find -L $MY_PATH -mindepth 1 -maxdepth 1 -type d|sort|sed s\|$MY_PATH/\|\|g|grep -vE 'debug|android-x86|security-patch-fix|feature-removal')"
 fi
 
 rm patch-failed.txt || true
