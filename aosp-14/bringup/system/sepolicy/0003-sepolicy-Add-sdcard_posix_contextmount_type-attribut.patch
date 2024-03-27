@@ -1,7 +1,7 @@
-From b0a42ad2ee38fda82c08a72f79f01422d79c9468 Mon Sep 17 00:00:00 2001
+From 00ed98bc47b9eaf139421a8dafc7a3f2c4b87528 Mon Sep 17 00:00:00 2001
 From: LuK1337 <priv.luk@gmail.com>
 Date: Tue, 7 Apr 2020 13:12:18 +0200
-Subject: [PATCH 3/4] sepolicy: Add sdcard_posix_contextmount_type attribute
+Subject: [PATCH 3/5] sepolicy: Add sdcard_posix_contextmount_type attribute
 
 * Since we can't use contextmount_type for sdcard_posix
   due to contextmount_type being read only by design we
@@ -46,7 +46,7 @@ index c977c295c..028e56b10 100644
  # Ensure that context mount types are not writable, to ensure that
  # the write to /system restriction above is not bypassed via context=
 diff --git a/public/attributes b/public/attributes
-index 16a8e66af..83e04c1d7 100644
+index 759b773a2..9cd89fa33 100644
 --- a/public/attributes
 +++ b/public/attributes
 @@ -27,6 +27,9 @@ attribute contextmount_type;
@@ -60,10 +60,10 @@ index 16a8e66af..83e04c1d7 100644
  # Do not use for pseudo file types.
  # On change, update CHECK_FC_ASSERT_ATTRS
 diff --git a/public/domain.te b/public/domain.te
-index c977c295c..028e56b10 100644
+index c336d5baa..c2f858a28 100644
 --- a/public/domain.te
 +++ b/public/domain.te
-@@ -492,7 +492,7 @@ neverallow { domain -recovery } rootfs:file { create write setattr relabelto app
+@@ -503,7 +503,7 @@ neverallow { domain -recovery } rootfs:file { create write setattr relabelto app
  
  # Restrict context mounts to specific types marked with
  # the contextmount_type attribute.
@@ -73,5 +73,5 @@ index c977c295c..028e56b10 100644
  # Ensure that context mount types are not writable, to ensure that
  # the write to /system restriction above is not bypassed via context=
 -- 
-2.30.2
+2.39.2
 

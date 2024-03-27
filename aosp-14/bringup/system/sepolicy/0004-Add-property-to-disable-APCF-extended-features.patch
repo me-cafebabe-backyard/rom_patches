@@ -1,7 +1,7 @@
-From 3389c360409aee6e4ef365909f3a2958134d2666 Mon Sep 17 00:00:00 2001
+From 258c01a169322a5640054db7c7a838eab8d2032a Mon Sep 17 00:00:00 2001
 From: me-cafebabe <me.cafebabe@gmail.com>
 Date: Mon, 20 Mar 2023 20:01:50 +0800
-Subject: [PATCH 4/4] Add property to disable APCF extended features
+Subject: [PATCH 4/5] Add property to disable APCF extended features
 
 * Required for change I4b1764b7551150e78dd8e2dfc99a6472c1293c2b
 
@@ -12,7 +12,7 @@ Change-Id: I895c7c81b55eff7137b6c558e3a66d57f2406a30
  2 files changed, 4 insertions(+)
 
 diff --git a/prebuilts/api/34.0/private/property_contexts b/prebuilts/api/34.0/private/property_contexts
-index 3afb6616c..dfb86900b 100644
+index da0ea5bc7..f3d016c9e 100644
 --- a/prebuilts/api/34.0/private/property_contexts
 +++ b/prebuilts/api/34.0/private/property_contexts
 @@ -550,6 +550,8 @@ bluetooth.core.le_audio.inband_ringtone.supported    u:object_r:bluetooth_config
@@ -25,10 +25,10 @@ index 3afb6616c..dfb86900b 100644
  bluetooth.profile.a2dp.source.enabled                u:object_r:bluetooth_config_prop:s0 exact bool
  bluetooth.profile.asha.central.enabled               u:object_r:bluetooth_config_prop:s0 exact bool
 diff --git a/private/property_contexts b/private/property_contexts
-index 3afb6616c..dfb86900b 100644
+index 4166c5509..46ac0ed8d 100644
 --- a/private/property_contexts
 +++ b/private/property_contexts
-@@ -550,6 +550,8 @@ bluetooth.core.le_audio.inband_ringtone.supported    u:object_r:bluetooth_config
+@@ -564,6 +564,8 @@ bluetooth.core.le_audio.inband_ringtone.supported    u:object_r:bluetooth_config
  bluetooth.device.default_name                        u:object_r:bluetooth_config_prop:s0 exact string
  bluetooth.device.class_of_device                     u:object_r:bluetooth_config_prop:s0 exact string
  
@@ -38,5 +38,5 @@ index 3afb6616c..dfb86900b 100644
  bluetooth.profile.a2dp.source.enabled                u:object_r:bluetooth_config_prop:s0 exact bool
  bluetooth.profile.asha.central.enabled               u:object_r:bluetooth_config_prop:s0 exact bool
 -- 
-2.30.2
+2.39.2
 
