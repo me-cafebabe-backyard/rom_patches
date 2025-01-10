@@ -1,0 +1,74 @@
+From 3c12cb1b3bb6126bd5604af6e216cde5ef52e10b Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Thu, 19 Dec 2024 21:41:28 +0800
+Subject: [PATCH] minadbd: Setup ADB over network (TCP/IP and VirtIO VSOCK)
+
+* Adds alternative way to use ADB sideload on devices without USB gadget mode
+* Code taken from android-15.0.0_r5 packages/modules/adb/daemon/main.cpp
+
+Change-Id: Ibef04214de79c991a863daef727979598050cc46
+---
+ minadbd/Android.bp  |  1 +
+ minadbd/minadbd.cpp | 20 ++++++++++++++++++++
+ 2 files changed, 21 insertions(+)
+
+diff --git a/minadbd/Android.bp b/minadbd/Android.bp
+index 91407f98..f57bbb0f 100644
+--- a/minadbd/Android.bp
++++ b/minadbd/Android.bp
+@@ -101,6 +101,7 @@ cc_binary {
+         "android.hardware.health-V3-ndk", // from librecovery_utils
+         "libbase",
+         "libcrypto",
++        "libssl",
+     ],
+ 
+     static_libs: [
+diff --git a/minadbd/minadbd.cpp b/minadbd/minadbd.cpp
+index 4fab0f42..e31d2fd3 100644
+--- a/minadbd/minadbd.cpp
++++ b/minadbd/minadbd.cpp
+@@ -23,6 +23,8 @@
+ 
+ #include <android-base/logging.h>
+ #include <android-base/parseint.h>
++#include <android-base/properties.h>
++#include <android-base/strings.h>
+ 
+ #include "adb.h"
+ #include "adb_auth.h"
+@@ -33,6 +35,22 @@
+ 
+ using namespace std::string_literals;
+ 
++static void minadbd_net_init() {
++  std::string prop_port = android::base::GetProperty("service.adb.tcp.port", "");
++
++  int port;
++  if (sscanf(prop_port.c_str(), "%d", &port) == 1 && port > 0) {
++    LOG(DEBUG) << "using tcp port=" << std::to_string(port);
++    // Listen on TCP and VSOCK port specified by service.adb.tcp.port property.
++    local_init(android::base::StringPrintf("tcp:%d", port));
++    local_init(android::base::StringPrintf("vsock:%d", port));
++  } else {
++    // Listen on default port.
++    local_init(android::base::StringPrintf("tcp:%d", DEFAULT_ADB_LOCAL_TRANSPORT_PORT));
++    local_init(android::base::StringPrintf("vsock:%d", DEFAULT_ADB_LOCAL_TRANSPORT_PORT));
++  }
++}
++
+ int main(int argc, char** argv) {
+   android::base::InitLogging(argv, &android::base::StderrLogger);
+   // TODO(xunchang) implement a command parser
+@@ -68,6 +86,8 @@ int main(int argc, char** argv) {
+ 
+   usb_init();
+ 
++  minadbd_net_init();
++
+   VLOG(ADB) << "Event loop starting";
+   fdevent_loop();
+ 
+-- 
+2.39.5
+
