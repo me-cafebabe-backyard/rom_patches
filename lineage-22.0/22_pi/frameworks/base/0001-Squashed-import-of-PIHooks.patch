@@ -1,164 +1,18 @@
-From 147ce418c78eca9fdb3a6ce71d4e1ec9ccffd660 Mon Sep 17 00:00:00 2001
+From e536ec50edc706598ca9005f16f2ec1a1722f8cc Mon Sep 17 00:00:00 2001
 From: Omkar Chandorkar <gotenksIN@aospa.co>
 Date: Thu, 1 Sep 2022 17:18:58 +0530
 Subject: [PATCH] Squashed import of PIHooks
-
-Introduce PropImitationHooks
-
-This is a squash of the following commits.
-
-  Author: Omkar Chandorkar <gotenksIN@aospa.co>
-  Date:   Thu Sep 1 17:18:58 2022 +0530
-
-      Introduce PropImitationHooks
-
-      - A minimal implementation to pass CTS and Play Integrity while
-        loading correct ARCore profiles if existing
-
-      - Loosely inspired by PixelPropUtils from
-        https://github.com/PixelExperience/frameworks_base/blob/twelve/core/java/com/android/internal/util/custom/PixelPropsUtils.java
-
-      - Thanks Danny for original idea at
-        https://github.com/ProtonAOSP/android_frameworks_base/blob/sc-qpr3/core/java/com/android/internal/gmscompat/AttestationHooks.java
-
-      - Thanks Dyneteve for fixing Play Integrity API at
-        https://github.com/hentaiOS/platform_frameworks_base/commit/c9a086f9b635bf4e3e61fbd501ade464f8f5b713
-
-      Change-Id: I6937258c8297aa909fcdb3b40195cbd6dc0f869b
-      Co-authored-by: Chris Crawford <chriscrawford893@gmail.com>
-      Co-authored-by: jhenrique09 <jhenrique09.mcz@hotmail.com>
-      Co-authored-by: Danny Lin <danny@kdrag0n.dev>
-      Co-authored-by: Adithya R <gh0strider.2k18.reborn@gmail.com>
-      Signed-off-by: Omkar Chandorkar <gotenksIN@aospa.co>
-
-  Author: Danny Lin <danny@kdrag0n.dev>
-  Date:   Fri Oct 14 09:53:12 2022 +0200
-
-      PIHooks: Alter model name to avoid SafetyNet HW attestation
-
-      As of September 2, Google is enforcing SafetyNet's previously
-      opportunistic hardware-backed attestation based on device information.
-      Append a space to the device model name in order to avoid such
-      enforcement.
-
-      Change-Id: Ib7779e0aae40cab3730a56785e9231896917ab0a
-      [ghostrider-reborn: adapt to PIHooks, use invisible space]
-      Signed-off-by: Adithya R <gh0strider.2k18.reborn@gmail.com>
-
-  Author: jhenrique09 <jhsv09@gmail.com>
-  Date:   Fri Nov 4 15:40:04 2022 -0300
-
-      PIHooks: Get package name from context instead of app
-
-      11-04 08:48:39.039 11637 11637 E AndroidRuntime: FATAL EXCEPTION: main
-      11-04 08:48:39.039 11637 11637 E AndroidRuntime: Process: com.NextFloor.DestinyChild, PID: 11637
-      11-04 08:48:39.039 11637 11637 E AndroidRuntime: java.lang.RuntimeException: Unable to get provider androidx.startup.InitializationProvider: androidx.startup.StartupException: android.content.pm.PackageManager$NameNotFoundException: ComponentInfo{/androidx.startup.InitializationProvider}
-      11-04 08:48:39.039 11637 11637 E AndroidRuntime:   at android.app.ActivityThread.installProvider(ActivityThread.java:7488)
-
-      Change-Id: Icb12f938fe0fca710f8f9d29182d0134ba3c63eb
-      [ghostrider-reborn: adapt to PIHooks]
-      Signed-off-by: Adithya R <gh0strider.2k18.reborn@gmail.com>
-
-  Author: Adithya R <gh0strider.2k18.reborn@gmail.com>
-  Date:   Thu Feb 9 11:41:44 2023 +0530
-
-      PIHooks: Make CTS/Play Integrity pass again
-
-      The logic behind SafetyNet CTS and Play Integrity has been updated today
-      it now checks the product and model names against the fingerprint and if
-      they do not match the CTS profile will fail.
-
-      Based on https://github.com/hentaiOS/platform_frameworks_base/commit/32cd021753626ae2dc0f72d222ac4fd734f3a8aa
-
-      Co-authored-by: Dyneteve <dyneteve@hentaios.com>
-      Change-Id: If3a865849c7c99a9c7080114ba94a8f8878bb4f2
-
-  Author: Adithya R <gh0strider.2k18.reborn@gmail.com>
-  Date:   Thu Jun 8 16:55:44 2023 +0530
-
-      PIHooks: Un-spoof GMS while adding google account
-
-      GMS uses its DroidGuard service (the same that's used for safetynet)
-      to get the device name from the build fingerprint, which from our
-      current certified props, is Pixel XL. The device name after Google
-      login shows up in the login alert accordingly as Pixel XL, which is
-      inconvenient especially when you have multiple devices on the same ROM.
-
-      By restarting the DroidGuard service process (gms.unstable) as soon as
-      the user starts adding Google account (i.e when the GMS add account
-      activity is started and moved to the top of the task stack), we can
-      skip spoofing to certified props in this instance. When the user
-      stops/finishes adding account (GMS add account activity is no longer
-      at the top of the task stack), restart the process again, this time
-      spoofing to certified props in order to be ready for safetynet.
-
-      This ensures while adding a Google account, GMS reads the original
-      properties of the device and labels the device with its original name,
-      while in any other situation GMS reads certified properties required
-      to pass SafetyNet/Play Integrity.
-
-      Test:
-      - Add google account from setup wizard, settings, any other app
-      - Observe correct device name in gmail login alert
-      - SafetyNet (basic, CTS), Play Integrity (basic, device) passes.
-
-      Change-Id: Ia5463f220a8262f7963fc5b2640a7a5311a73210
-
-  Author: Adithya R <gh0strider.2k18.reborn@gmail.com>
-  Date:   Mon Sep 19 17:33:34 2022 +0530
-
-      PIHooks: Allow spoofing device model for Netflix
-
-      It can be used to unlock HDR for devices that don't
-      have it by default.
-
-      Set config_netflixSpoofModel to the desired model in
-      device overlay.
-
-      Change-Id: I5d520de143c16e9c6fd10978244f598bd64b4d0a
-
-Change-Id: I7844dc9ac8e2f927e6bb565ee218210b194e6ef0
-
-PIHooks: Allow setting any field in certified build props
-
-Brand and manufacturer may also be used for attestation checks, as seen
-by _FOR_ATTESTATION fields added in Android 14 [1]. Refactor certified
-properties to allow setting any Build or Build.VERSION string or integer
-field, to make it more scalable for future.
-
-[1]: https://cs.android.com/android/_/android/platform/frameworks/base/+/fb32aac1ea60bf267ff013f6e1023641736c6de5
-
-Change-Id: I16dc8e18a67ffd8fdba8eb9c6928447f82b7d810
-
-PIHooks: Get resources from context
-
-Allows updating overlays on the fly.
-
-Change-Id: Idb85918af06400559e3b17317b3ab88a25828fae
-
-PIHooks: Set system props for native hook
-
-Relay the spoofed (or not) first API and security patch level to
-native PIHooks.
-
-Change-Id: I11a9e9c13a33c1f9962844abba7c83bd040d7a62
-
-PIHooks: Spoof more gapps and google photos
-
-Change-Id: I2e66cba7c9098dd0063123db103407b2955d1c80
-
-PIHooks: Get rid of netflix and arcore spoof
 
 Change-Id: Ic321557a2da0cbded8a3792548c7b2fe3e35fc62
 ---
  .../app/ApplicationPackageManager.java        |   4 +-
  core/java/android/app/Instrumentation.java    |   3 +
- .../internal/util/PropImitationHooks.java     | 363 ++++++++++++++++++
- core/res/res/values/extra_config.xml          |  19 +
+ .../internal/util/PropImitationHooks.java     | 301 ++++++++++++++++++
+ core/res/res/values/extra_config.xml          |  19 ++
  core/res/res/values/extra_symbols.xml         |   6 +
  .../keystore2/AndroidKeyStoreSpi.java         |   3 +
  .../server/wm/ActivityTaskManagerService.java |   9 +-
- 7 files changed, 404 insertions(+), 3 deletions(-)
+ 7 files changed, 342 insertions(+), 3 deletions(-)
  create mode 100644 core/java/com/android/internal/util/PropImitationHooks.java
  create mode 100644 core/res/res/values/extra_config.xml
  create mode 100644 core/res/res/values/extra_symbols.xml
@@ -215,13 +69,12 @@ index 93a9489849af..9c0490795f39 100644
  
 diff --git a/core/java/com/android/internal/util/PropImitationHooks.java b/core/java/com/android/internal/util/PropImitationHooks.java
 new file mode 100644
-index 000000000000..f921bdc1de75
+index 000000000000..81ab00a5b8c0
 --- /dev/null
 +++ b/core/java/com/android/internal/util/PropImitationHooks.java
-@@ -0,0 +1,363 @@
+@@ -0,0 +1,301 @@
 +/*
 + * Copyright (C) 2022 Paranoid Android
-+ *           (C) 2023 StatiXOS
 + *           (C) 2023 ArrowOS
 + *           (C) 2023 The LibreMobileOS Foundation
 + *
@@ -260,27 +113,20 @@ index 000000000000..f921bdc1de75
 +import java.util.Map;
 +import java.util.Set;
 +
++/**
++ * @hide
++ */
 +public class PropImitationHooks {
 +
 +    private static final String TAG = "PropImitationHooks";
-+    private static final boolean DEBUG = SystemProperties.getBoolean("debug.pihooks.log", false);
++    private static final boolean DEBUG = false;
 +
-+    private static final String PACKAGE_AIWALLPAPERS = "com.google.android.apps.aiwallpapers";
 +    private static final String PACKAGE_ARCORE = "com.google.ar.core";
-+    private static final String PACKAGE_ASI = "com.google.android.as";
-+    private static final String PACKAGE_ASSISTANT = "com.google.android.apps.googleassistant";
-+    private static final String PACKAGE_EMOJIWALLPAPER = "com.google.android.apps.emojiwallpaper";
++
 +    private static final String PACKAGE_FINSKY = "com.android.vending";
 +    private static final String PACKAGE_GMS = "com.google.android.gms";
 +    private static final String PACKAGE_GPHOTOS = "com.google.android.apps.photos";
-+    private static final String PACKAGE_NETFLIX = "com.netflix.mediaclient";
-+    private static final String PACKAGE_PIXELTHEMES = "com.google.android.apps.customization.pixel";
-+    private static final String PACKAGE_PIXELWALLPAPER = "com.google.android.apps.wallpaper.pixel";
-+    private static final String PACKAGE_LIVEWALLPAPER = "com.google.pixel.livewallpaper";
-+    private static final String PACKAGE_SUBSCRIPTION_RED = "com.google.android.apps.subscriptions.red";
-+    private static final String PACKAGE_VELVET = "com.google.android.googlequicksearchbox";
-+    private static final String PACKAGE_WALLPAPER = "com.google.android.apps.wallpaper";
-+    private static final String PACKAGE_WALLPAPEREFFECTS = "com.google.android.wallpaper.effects";
++
 +    private static final String PROCESS_GMS_GAPPS = PACKAGE_GMS + ".gapps";
 +    private static final String PROCESS_GMS_GSERVICE = PACKAGE_GMS + ".gservice";
 +    private static final String PROCESS_GMS_LEARNING = PACKAGE_GMS + ".learning";
@@ -294,28 +140,6 @@ index 000000000000..f921bdc1de75
 +
 +    private static final ComponentName GMS_ADD_ACCOUNT_ACTIVITY = ComponentName.unflattenFromString(
 +            "com.google.android.gms/.auth.uiflows.minutemaid.MinuteMaidActivity");
-+
-+    private static final Map<String, String> sPixelNineXLProps = Map.of(
-+            "PRODUCT", "komodo",
-+            "DEVICE", "komodo",
-+            "HARDWARE", "komodo",
-+            "MANUFACTURER", "Google",
-+            "BRAND", "google",
-+            "MODEL", "Pixel 9 Pro XL",
-+            "ID", "AD1A.240905.004",
-+            "FINGERPRINT", "google/komodo/komodo:14/AD1A.240905.004/12196292:user/release-keys"
-+    );
-+
-+    private static final Map<String, String> sPixelFiveProps = Map.of(
-+            "PRODUCT", "barbet",
-+            "DEVICE", "barbet",
-+            "HARDWARE", "barbet",
-+            "MANUFACTURER", "Google",
-+            "BRAND", "google",
-+            "MODEL", "Pixel 5a",
-+            "ID", "AP2A.240805.005",
-+            "FINGERPRINT", "google/barbet/barbet:14/AP2A.240805.005/12025142:user/release-keys"
-+    );
 +
 +    private static final Map<String, String> sPixelXLProps = Map.of(
 +            "PRODUCT", "marlin",
@@ -337,8 +161,6 @@ index 000000000000..f921bdc1de75
 +    );
 +
 +    private static final Set<String> sPixelFeatures = Set.of(
-+            "GOOGLE_BUILD",
-+            "GOOGLE_EXPERIENCE",
 +            "PIXEL_2017_EXPERIENCE",
 +            "PIXEL_2017_PRELOAD",
 +            "PIXEL_2018_EXPERIENCE",
@@ -359,9 +181,7 @@ index 000000000000..f921bdc1de75
 +            "PIXEL_2023_EXPERIENCE",
 +            "PIXEL_2023_MIDYEAR_EXPERIENCE",
 +            "PIXEL_2024_EXPERIENCE",
-+            "PIXEL_2024_MIDYEAR_EXPERIENCE",
-+            "PIXEL_2025_EXPERIENCE",
-+            "PIXEL_2025_MIDYEAR_EXPERIENCE"
++            "PIXEL_2024_MIDYEAR_EXPERIENCE"
 +    );
 +
 +    private static volatile String[] sCertifiedProps;
@@ -397,22 +217,13 @@ index 000000000000..f921bdc1de75
 +         * Set stock fingerprint for ARCore
 +         * Set Pixel 8 Pro for Google, ASI and GMS device configurator
 +         * Set Pixel XL for Google Photos
-+         * Set Pixel 5a for Netflix
++         * Set custom model for Netflix
 +         */
 +
 +        switch (processName) {
 +            case PROCESS_GMS_UNSTABLE:
 +                dlog("Setting certified props for: " + packageName + " process: " + processName);
 +                setCertifiedPropsForGms();
-+                return;
-+            case PROCESS_GMS_PERSISTENT:
-+            case PROCESS_GMS_GAPPS:
-+            case PROCESS_GMS_GSERVICE:
-+            case PROCESS_GMS_LEARNING:
-+            case PROCESS_GMS_SEARCH:
-+            case PROCESS_GMS_UPDATE:
-+                dlog("Spoofing Pixel 5a for: " + packageName + " process: " + processName);
-+                setProps(sPixelFiveProps);
 +                return;
 +        }
 +
@@ -423,28 +234,9 @@ index 000000000000..f921bdc1de75
 +        }
 +
 +        switch (packageName) {
-+            case PACKAGE_AIWALLPAPERS:
-+            case PACKAGE_ASSISTANT:
-+            case PACKAGE_ASI:
-+            case PACKAGE_EMOJIWALLPAPER:
-+            case PACKAGE_GMS:
-+            case PACKAGE_LIVEWALLPAPER:
-+            case PACKAGE_PIXELTHEMES:
-+            case PACKAGE_PIXELWALLPAPER:
-+            case PACKAGE_SUBSCRIPTION_RED:
-+            case PACKAGE_VELVET:
-+            case PACKAGE_WALLPAPER:
-+            case PACKAGE_WALLPAPEREFFECTS:
-+                dlog("Spoofing Pixel 9 Pro XL for: " + packageName + " process: " + processName);
-+                setProps(sPixelNineXLProps);
-+                return;
 +            case PACKAGE_GPHOTOS:
 +                dlog("Spoofing Pixel XL for Google Photos");
 +                setProps(sPixelXLProps);
-+                return;
-+            case PACKAGE_NETFLIX:
-+                dlog("Spoofing Pixel 5a for Netflix");
-+                setProps(sPixelFiveProps);
 +                return;
 +        }
 +    }
