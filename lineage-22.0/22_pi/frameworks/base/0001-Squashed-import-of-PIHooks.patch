@@ -1,4 +1,4 @@
-From e536ec50edc706598ca9005f16f2ec1a1722f8cc Mon Sep 17 00:00:00 2001
+From 3a99048f7eed4e93e61b597d33c634130121ddcd Mon Sep 17 00:00:00 2001
 From: Omkar Chandorkar <gotenksIN@aospa.co>
 Date: Thu, 1 Sep 2022 17:18:58 +0530
 Subject: [PATCH] Squashed import of PIHooks
@@ -7,12 +7,12 @@ Change-Id: Ic321557a2da0cbded8a3792548c7b2fe3e35fc62
 ---
  .../app/ApplicationPackageManager.java        |   4 +-
  core/java/android/app/Instrumentation.java    |   3 +
- .../internal/util/PropImitationHooks.java     | 301 ++++++++++++++++++
- core/res/res/values/extra_config.xml          |  19 ++
+ .../internal/util/PropImitationHooks.java     | 358 ++++++++++++++++++
+ core/res/res/values/extra_config.xml          |  19 +
  core/res/res/values/extra_symbols.xml         |   6 +
  .../keystore2/AndroidKeyStoreSpi.java         |   3 +
  .../server/wm/ActivityTaskManagerService.java |   9 +-
- 7 files changed, 342 insertions(+), 3 deletions(-)
+ 7 files changed, 399 insertions(+), 3 deletions(-)
  create mode 100644 core/java/com/android/internal/util/PropImitationHooks.java
  create mode 100644 core/res/res/values/extra_config.xml
  create mode 100644 core/res/res/values/extra_symbols.xml
@@ -69,10 +69,10 @@ index 93a9489849af..9c0490795f39 100644
  
 diff --git a/core/java/com/android/internal/util/PropImitationHooks.java b/core/java/com/android/internal/util/PropImitationHooks.java
 new file mode 100644
-index 000000000000..81ab00a5b8c0
+index 000000000000..b438444c2b03
 --- /dev/null
 +++ b/core/java/com/android/internal/util/PropImitationHooks.java
-@@ -0,0 +1,301 @@
+@@ -0,0 +1,358 @@
 +/*
 + * Copyright (C) 2022 Paranoid Android
 + *           (C) 2023 ArrowOS
@@ -121,11 +121,23 @@ index 000000000000..81ab00a5b8c0
 +    private static final String TAG = "PropImitationHooks";
 +    private static final boolean DEBUG = false;
 +
++    private static final String PACKAGE_AIWALLPAPERS = "com.google.android.apps.aiwallpapers";
 +    private static final String PACKAGE_ARCORE = "com.google.ar.core";
++    private static final String PACKAGE_ASI = "com.google.android.as";
++    private static final String PACKAGE_EMOJIWALLPAPER = "com.google.android.apps.emojiwallpaper";
 +
 +    private static final String PACKAGE_FINSKY = "com.android.vending";
 +    private static final String PACKAGE_GMS = "com.google.android.gms";
 +    private static final String PACKAGE_GPHOTOS = "com.google.android.apps.photos";
++    private static final String PACKAGE_NETFLIX = "com.netflix.mediaclient";
++
++    private static final String PACKAGE_NEXUSLAUNCHER = "com.google.android.apps.nexuslauncher";
++    private static final String PACKAGE_PIXELTHEMES = "com.google.android.apps.customization.pixel";
++    private static final String PACKAGE_PIXELWALLPAPER = "com.google.android.apps.wallpaper.pixel";
++    private static final String PACKAGE_LIVEWALLPAPER = "com.google.pixel.livewallpaper";
++    private static final String PACKAGE_SUBSCRIPTION_RED = "com.google.android.apps.subscriptions.red";
++    private static final String PACKAGE_WALLPAPER = "com.google.android.apps.wallpaper";
++    private static final String PACKAGE_WALLPAPEREFFECTS = "com.google.android.wallpaper.effects";
 +
 +    private static final String PROCESS_GMS_GAPPS = PACKAGE_GMS + ".gapps";
 +    private static final String PROCESS_GMS_GSERVICE = PACKAGE_GMS + ".gservice";
@@ -140,6 +152,28 @@ index 000000000000..81ab00a5b8c0
 +
 +    private static final ComponentName GMS_ADD_ACCOUNT_ACTIVITY = ComponentName.unflattenFromString(
 +            "com.google.android.gms/.auth.uiflows.minutemaid.MinuteMaidActivity");
++
++    private static final Map<String, String> sPixelNineProps = Map.of(
++            "PRODUCT", "caiman",
++            "DEVICE", "caiman",
++            "HARDWARE", "caiman",
++            "MANUFACTURER", "Google",
++            "BRAND", "google",
++            "MODEL", "Pixel 9 Pro",
++            "ID", "AP4A.241205.013.C1",
++            "FINGERPRINT", "google/caiman/caiman:15/AP4A.241205.013.C1/12657666:user/release-keys"
++    );
++
++    private static final Map<String, String> sPixelFiveProps = Map.of(
++            "PRODUCT", "barbet",
++            "DEVICE", "barbet",
++            "HARDWARE", "barbet",
++            "MANUFACTURER", "Google",
++            "BRAND", "google",
++            "MODEL", "Pixel 5a",
++            "ID", "AP2A.240805.005.S4",
++            "FINGERPRINT", "google/barbet/barbet:14/AP2A.240805.005.S4/12281092:user/release-keys"
++    );
 +
 +    private static final Map<String, String> sPixelXLProps = Map.of(
 +            "PRODUCT", "marlin",
@@ -225,6 +259,15 @@ index 000000000000..81ab00a5b8c0
 +                dlog("Setting certified props for: " + packageName + " process: " + processName);
 +                setCertifiedPropsForGms();
 +                return;
++            case PROCESS_GMS_PERSISTENT:
++            case PROCESS_GMS_GAPPS:
++            case PROCESS_GMS_GSERVICE:
++            case PROCESS_GMS_LEARNING:
++            case PROCESS_GMS_SEARCH:
++            case PROCESS_GMS_UPDATE:
++                dlog("Spoofing Pixel 5a for: " + packageName + " process: " + processName);
++                setProps(sPixelFiveProps);
++                return;
 +        }
 +
 +        if (!sStockFp.isEmpty() && packageName.equals(PACKAGE_ARCORE)) {
@@ -234,6 +277,20 @@ index 000000000000..81ab00a5b8c0
 +        }
 +
 +        switch (packageName) {
++            case PACKAGE_AIWALLPAPERS:
++            case PACKAGE_ASI:
++            case PACKAGE_EMOJIWALLPAPER:
++            case PACKAGE_GMS:
++            case PACKAGE_LIVEWALLPAPER:
++            case PACKAGE_NEXUSLAUNCHER:
++            case PACKAGE_PIXELTHEMES:
++            case PACKAGE_PIXELWALLPAPER:
++            case PACKAGE_SUBSCRIPTION_RED:
++            case PACKAGE_WALLPAPER:
++            case PACKAGE_WALLPAPEREFFECTS:
++                    dlog("Spoofing Pixel 9 Pro for: " + packageName + " process: " + processName);
++                    setProps(sPixelNineProps);
++                return;
 +            case PACKAGE_GPHOTOS:
 +                dlog("Spoofing Pixel XL for Google Photos");
 +                setProps(sPixelXLProps);
