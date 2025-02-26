@@ -1,0 +1,43 @@
+From 1994b86d7b86d0b834dbf69b6955e155fb16d3e3 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Tue, 24 Dec 2024 01:11:19 +0800
+Subject: [PATCH] build: Move inclusion of BoardConfigExtra.mk to
+ board_config.mk
+
+Some kind of extras needs to alter variables that becomes read-only
+after inclusion of board_config.mk, or wants some variables getting
+processed by board_config.mk. For example, native bridge.
+
+Change-Id: If7ef0dcfc30b52940017662fa7402e4970dbc3c7
+---
+ core/board_config.mk | 1 +
+ core/config.mk       | 1 -
+ 2 files changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/core/board_config.mk b/core/board_config.mk
+index 6fa9ad940a..a227ddee10 100644
+--- a/core/board_config.mk
++++ b/core/board_config.mk
+@@ -239,6 +239,7 @@ endif
+ 
+ ifndef RBC_PRODUCT_CONFIG
+ include $(board_config_mk)
++-include vendor/extra/BoardConfigExtra.mk
+ else
+   $(shell mkdir -p $(OUT_DIR)/rbc)
+   $(call dump-variables-rbc, $(OUT_DIR)/rbc/make_vars_pre_board_config.mk)
+diff --git a/core/config.mk b/core/config.mk
+index a8a5e5f711..a40c7a5e3d 100644
+--- a/core/config.mk
++++ b/core/config.mk
+@@ -442,7 +442,6 @@ endif
+ # See envsetup.mk for a description of SCAN_EXCLUDE_DIRS
+ FIND_LEAVES_EXCLUDES := $(addprefix --prune=, $(SCAN_EXCLUDE_DIRS) .repo .git)
+ 
+--include vendor/extra/BoardConfigExtra.mk
+ ifneq ($(LINEAGE_BUILD),)
+ include vendor/lineage/config/BoardConfigLineage.mk
+ endif
+-- 
+2.39.5
+
