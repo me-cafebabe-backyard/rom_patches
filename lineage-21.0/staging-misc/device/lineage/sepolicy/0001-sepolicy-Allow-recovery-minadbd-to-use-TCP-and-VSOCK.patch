@@ -1,1 +1,32 @@
-../../../../../lineage-22.0/staging-misc/device/lineage/sepolicy/0001-sepolicy-Allow-recovery-minadbd-to-use-TCP-and-VSOCK.patch
+From f28fbef7bb54cf4384bf999c66f3d52821139309 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Thu, 19 Dec 2024 22:25:08 +0800
+Subject: [PATCH] sepolicy: Allow recovery (minadbd) to use TCP and VSOCK
+ socket
+
+Change-Id: Icff8dec40e9a360b250d1665567c89d8327935e6
+---
+ common/private/recovery.te | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/common/private/recovery.te b/common/private/recovery.te
+index cd1649a..db28851 100644
+--- a/common/private/recovery.te
++++ b/common/private/recovery.te
+@@ -3,6 +3,13 @@ userdebug_or_eng(`
+ permissive recovery;
+ ')
+ 
++# Minadbd networking support
++allow recovery node:tcp_socket node_bind;
++allow recovery port:tcp_socket name_bind;
++allow recovery self:tcp_socket { create_socket_perms_no_ioctl listen accept };
++allow recovery self:vsock_socket { create_socket_perms_no_ioctl listen accept };
++get_prop(recovery, adbd_config_prop)
++
+ # Volume manager
+ r_dir_file(recovery, sdcard_type)
+ allow recovery block_device:dir create_dir_perms;
+-- 
+2.39.5
+
