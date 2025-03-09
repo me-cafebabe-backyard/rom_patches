@@ -1,0 +1,27 @@
+From 8107126c750827f2fc442e359a6faf0d5f7fcac3 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Thu, 6 Mar 2025 22:22:33 +0000
+Subject: [PATCH] sepolicy: Label `ro.minui.blacklist_input_devices` property
+
+Change-Id: I60499c21b662f7bc5280b6a12c32920a0ad650d5
+---
+ common/private/property_contexts | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/common/private/property_contexts b/common/private/property_contexts
+index 298859f..0903ed7 100644
+--- a/common/private/property_contexts
++++ b/common/private/property_contexts
+@@ -27,6 +27,9 @@ ro.recovery.batteryless                u:object_r:recovery_config_prop:s0 exact
+ # Recovery filesystem
+ ro.recovery.supported_fs               u:object_r:recovery_config_prop:s0 exact string
+ 
++# Recovery input
++ro.minui.blacklist_input_devices       u:object_r:recovery_config_prop:s0
++
+ # Recovery touch
+ ro.minui.default_touch_rotation        u:object_r:recovery_config_prop:s0
+ 
+-- 
+2.39.5
+

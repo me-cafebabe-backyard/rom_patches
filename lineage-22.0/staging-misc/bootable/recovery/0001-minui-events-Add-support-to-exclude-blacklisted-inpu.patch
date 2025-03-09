@@ -1,0 +1,36 @@
+From 74502182bee63f002be4a220ec4db587b7cb388b Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Fri, 7 Mar 2025 06:16:25 +0800
+Subject: [PATCH] minui: events: Add support to exclude blacklisted input
+ devices
+
+Change-Id: I6e631b28f2677e3df53554fc12878a3db6c45137
+---
+ minui/events.cpp | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/minui/events.cpp b/minui/events.cpp
+index 592b58c9..30ddbc89 100644
+--- a/minui/events.cpp
++++ b/minui/events.cpp
+@@ -74,6 +74,17 @@ static bool test_bit(size_t bit, unsigned long* array) { // NOLINT
+ }
+ 
+ static bool should_add_input_device(int fd, bool allow_touch_inputs) {
++  static auto blacklist_input_devices =
++      android::base::Split(android::base::GetProperty("ro.minui.blacklist_input_devices", ""), ",");
++
++  char name[64];
++  if (ioctl(fd, EVIOCGNAME(sizeof(name)), name) >= 1) {
++    if (std::find(blacklist_input_devices.begin(), blacklist_input_devices.end(),
++                  std::string(name)) != blacklist_input_devices.end()) {
++      return false;
++    }
++  }
++
+   // Use unsigned long to match ioctl's parameter type.
+   unsigned long ev_bits[BITS_TO_LONGS(EV_MAX)];  // NOLINT
+ 
+-- 
+2.39.5
+
