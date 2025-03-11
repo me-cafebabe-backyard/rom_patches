@@ -1,0 +1,33 @@
+From 15586b826313cc49bf1a0cb979f3c92793fe3e9e Mon Sep 17 00:00:00 2001
+From: Pranav Vashi <neobuddy89@gmail.com>
+Date: Sat, 16 Oct 2021 00:12:03 +0530
+Subject: [PATCH] build: Always use release-keys
+
+* [@techyminati]
+  - Some payment/banking apps check for this and report device as rooted, I know this is dirty hack,
+    the proper fix should be signing builds , but since most of developers dont care about signing builds
+    lets hardcode 'release-keys' here.
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ core/sysprop.mk | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/core/sysprop.mk b/core/sysprop.mk
+index 19173985ef..0da6e31493 100644
+--- a/core/sysprop.mk
++++ b/core/sysprop.mk
+@@ -174,10 +174,8 @@ endif
+ # when the target-files is signed in a post-build step.
+ ifeq ($(DEFAULT_SYSTEM_DEV_CERTIFICATE),build/make/target/product/security/testkey)
+ BUILD_KEYS := test-keys
+-else ifneq ($(filter vendor/lineage-priv/%,$(DEFAULT_SYSTEM_DEV_CERTIFICATE)),)
+-BUILD_KEYS := release-keys
+ else
+-BUILD_KEYS := dev-keys
++BUILD_KEYS := release-keys
+ endif
+ BUILD_VERSION_TAGS += $(BUILD_KEYS)
+ BUILD_VERSION_TAGS := $(subst $(space),$(comma),$(sort $(BUILD_VERSION_TAGS)))
+-- 
+2.39.5
+
