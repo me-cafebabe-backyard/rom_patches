@@ -1,0 +1,40 @@
+From 0b424e9d3063b2b861bf16bfe8326e8d1d5ce9d2 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Fri, 14 Mar 2025 00:15:36 +0800
+Subject: [PATCH] [DNM] make: Use UTC timezone on date
+
+Change-Id: I08ef64be136edbec3704fe082141654c817a0194
+---
+ core/main.mk         | 2 +-
+ core/version_util.mk | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/core/main.mk b/core/main.mk
+index 5ca71e87e8..a8f0bf9bbc 100644
+--- a/core/main.mk
++++ b/core/main.mk
+@@ -53,7 +53,7 @@ $(BUILD_HOSTNAME_FILE):
+ .KATI_RESTAT: $(BUILD_NUMBER_FILE)
+ .KATI_RESTAT: $(BUILD_HOSTNAME_FILE)
+ 
+-DATE_FROM_FILE := date -d @$(BUILD_DATETIME_FROM_FILE)
++DATE_FROM_FILE := TZ=UTC date -d @$(BUILD_DATETIME_FROM_FILE)
+ .KATI_READONLY := DATE_FROM_FILE
+ 
+ 
+diff --git a/core/version_util.mk b/core/version_util.mk
+index ddcbda2cdc..b263275587 100644
+--- a/core/version_util.mk
++++ b/core/version_util.mk
+@@ -226,7 +226,7 @@ ifndef BUILD_DATETIME
+   BUILD_DATETIME := $(shell date +%s)
+ endif
+ 
+-DATE := date -d @$(BUILD_DATETIME)
++DATE := TZ=UTC date -d @$(BUILD_DATETIME)
+ .KATI_READONLY := DATE
+ 
+ # Everything should be using BUILD_DATETIME_FROM_FILE instead.
+-- 
+2.39.5
+

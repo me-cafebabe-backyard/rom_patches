@@ -1,0 +1,79 @@
+From cfb7a82e795c8773adb07fa704a62a11c84a61bb Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Fri, 14 Mar 2025 04:57:57 +0800
+Subject: [PATCH 1/2] [DNM] soong: Fake build user and build host
+
+Change-Id: I1f67d9856fc5345aad02e8a9ba883c1ada5e5353
+---
+ ui/build/config.go |  8 +-------
+ ui/build/kati.go   | 14 ++------------
+ 2 files changed, 3 insertions(+), 19 deletions(-)
+
+diff --git a/ui/build/config.go b/ui/build/config.go
+index 209404e47..aa62577ae 100644
+--- a/ui/build/config.go
++++ b/ui/build/config.go
+@@ -22,7 +22,6 @@ import (
+ 	"math/rand"
+ 	"os"
+ 	"os/exec"
+-	"os/user"
+ 	"path/filepath"
+ 	"runtime"
+ 	"strconv"
+@@ -489,12 +488,7 @@ func NewConfig(ctx Context, args ...string) Config {
+ 	ret.environ.Set("BUILD_DATETIME_FILE", ret.sandboxPath(wd, buildDateTimeFile))
+ 
+ 	if _, ok := ret.environ.Get("BUILD_USERNAME"); !ok {
+-		username := "unknown"
+-		if u, err := user.Current(); err == nil {
+-			username = u.Username
+-		} else {
+-			ctx.Println("Failed to get current user:", err)
+-		}
++		username := "root"
+ 		ret.environ.Set("BUILD_USERNAME", username)
+ 	}
+ 	ret.environ.Set("PWD", ret.sandboxPath(wd, wd))
+diff --git a/ui/build/kati.go b/ui/build/kati.go
+index 4dfb7108b..7b8e7f47e 100644
+--- a/ui/build/kati.go
++++ b/ui/build/kati.go
+@@ -21,7 +21,6 @@ import (
+ 	"fmt"
+ 	"io/ioutil"
+ 	"os"
+-	"os/user"
+ 	"path/filepath"
+ 	"strings"
+ )
+@@ -172,12 +171,7 @@ func runKati(ctx Context, config Config, extraSuffix string, args []string, envF
+ 	var username string
+ 	// Pass on various build environment metadata to Kati.
+ 	if usernameFromEnv, ok := cmd.Environment.Get("BUILD_USERNAME"); !ok {
+-		username = "unknown"
+-		if u, err := user.Current(); err == nil {
+-			username = u.Username
+-		} else {
+-			ctx.Println("Failed to get current user:", err)
+-		}
++		username = "root"
+ 		cmd.Environment.Set("BUILD_USERNAME", username)
+ 	} else {
+ 		username = usernameFromEnv
+@@ -204,11 +198,7 @@ func runKati(ctx Context, config Config, extraSuffix string, args []string, envF
+ 	// Unset BUILD_HOSTNAME during kati run to avoid kati rerun, kati will use BUILD_HOSTNAME from a file.
+ 	cmd.Environment.Unset("BUILD_HOSTNAME")
+ 	if !ok {
+-		hostname, err = os.Hostname()
+-		if err != nil {
+-			ctx.Println("Failed to read hostname:", err)
+-			hostname = "unknown"
+-		}
++		hostname = "localhost"
+ 	}
+ 	writeValueIfChanged(ctx, config, config.SoongOutDir(), "build_hostname.txt", hostname)
+ 	_, ok = cmd.Environment.Get("BUILD_NUMBER")
+-- 
+2.39.5
+
