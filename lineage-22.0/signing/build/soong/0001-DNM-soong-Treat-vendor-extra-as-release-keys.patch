@@ -1,0 +1,40 @@
+From d69f4db58d0183917ab48cfd2e72caa108c16622 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Fri, 14 Mar 2025 05:14:08 +0800
+Subject: [PATCH] [DNM] soong: Treat vendor/extra* as release-keys
+
+Change-Id: If585ff7654351cfc8facdc057b18852ef4ed9ace
+---
+ android/config.go         | 2 +-
+ scripts/gen_build_prop.py | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/android/config.go b/android/config.go
+index 229bb1e68..e0c652f12 100644
+--- a/android/config.go
++++ b/android/config.go
+@@ -1173,7 +1173,7 @@ func (c *config) BuildKeys() string {
+ 	if defaultCert == "" || defaultCert == filepath.Join(testKeyDir, "testkey") {
+ 		return "test-keys"
+ 	}
+-	if strings.HasPrefix(defaultCert, "vendor/lineage-priv/") {
++	if strings.HasPrefix(defaultCert, "vendor/extra") || strings.HasPrefix(defaultCert, "vendor/lineage-priv/") {
+ 		return "release-keys"
+ 	}
+ 	return "dev-keys"
+diff --git a/scripts/gen_build_prop.py b/scripts/gen_build_prop.py
+index 85debc3c0..fb631fe43 100644
+--- a/scripts/gen_build_prop.py
++++ b/scripts/gen_build_prop.py
+@@ -43,7 +43,7 @@ def get_build_keys(product_config):
+   default_cert = product_config.get("DefaultAppCertificate", "")
+   if default_cert == "" or default_cert == os.path.join(TEST_KEY_DIR, "testKey"):
+     return "test-keys"
+-  if default_cert.startswith("vendor/lineage-priv/"):
++  if default_cert.startswith("vendor/extra") or default_cert.startswith("vendor/lineage-priv/"):
+     return "release-keys"
+   return "dev-keys"
+ 
+-- 
+2.39.5
+
