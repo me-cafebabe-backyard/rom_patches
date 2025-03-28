@@ -1,0 +1,170 @@
+From c9d7585be11723ab44ed467f4e01e33e5832ebb6 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Thu, 24 Oct 2024 18:48:53 +0800
+Subject: [PATCH 2/4] lineage: products: Add Cuttlefish products
+
+How-to:
+1. Build and install cuttlefish packages by following [1]
+2. Build LineageOS image and hosttar
+    ```
+    source build/envsetup.sh
+    breakfast cf_phone_x86_64
+    m hosttar updatepackage
+    ```
+3. Extract LineageOS image and hosttar
+    ```
+    mkdir lineage-cvd
+    cd lineage-cvd
+    unzip <LineageOS tree>/out/target/product/vsoc_x86_64/lineage_cf_phone_x86_64-img.zip
+    tar xzvf <LineageOS tree>/out/host/linux-x86/cvd-host_package.tar.gz
+    ```
+4. Run it
+    ```
+    HOME=$PWD ./bin/launch_cvd
+    ```
+5. Open https://127.0.0.1:8443 in browser, and enjoy
+
+[1]: https://github.com/google/android-cuttlefish?tab=readme-ov-file#debian-packages
+
+Change-Id: I7d69db7be99d250f02d7e76fd398ebf5c2ca7c5f
+---
+ build/target/product/AndroidProducts.mk         | 10 ++++++++++
+ build/target/product/lineage_cf_car_arm64.mk    | 15 +++++++++++++++
+ build/target/product/lineage_cf_car_x86_64.mk   | 15 +++++++++++++++
+ build/target/product/lineage_cf_phone_arm64.mk  | 12 ++++++++++++
+ build/target/product/lineage_cf_phone_x86_64.mk | 12 ++++++++++++
+ build/target/product/lineage_cf_tv_x86_64.mk    | 12 ++++++++++++
+ 6 files changed, 76 insertions(+)
+ create mode 100644 build/target/product/lineage_cf_car_arm64.mk
+ create mode 100644 build/target/product/lineage_cf_car_x86_64.mk
+ create mode 100644 build/target/product/lineage_cf_phone_arm64.mk
+ create mode 100644 build/target/product/lineage_cf_phone_x86_64.mk
+ create mode 100644 build/target/product/lineage_cf_tv_x86_64.mk
+
+diff --git a/build/target/product/AndroidProducts.mk b/build/target/product/AndroidProducts.mk
+index 3cc9d95c..d324a661 100644
+--- a/build/target/product/AndroidProducts.mk
++++ b/build/target/product/AndroidProducts.mk
+@@ -15,6 +15,11 @@
+ #
+ 
+ PRODUCT_MAKEFILES := \
++    $(LOCAL_DIR)/lineage_cf_car_arm64.mk \
++    $(LOCAL_DIR)/lineage_cf_car_x86_64.mk \
++    $(LOCAL_DIR)/lineage_cf_phone_arm64.mk \
++    $(LOCAL_DIR)/lineage_cf_phone_x86_64.mk \
++    $(LOCAL_DIR)/lineage_cf_tv_x86_64.mk \
+     $(LOCAL_DIR)/lineage_gsi_arm.mk \
+     $(LOCAL_DIR)/lineage_gsi_arm64.mk \
+     $(LOCAL_DIR)/lineage_gsi_x86.mk \
+@@ -34,6 +39,11 @@ PRODUCT_MAKEFILES := \
+     $(LOCAL_DIR)/lineage_sdk_tv_x86_64.mk
+ 
+ COMMON_LUNCH_CHOICES := \
++    lineage_cf_car_arm64-userdebug \
++    lineage_cf_car_x86_64-userdebug \
++    lineage_cf_phone_arm64-userdebug \
++    lineage_cf_phone_x86_64-userdebug \
++    lineage_cf_tv_x86_64-userdebug \
+     lineage_gsi_arm-userdebug \
+     lineage_gsi_arm64-userdebug \
+     lineage_gsi_x86-userdebug \
+diff --git a/build/target/product/lineage_cf_car_arm64.mk b/build/target/product/lineage_cf_car_arm64.mk
+new file mode 100644
+index 00000000..965745fe
+--- /dev/null
++++ b/build/target/product/lineage_cf_car_arm64.mk
+@@ -0,0 +1,15 @@
++# SPDX-FileCopyrightText: 2024 The LineageOS Project
++# SPDX-License-Identifier: Apache-2.0
++
++$(call inherit-product, device/google/cuttlefish/vsoc_arm64_only/auto/aosp_cf.mk)
++
++include vendor/lineage/build/target/product/lineage_generic_car_target.mk
++
++TARGET_NO_KERNEL_OVERRIDE := true
++
++# Enable mainline checking
++PRODUCT_ENFORCE_ARTIFACT_PATH_REQUIREMENTS := relaxed
++
++# Overrides
++PRODUCT_NAME := lineage_cf_car_arm64
++PRODUCT_MODEL := LineageOS Cuttlefish car built for arm64
+diff --git a/build/target/product/lineage_cf_car_x86_64.mk b/build/target/product/lineage_cf_car_x86_64.mk
+new file mode 100644
+index 00000000..637558cd
+--- /dev/null
++++ b/build/target/product/lineage_cf_car_x86_64.mk
+@@ -0,0 +1,15 @@
++# SPDX-FileCopyrightText: 2024 The LineageOS Project
++# SPDX-License-Identifier: Apache-2.0
++
++$(call inherit-product, device/google/cuttlefish/vsoc_x86_64_only/auto/aosp_cf.mk)
++
++include vendor/lineage/build/target/product/lineage_generic_car_target.mk
++
++TARGET_NO_KERNEL_OVERRIDE := true
++
++# Enable mainline checking
++PRODUCT_ENFORCE_ARTIFACT_PATH_REQUIREMENTS := relaxed
++
++# Overrides
++PRODUCT_NAME := lineage_cf_car_x86_64
++PRODUCT_MODEL := LineageOS Cuttlefish car built for x86_64
+diff --git a/build/target/product/lineage_cf_phone_arm64.mk b/build/target/product/lineage_cf_phone_arm64.mk
+new file mode 100644
+index 00000000..d58ffe8d
+--- /dev/null
++++ b/build/target/product/lineage_cf_phone_arm64.mk
+@@ -0,0 +1,12 @@
++# SPDX-FileCopyrightText: 2024 The LineageOS Project
++# SPDX-License-Identifier: Apache-2.0
++
++$(call inherit-product, device/google/cuttlefish/vsoc_arm64/phone/aosp_cf.mk)
++
++include vendor/lineage/build/target/product/lineage_generic_target.mk
++
++TARGET_NO_KERNEL_OVERRIDE := true
++
++# Overrides
++PRODUCT_NAME := lineage_cf_phone_arm64
++PRODUCT_MODEL := LineageOS Cuttlefish phone built for arm64
+diff --git a/build/target/product/lineage_cf_phone_x86_64.mk b/build/target/product/lineage_cf_phone_x86_64.mk
+new file mode 100644
+index 00000000..fd6b289e
+--- /dev/null
++++ b/build/target/product/lineage_cf_phone_x86_64.mk
+@@ -0,0 +1,12 @@
++# SPDX-FileCopyrightText: 2024 The LineageOS Project
++# SPDX-License-Identifier: Apache-2.0
++
++$(call inherit-product, device/google/cuttlefish/vsoc_x86_64/phone/aosp_cf.mk)
++
++include vendor/lineage/build/target/product/lineage_generic_target.mk
++
++TARGET_NO_KERNEL_OVERRIDE := true
++
++# Overrides
++PRODUCT_NAME := lineage_cf_phone_x86_64
++PRODUCT_MODEL := LineageOS Cuttlefish phone built for x86_64
+diff --git a/build/target/product/lineage_cf_tv_x86_64.mk b/build/target/product/lineage_cf_tv_x86_64.mk
+new file mode 100644
+index 00000000..74200d62
+--- /dev/null
++++ b/build/target/product/lineage_cf_tv_x86_64.mk
+@@ -0,0 +1,12 @@
++# SPDX-FileCopyrightText: 2024 The LineageOS Project
++# SPDX-License-Identifier: Apache-2.0
++
++$(call inherit-product, device/google/cuttlefish/vsoc_x86_64/tv/aosp_cf.mk)
++
++include vendor/lineage/build/target/product/lineage_generic_tv_target.mk
++
++TARGET_NO_KERNEL_OVERRIDE := true
++
++# Overrides
++PRODUCT_NAME := lineage_cf_tv_x86_64
++PRODUCT_MODEL := LineageOS Cuttlefish TV built for x86_64
+-- 
+2.39.5
+
