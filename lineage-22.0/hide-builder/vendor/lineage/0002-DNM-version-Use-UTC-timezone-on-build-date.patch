@@ -1,4 +1,4 @@
-From fa128c1d1617daea659a88504c9811bb8a0f4b27 Mon Sep 17 00:00:00 2001
+From 29c529d0a4d1141bea5ea80a15fd3504741d2f2f Mon Sep 17 00:00:00 2001
 From: Yumi Yukimura <me.cafebabe@gmail.com>
 Date: Tue, 18 Mar 2025 03:46:20 +0800
 Subject: [PATCH 2/2] [DNM] version: Use UTC timezone on build date
