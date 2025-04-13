@@ -1,7 +1,7 @@
-From f904e08901178988cb0f1a1da0c9bceae8681cf3 Mon Sep 17 00:00:00 2001
+From dad9630b0daec81422b24779f8eba61ac813a925 Mon Sep 17 00:00:00 2001
 From: Yumi Yukimura <me.cafebabe@gmail.com>
 Date: Tue, 9 Jan 2024 15:53:23 +0800
-Subject: [PATCH 4/4] kernel: Add support to append DTBs to kernel image
+Subject: [PATCH 1/6] kernel: Add support to append DTBs to kernel image
 
 * Many Qualcomm targets that uses boot header v0 or v1
   have the DTBs appended to the end of kernel image.
@@ -27,7 +27,7 @@ Change-Id: I603d1ebac5ee808bad045b85f9868d572d52cb80
  1 file changed, 26 insertions(+)
 
 diff --git a/build/tasks/kernel.mk b/build/tasks/kernel.mk
-index 8f3fa51a..d2f3d4a6 100644
+index 64ef99bb..38674fc7 100644
 --- a/build/tasks/kernel.mk
 +++ b/build/tasks/kernel.mk
 @@ -41,6 +41,9 @@
@@ -40,7 +40,7 @@ index 8f3fa51a..d2f3d4a6 100644
  #   BOARD_DTB_CFG                      = Path to a mkdtboimg config file for dtb.img
  #
  #   BOARD_DTBO_CFG                     = Path to a mkdtboimg config file
-@@ -686,14 +689,37 @@ endif
+@@ -688,14 +691,37 @@ endif
  
  ## Install it
  

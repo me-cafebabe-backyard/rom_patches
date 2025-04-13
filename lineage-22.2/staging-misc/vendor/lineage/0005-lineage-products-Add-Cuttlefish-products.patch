@@ -1,7 +1,7 @@
-From c9d7585be11723ab44ed467f4e01e33e5832ebb6 Mon Sep 17 00:00:00 2001
+From a30f759d1cb1995a3edfa2d4127b818f38d066f5 Mon Sep 17 00:00:00 2001
 From: Yumi Yukimura <me.cafebabe@gmail.com>
 Date: Thu, 24 Oct 2024 18:48:53 +0800
-Subject: [PATCH 2/4] lineage: products: Add Cuttlefish products
+Subject: [PATCH 5/6] lineage: products: Add Cuttlefish products
 
 How-to:
 1. Build and install cuttlefish packages by following [1]

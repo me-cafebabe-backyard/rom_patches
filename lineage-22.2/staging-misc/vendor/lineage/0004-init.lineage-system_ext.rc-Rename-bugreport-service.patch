@@ -1,7 +1,7 @@
-From 90feb101da6c2f23f7d8cacb99cd55fb16e9a39a Mon Sep 17 00:00:00 2001
+From 3e372903819e7b0923cee20b7baa11379948081f Mon Sep 17 00:00:00 2001
 From: Yumi Yukimura <me.cafebabe@gmail.com>
 Date: Fri, 25 Oct 2024 03:38:25 +0800
-Subject: [PATCH 1/4] init.lineage-system_ext.rc: Rename `bugreport` service
+Subject: [PATCH 4/6] init.lineage-system_ext.rc: Rename `bugreport` service
 
 * Cuttlefish has defined one with the same name.
 
@@ -17,7 +17,7 @@ Change-Id: I0af60a1c19035d336a88a543089fd01400736dd5
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/prebuilt/common/etc/init/init.lineage-system_ext.rc b/prebuilt/common/etc/init/init.lineage-system_ext.rc
-index fdee7ea7..9a7fbed9 100644
+index d52c02e7..3565ecc1 100644
 --- a/prebuilt/common/etc/init/init.lineage-system_ext.rc
 +++ b/prebuilt/common/etc/init/init.lineage-system_ext.rc
 @@ -3,7 +3,7 @@ on init
@@ -26,9 +26,9 @@ index fdee7ea7..9a7fbed9 100644
  # bugreport is triggered by holding down volume down, volume up and power
 -service bugreport /system/bin/dumpstate -d -p -z
 +service lineage-bugreport /system/bin/dumpstate -d -p -z
-     oneshot
-     disabled
-     keycodes 114 115 116
+     socket dumpstate stream 0660 shell log
+     class main
+     user root
 -- 
 2.39.5
 
