@@ -1,7 +1,7 @@
-From 19d13b93c8f367701a163be7bf7c1d8e3b709951 Mon Sep 17 00:00:00 2001
+From b18a53e7186ba72f9e995bb18da808513b3a9c3e Mon Sep 17 00:00:00 2001
 From: Yumi Yukimura <me.cafebabe@gmail.com>
 Date: Fri, 11 Apr 2025 03:54:35 +0800
-Subject: [PATCH 3/6] kernel: Don't depend on $(KERNEL_OUT)
+Subject: [PATCH 09/10] kernel: Don't depend on $(KERNEL_OUT)
 
 * Avoids rebuilding kernel config unnecessarily.
 
@@ -11,18 +11,18 @@ Change-Id: I231945a1755c51b9b81db3add930ba9c40b7d2d5
  1 file changed, 7 insertions(+), 11 deletions(-)
 
 diff --git a/build/tasks/kernel.mk b/build/tasks/kernel.mk
-index ba009bab..94d08736 100644
+index 9d43edc1..2a39c22c 100644
 --- a/build/tasks/kernel.mk
 +++ b/build/tasks/kernel.mk
-@@ -313,6 +313,7 @@ endef
+@@ -333,6 +333,7 @@ endef
  # $(1): Output path (The value passed to O=)
  # $(2): The defconfig to process (full path to file)
  define make-kernel-config
 +	mkdir -p $(1)
- 	cp $(word 1,$(2)) $(1)/.config
- 	$(call internal-make-kernel-target,$(1),olddefconfig)
- 	$(if $(filter true,$(MERGE_ALL_KERNEL_CONFIGS_AT_ONCE)),\
-@@ -500,10 +501,7 @@ KERNEL_RECOVERY_MODULES_OUT := $(TARGET_RECOVERY_ROOT_OUT)
+ 	$(if $(VARIANT_DEFCONFIG)$(SELINUX_DEFCONFIG), \
+ 		$(call internal-make-kernel-target,$(1),VARIANT_DEFCONFIG=$(VARIANT_DEFCONFIG) SELINUX_DEFCONFIG=$(SELINUX_DEFCONFIG) $(notdir $(word 1,$(2)))) \
+ 	, \
+@@ -537,10 +538,7 @@ KERNEL_RECOVERY_MODULES_OUT := $(TARGET_RECOVERY_ROOT_OUT)
  $(recovery_uncompressed_ramdisk): $(TARGET_PREBUILT_INT_KERNEL)
  endif
  
@@ -34,7 +34,7 @@ index ba009bab..94d08736 100644
  	@echo "Building Kernel Config"
  	$(call make-kernel-config,$(KERNEL_OUT),$(ALL_KERNEL_DEFCONFIG_SRCS))
  
-@@ -586,20 +584,21 @@ kerneltags: $(KERNEL_CONFIG)
+@@ -625,20 +623,21 @@ kerneltags: $(KERNEL_CONFIG)
  
  .PHONY: kernelsavedefconfig alldefconfig kernelconfig recoverykernelconfig
  
@@ -60,7 +60,7 @@ index ba009bab..94d08736 100644
  	@echo "Building Recovery Kernel Config"
  	$(call make-kernel-config,$(RECOVERY_KERNEL_OUT),$(ALL_RECOVERY_KERNEL_DEFCONFIG_SRCS))
  
-@@ -695,9 +694,6 @@ endif # FULL_KERNEL_BUILD
+@@ -734,9 +733,6 @@ endif # FULL_KERNEL_BUILD
  
  ifeq ($(FULL_RECOVERY_KERNEL_BUILD),true)
  

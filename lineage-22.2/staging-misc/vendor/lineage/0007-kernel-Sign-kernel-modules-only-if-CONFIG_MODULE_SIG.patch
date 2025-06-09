@@ -1,0 +1,37 @@
+From 855c2536942072ae0e64f3da8760356d7e54b88b Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Mon, 19 May 2025 03:15:52 +0800
+Subject: [PATCH 07/10] kernel: Sign kernel modules only if
+ CONFIG_MODULE_SIG_FORMAT=y
+
+Change-Id: If8ef12f2b751390fc1689edb551379ca2e4e78be
+---
+ build/tasks/kernel.mk | 12 +++++++-----
+ 1 file changed, 7 insertions(+), 5 deletions(-)
+
+diff --git a/build/tasks/kernel.mk b/build/tasks/kernel.mk
+index 23d02f88..f849eff2 100644
+--- a/build/tasks/kernel.mk
++++ b/build/tasks/kernel.mk
+@@ -591,11 +591,13 @@ $(TARGET_PREBUILT_INT_KERNEL): $(KERNEL_CONFIG) $(DEPMOD) $(DTC) $(KERNEL_MODULE
+ 					if [[ ! "$(SYSTEM_KERNEL_MODULES)" =~ "$$module_name" ]]; then echo $$n; fi; \
+ 				done); \
+ 				($(call build-image-kernel-modules-lineage,$$filtered_modules,$(KERNEL_MODULES_OUT),$(KERNEL_MODULE_MOUNTPOINT)/,$(KERNEL_DEPMOD_STAGING_DIR),$(BOARD_VENDOR_KERNEL_MODULES_LOAD),,$(KERNEL_MODULES_PARTITION_FILE_LIST),$(SYSTEM_KERNEL_DEPMOD_STAGING_DIR)/lib/modules/0.0/$(SYSTEM_KERNEL_MODULE_MOUNTPOINT))) || exit "$$?"; \
+-				(for m in $$(find $(SYSTEM_KERNEL_MODULES_OUT) -type f -name "*.ko"); do \
+-					$(KERNEL_OUT)/scripts/sign-file sha1 \
+-					$(KERNEL_OUT)/certs/signing_key.pem \
+-					$(KERNEL_OUT)/certs/signing_key.x509 "$$m"; \
+-				done) || exit "$$?"; \
++				if grep -q 'CONFIG_MODULE_SIG_FORMAT=y' $(KERNEL_CONFIG); then \
++					(for m in $$(find $(SYSTEM_KERNEL_MODULES_OUT) -type f -name "*.ko"); do \
++						$(KERNEL_OUT)/scripts/sign-file sha1 \
++						$(KERNEL_OUT)/certs/signing_key.pem \
++						$(KERNEL_OUT)/certs/signing_key.x509 "$$m"; \
++					done) || exit "$$?"; \
++				fi; \
+ 				,\
+ 				($(call build-image-kernel-modules-lineage,$$all_modules,$(KERNEL_MODULES_OUT),$(KERNEL_MODULE_MOUNTPOINT)/,$(KERNEL_DEPMOD_STAGING_DIR),$(BOARD_VENDOR_KERNEL_MODULES_LOAD),,$(KERNEL_MODULES_PARTITION_FILE_LIST),)) || exit "$$?"; \
+ 			) \
+-- 
+2.39.5
+

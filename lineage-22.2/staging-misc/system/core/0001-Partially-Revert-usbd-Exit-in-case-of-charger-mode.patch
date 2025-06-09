@@ -1,0 +1,30 @@
+From 354ee94caff67f42636392323b69750e4222cc4b Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Sun, 13 Apr 2025 17:37:55 +0800
+Subject: [PATCH] Partially Revert "usbd: Exit in case of charger mode."
+
+* Normally nothing should start usbd in charger mode.
+* This breaks USB when the device is booted from charger mode.
+
+This reverts commit abc92991ead7e48b409d898f2c11a33016ee4a47.
+
+Change-Id: I31821c9db79d1681b3747d20d9215f163da6566c
+---
+ usbd/usbd.cpp | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/usbd/usbd.cpp b/usbd/usbd.cpp
+index 0616cfb00..8b45c3996 100644
+--- a/usbd/usbd.cpp
++++ b/usbd/usbd.cpp
+@@ -36,7 +36,6 @@ using std::shared_ptr;
+ std::atomic<int> sUsbOperationCount{};
+ 
+ int main(int /*argc*/, char** /*argv*/) {
+-    if (GetProperty("ro.bootmode", "") == "charger") exit(0);
+     int operationId = sUsbOperationCount++;
+ 
+     ABinderProcess_setThreadPoolMaxThreadCount(1);
+-- 
+2.39.5
+

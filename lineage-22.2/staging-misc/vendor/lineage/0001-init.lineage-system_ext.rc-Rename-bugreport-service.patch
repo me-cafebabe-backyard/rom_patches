@@ -1,7 +1,7 @@
-From 3e372903819e7b0923cee20b7baa11379948081f Mon Sep 17 00:00:00 2001
+From 6b8100b68f04f6cb4a7b735a10a324c205b1ef85 Mon Sep 17 00:00:00 2001
 From: Yumi Yukimura <me.cafebabe@gmail.com>
 Date: Fri, 25 Oct 2024 03:38:25 +0800
-Subject: [PATCH 4/6] init.lineage-system_ext.rc: Rename `bugreport` service
+Subject: [PATCH 01/10] init.lineage-system_ext.rc: Rename `bugreport` service
 
 * Cuttlefish has defined one with the same name.
 

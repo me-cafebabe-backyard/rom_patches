@@ -1,0 +1,26 @@
+From 29c656c3519d6e4a5118d988a9b76118f9bad267 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Mon, 19 May 2025 03:29:12 +0800
+Subject: [PATCH 08/10] kernel: Read the correct GKI_SUFFIX from kernel source
+
+Change-Id: I1aa9d5a8ad9e587b97e0d832aa7a4d5c103aea5e
+---
+ build/tasks/kernel.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/build/tasks/kernel.mk b/build/tasks/kernel.mk
+index f849eff2..9d43edc1 100644
+--- a/build/tasks/kernel.mk
++++ b/build/tasks/kernel.mk
+@@ -134,7 +134,7 @@ KERNEL_CONFIG := $(KERNEL_OUT)/.config
+ KERNEL_RELEASE := $(KERNEL_OUT)/include/config/kernel.release
+ RECOVERY_KERNEL_CONFIG := $(RECOVERY_KERNEL_OUT)/.config
+ RECOVERY_KERNEL_RELEASE := $(RECOVERY_KERNEL_OUT)/include/config/kernel.release
+-GKI_SUFFIX := $(shell echo android$(PLATFORM_VERSION)-$(TARGET_KERNEL_VERSION))
++GKI_SUFFIX := $(shell grep -h 'BRANCH=' $(KERNEL_SRC)/build.config.* 2>/dev/null | cut -c 8-)
+ 
+ ifeq ($(KERNEL_ARCH),x86_64)
+ KERNEL_DEFCONFIG_ARCH := x86
+-- 
+2.39.5
+

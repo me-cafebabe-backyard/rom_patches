@@ -1,0 +1,32 @@
+From b0801c9d71cf0523807aa9b88cf7f6327bc7397a Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Mon, 19 May 2025 02:36:51 +0800
+Subject: [PATCH 05/10] kernel: Support installing kernel modules to system
+
+* Example usecase: Installing zram.ko on devices without system_dlkm
+
+Change-Id: I3afe358bcd444f7c3724e5682d4056fe52cfeea9
+---
+ build/tasks/kernel.mk | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/build/tasks/kernel.mk b/build/tasks/kernel.mk
+index 5f16fa77..cfd06b0a 100644
+--- a/build/tasks/kernel.mk
++++ b/build/tasks/kernel.mk
+@@ -495,6 +495,12 @@ SYSTEM_KERNEL_DEPMOD_STAGING_DIR := $(KERNEL_BUILD_OUT_PREFIX)$(call intermediat
+ SYSTEM_KERNEL_MODULE_MOUNTPOINT := system_dlkm
+ SYSTEM_KERNEL_MODULES_PARTITION_FILE_LIST := $(system_dlkmimage_intermediates)/file_list.txt
+ $(INSTALLED_SYSTEM_DLKMIMAGE_TARGET): $(TARGET_PREBUILT_INT_KERNEL)
++else ifneq ($(SYSTEM_KERNEL_MODULES),)
++SYSTEM_KERNEL_MODULES_OUT := $(TARGET_OUT)
++SYSTEM_KERNEL_DEPMOD_STAGING_DIR := $(KERNEL_BUILD_OUT_PREFIX)$(call intermediates-dir-for,PACKAGING,depmod_system)
++SYSTEM_KERNEL_MODULE_MOUNTPOINT := system
++SYSTEM_KERNEL_MODULES_PARTITION_FILE_LIST := $(systemimage_intermediates)/file_list.txt
++$(INSTALLED_SYSTEMIMAGE_TARGET): $(TARGET_PREBUILT_INT_KERNEL)
+ endif
+ MODULES_INTERMEDIATES := $(KERNEL_BUILD_OUT_PREFIX)$(call intermediates-dir-for,PACKAGING,kernel_modules)
+ 
+-- 
+2.39.5
+

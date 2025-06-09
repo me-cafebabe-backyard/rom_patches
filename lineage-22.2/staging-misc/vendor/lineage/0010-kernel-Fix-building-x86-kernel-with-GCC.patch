@@ -1,7 +1,7 @@
-From 946bb611590bb2c8c5446df5ebcfc39c81ceccbf Mon Sep 17 00:00:00 2001
+From 7abbb6dc8bbf4c0c728e5cbd3ab42867b3a466b9 Mon Sep 17 00:00:00 2001
 From: Yumi Yukimura <me.cafebabe@gmail.com>
 Date: Wed, 25 Sep 2024 16:52:22 +0800
-Subject: [PATCH 6/6] kernel: Fix building x86 kernel with GCC
+Subject: [PATCH 10/10] kernel: Fix building x86 kernel with GCC
 
 Change-Id: Ib1097d604776adc63c31b90cec9a0d13729248be
 ---
@@ -10,10 +10,10 @@ Change-Id: Ib1097d604776adc63c31b90cec9a0d13729248be
  2 files changed, 23 insertions(+), 2 deletions(-)
 
 diff --git a/build/tasks/kernel.mk b/build/tasks/kernel.mk
-index 94d08736..c15c8acc 100644
+index 2a39c22c..6edcbfc3 100644
 --- a/build/tasks/kernel.mk
 +++ b/build/tasks/kernel.mk
-@@ -267,7 +267,7 @@ ifneq ($(TARGET_KERNEL_CLANG_COMPILE),false)
+@@ -287,7 +287,7 @@ ifneq ($(TARGET_KERNEL_CLANG_COMPILE),false)
      endif
      PATH_OVERRIDE += PATH=$(TARGET_KERNEL_CLANG_PATH)/bin:$$PATH
      ifeq ($(KERNEL_CC),)
