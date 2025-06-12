@@ -1,0 +1,39 @@
+From 24c08c173cbd7bcb980e635b5edf965016ca612d Mon Sep 17 00:00:00 2001
+From: Aaron Kling <webgeek1234@gmail.com>
+Date: Wed, 9 Nov 2022 17:30:51 -0600
+Subject: [PATCH 1/2] recovery: init: Add console service
+
+This enables console over uart. This is useful for debugging during
+bringup when adb is not working.
+
+Change-Id: If2eaefae8dde245bf0780c8010c5274f96c234cc
+---
+ etc/init.rc | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/etc/init.rc b/etc/init.rc
+index bdf9ec07..dd6a8ea6 100644
+--- a/etc/init.rc
++++ b/etc/init.rc
+@@ -78,6 +78,18 @@ service ueventd /system/bin/ueventd
+     seclabel u:r:ueventd:s0
+     user root
+ 
++service console /system/bin/sh
++    class core
++    console
++    disabled
++    user shell
++    group shell log readproc
++    seclabel u:r:shell:s0
++    setenv HOSTNAME console
++
++on init && property:ro.debuggable=1
++    start console
++
+ service charger /system/bin/charger
+     critical
+     seclabel u:r:charger:s0
+-- 
+2.39.2
+

@@ -1,0 +1,34 @@
+From cab2b9257c93030880ad40fdd68fb813386a89d8 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Thu, 23 May 2024 04:24:40 +0800
+Subject: [PATCH 2/2] enable serial console as root
+
+Change-Id: I73ce89744aa40be9b7d9ea7c7a303d52689bb82b
+---
+ etc/init.rc | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
+
+diff --git a/etc/init.rc b/etc/init.rc
+index dd6a8ea6..0b38bc39 100644
+--- a/etc/init.rc
++++ b/etc/init.rc
+@@ -81,13 +81,12 @@ service ueventd /system/bin/ueventd
+ service console /system/bin/sh
+     class core
+     console
+-    disabled
+-    user shell
+-    group shell log readproc
++    user root
++    group root shell log readproc
+     seclabel u:r:shell:s0
+     setenv HOSTNAME console
+ 
+-on init && property:ro.debuggable=1
++on init
+     start console
+ 
+ service charger /system/bin/charger
+-- 
+2.39.2
+

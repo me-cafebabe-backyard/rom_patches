@@ -1,0 +1,167 @@
+From 5e26af8e5200f4baac8f8a264421b36e5a5eb88d Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Wed, 24 Jul 2024 06:08:01 +0800
+Subject: [PATCH 1/2] recovery_ui: ethernet: Show IPv4 addresses on title
+
+Change-Id: I50e9ea638211a13d68c51f00fa2c895889936e6f
+---
+ recovery_ui/ethernet_device.cpp               | 50 +++++++++++--------
+ recovery_ui/ethernet_ui.cpp                   | 18 +++++--
+ .../include/recovery_ui/ethernet_device.h     |  2 +-
+ recovery_ui/include/recovery_ui/ethernet_ui.h |  5 +-
+ 4 files changed, 49 insertions(+), 26 deletions(-)
+
+diff --git a/recovery_ui/ethernet_device.cpp b/recovery_ui/ethernet_device.cpp
+index 0318db85..3051988b 100644
+--- a/recovery_ui/ethernet_device.cpp
++++ b/recovery_ui/ethernet_device.cpp
+@@ -43,7 +43,7 @@ EthernetDevice::EthernetDevice(EthernetRecoveryUI* ui, std::string interface)
+ 
+ void EthernetDevice::PreRecovery() {
+   SetInterfaceFlags(0, IFF_UP);
+-  SetTitleIPv6LinkLocalAddress(false);
++  SetTitleIPAddress(false);
+ }
+ 
+ void EthernetDevice::PreFastboot() {
+@@ -54,7 +54,7 @@ void EthernetDevice::PreFastboot() {
+     return;
+   }
+ 
+-  SetTitleIPv6LinkLocalAddress(true);
++  SetTitleIPAddress(true);
+ }
+ 
+ int EthernetDevice::SetInterfaceFlags(const unsigned set, const unsigned clr) {
+@@ -82,38 +82,46 @@ int EthernetDevice::SetInterfaceFlags(const unsigned set, const unsigned clr) {
+   return 0;
+ }
+ 
+-void EthernetDevice::SetTitleIPv6LinkLocalAddress(const bool interface_up) {
++void EthernetDevice::SetTitleIPAddress(const bool interface_up) {
+   auto recovery_ui = reinterpret_cast<EthernetRecoveryUI*>(GetUI());
+-  if (!interface_up) {
+-    recovery_ui->SetIPv6LinkLocalAddress();
+-    return;
+-  }
++
++  // Cached IP Addresses needs to be cleared anyways, no matter if errored or not
++  recovery_ui->ClearIPAddresses();
++
++  if (!interface_up) return;
+ 
+   struct ifaddrs* ifaddr;
+   if (getifaddrs(&ifaddr) == -1) {
+     PLOG(ERROR) << "Failed to get interface addresses";
+-    recovery_ui->SetIPv6LinkLocalAddress();
+     return;
+   }
+ 
+   std::unique_ptr<struct ifaddrs, decltype(&freeifaddrs)> guard{ ifaddr, freeifaddrs };
+   for (struct ifaddrs* ifa = ifaddr; ifa != nullptr; ifa = ifa->ifa_next) {
+-    if (ifa->ifa_addr->sa_family != AF_INET6 || interface_ != ifa->ifa_name) {
++    if (interface_ != ifa->ifa_name)
+       continue;
+-    }
+ 
+-    auto current_addr = reinterpret_cast<struct sockaddr_in6*>(ifa->ifa_addr);
+-    if (!IN6_IS_ADDR_LINKLOCAL(&(current_addr->sin6_addr))) {
++    if (ifa->ifa_addr->sa_family == AF_INET) {
++      auto current_addr = reinterpret_cast<struct sockaddr_in*>(ifa->ifa_addr);
++
++      char addrstr[INET_ADDRSTRLEN];
++      inet_ntop(AF_INET, reinterpret_cast<const void*>(&current_addr->sin_addr), addrstr,
++                INET_ADDRSTRLEN);
++      LOG(INFO) << "Our IPv4 address is " << addrstr;
++      recovery_ui->AddIPv4Address(addrstr);
++      continue;
++    } else if (ifa->ifa_addr->sa_family == AF_INET6) {
++      auto current_addr = reinterpret_cast<struct sockaddr_in6*>(ifa->ifa_addr);
++      if (!IN6_IS_ADDR_LINKLOCAL(&(current_addr->sin6_addr))) {
++        continue;
++      }
++
++      char addrstr[INET6_ADDRSTRLEN];
++      inet_ntop(AF_INET6, reinterpret_cast<const void*>(&current_addr->sin6_addr), addrstr,
++                INET6_ADDRSTRLEN);
++      LOG(INFO) << "Our IPv6 link-local address is " << addrstr;
++      recovery_ui->SetIPv6LinkLocalAddress(addrstr);
+       continue;
+     }
+-
+-    char addrstr[INET6_ADDRSTRLEN];
+-    inet_ntop(AF_INET6, reinterpret_cast<const void*>(&current_addr->sin6_addr), addrstr,
+-              INET6_ADDRSTRLEN);
+-    LOG(INFO) << "Our IPv6 link-local address is " << addrstr;
+-    recovery_ui->SetIPv6LinkLocalAddress(addrstr);
+-    return;
+   }
+-
+-  recovery_ui->SetIPv6LinkLocalAddress();
+ }
+diff --git a/recovery_ui/ethernet_ui.cpp b/recovery_ui/ethernet_ui.cpp
+index 535d407f..18156c96 100644
+--- a/recovery_ui/ethernet_ui.cpp
++++ b/recovery_ui/ethernet_ui.cpp
+@@ -22,11 +22,23 @@ void EthernetRecoveryUI::SetTitle(const std::vector<std::string>& lines) {
+   ScreenRecoveryUI::SetTitle(lines);
+ 
+   // Append IP address, if any
+-  if (!address_.empty()) {
+-    title_lines_.push_back("IPv6 link-local address - " + address_);
++  for (auto it = ipv4_addresses_.begin(); it != ipv4_addresses_.end(); ++it) {
++    title_lines_.push_back("IPv4 address - " + *it);
+   }
++  if (!ipv6_linklocal_address_.empty()) {
++    title_lines_.push_back("IPv6 link-local address - " + ipv6_linklocal_address_);
++  }
++}
++
++void EthernetRecoveryUI::AddIPv4Address(const std::string& address) {
++  ipv4_addresses_.push_back(address);
++}
++
++void EthernetRecoveryUI::ClearIPAddresses() {
++  ipv4_addresses_.clear();
++  ipv6_linklocal_address_.clear();
+ }
+ 
+ void EthernetRecoveryUI::SetIPv6LinkLocalAddress(const std::string& address) {
+-  address_ = address;
++  ipv6_linklocal_address_ = address;
+ }
+diff --git a/recovery_ui/include/recovery_ui/ethernet_device.h b/recovery_ui/include/recovery_ui/ethernet_device.h
+index 3aadea20..141d668d 100644
+--- a/recovery_ui/include/recovery_ui/ethernet_device.h
++++ b/recovery_ui/include/recovery_ui/ethernet_device.h
+@@ -34,7 +34,7 @@ class EthernetDevice : public Device {
+ 
+  private:
+   int SetInterfaceFlags(const unsigned set, const unsigned clr);
+-  void SetTitleIPv6LinkLocalAddress(const bool interface_up);
++  void SetTitleIPAddress(const bool interface_up);
+ 
+   android::base::unique_fd ctl_sock_;
+   std::string interface_;
+diff --git a/recovery_ui/include/recovery_ui/ethernet_ui.h b/recovery_ui/include/recovery_ui/ethernet_ui.h
+index f40c73f6..2410c1c6 100644
+--- a/recovery_ui/include/recovery_ui/ethernet_ui.h
++++ b/recovery_ui/include/recovery_ui/ethernet_ui.h
+@@ -25,10 +25,13 @@ class EthernetRecoveryUI : public ScreenRecoveryUI {
+   void SetTitle(const std::vector<std::string>& lines) override;
+ 
+   // For EthernetDevice
++  void AddIPv4Address(const std::string& address);
++  void ClearIPAddresses();
+   void SetIPv6LinkLocalAddress(const std::string& address = "");
+ 
+  private:
+-  std::string address_;
++  std::vector<std::string> ipv4_addresses_;
++  std::string ipv6_linklocal_address_;
+ };
+ 
+ #endif  // RECOVERY_ETHERNET_UI_H
+-- 
+2.39.2
+

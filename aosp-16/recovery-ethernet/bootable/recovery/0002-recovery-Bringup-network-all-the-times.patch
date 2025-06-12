@@ -1,0 +1,98 @@
+From 2f5399c69d29ed664a0ecf9a65d336a568fdb93e Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Wed, 24 Jul 2024 06:12:36 +0800
+Subject: [PATCH 2/2] recovery: Bringup network all the times
+
+* For ADB mode (on devices without USB Gadget mode, same for fastboot)
+
+Change-Id: Ia5937e71e4800872970b568152c5e5d6d722bf04
+---
+ recovery_main.cpp                                |  2 ++
+ recovery_ui/ethernet_device.cpp                  | 16 +++++++++++-----
+ recovery_ui/include/recovery_ui/device.h         |  3 +++
+ .../include/recovery_ui/ethernet_device.h        |  2 ++
+ 4 files changed, 18 insertions(+), 5 deletions(-)
+
+diff --git a/recovery_main.cpp b/recovery_main.cpp
+index 903a3173..99287e23 100644
+--- a/recovery_main.cpp
++++ b/recovery_main.cpp
+@@ -470,6 +470,8 @@ int main(int argc, char** argv) {
+   std::thread listener_thread(ListenRecoverySocket, ui, std::ref(action));
+   listener_thread.detach();
+ 
++  device->InitDevice();
++
+   while (true) {
+     // We start adbd in recovery for the device with userdebug build or a unlocked bootloader.
+     std::string usb_config =
+diff --git a/recovery_ui/ethernet_device.cpp b/recovery_ui/ethernet_device.cpp
+index 3051988b..d59561ef 100644
+--- a/recovery_ui/ethernet_device.cpp
++++ b/recovery_ui/ethernet_device.cpp
+@@ -41,20 +41,26 @@ EthernetDevice::EthernetDevice(EthernetRecoveryUI* ui, std::string interface)
+   }
+ }
+ 
++void EthernetDevice::InitDevice() {
++  BringupInterface();
++  sleep(1);
++}
++
+ void EthernetDevice::PreRecovery() {
+-  SetInterfaceFlags(0, IFF_UP);
+-  SetTitleIPAddress(false);
++  SetTitleIPAddress(BringupInterface());
+ }
+ 
+ void EthernetDevice::PreFastboot() {
+   android::base::SetProperty("fastbootd.protocol", "tcp");
++  SetTitleIPAddress(BringupInterface());
++}
+ 
++bool EthernetDevice::BringupInterface() {
+   if (SetInterfaceFlags(IFF_UP, 0) < 0) {
+     LOG(ERROR) << "Failed to bring up interface";
+-    return;
++    return false;
+   }
+-
+-  SetTitleIPAddress(true);
++  return true;
+ }
+ 
+ int EthernetDevice::SetInterfaceFlags(const unsigned set, const unsigned clr) {
+diff --git a/recovery_ui/include/recovery_ui/device.h b/recovery_ui/include/recovery_ui/device.h
+index 76166f09..178cd4b4 100644
+--- a/recovery_ui/include/recovery_ui/device.h
++++ b/recovery_ui/include/recovery_ui/device.h
+@@ -79,6 +79,9 @@ class Device {
+     ui_.reset(ui);
+   }
+ 
++  // Called before any mode started up, to bring up network.
++  virtual void InitDevice() {}
++
+   // Called before recovery mode started up, to perform whatever device-specific recovery mode
+   // preparation as needed.
+   virtual void PreRecovery() {}
+diff --git a/recovery_ui/include/recovery_ui/ethernet_device.h b/recovery_ui/include/recovery_ui/ethernet_device.h
+index 141d668d..2e020380 100644
+--- a/recovery_ui/include/recovery_ui/ethernet_device.h
++++ b/recovery_ui/include/recovery_ui/ethernet_device.h
+@@ -29,10 +29,12 @@ class EthernetDevice : public Device {
+   explicit EthernetDevice(EthernetRecoveryUI* ui);
+   explicit EthernetDevice(EthernetRecoveryUI* ui, std::string interface);
+ 
++  void InitDevice() override;
+   void PreRecovery() override;
+   void PreFastboot() override;
+ 
+  private:
++  bool BringupInterface();
+   int SetInterfaceFlags(const unsigned set, const unsigned clr);
+   void SetTitleIPAddress(const bool interface_up);
+ 
+-- 
+2.39.2
+

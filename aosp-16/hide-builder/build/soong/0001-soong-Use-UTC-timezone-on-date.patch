@@ -1,0 +1,42 @@
+From 175c11dd36898de92138b9f20cfb753c1567b384 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Fri, 14 Mar 2025 00:15:45 +0800
+Subject: [PATCH] soong: Use UTC timezone on date
+
+Change-Id: I0c8ae8fdd956f9df4d11195cfa4302777e58d1ee
+---
+ java/droiddoc.go          | 2 +-
+ scripts/gen_build_prop.py | 4 +++-
+ 2 files changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/java/droiddoc.go b/java/droiddoc.go
+index 3faf294dea..818f9477a3 100644
+--- a/java/droiddoc.go
++++ b/java/droiddoc.go
+@@ -644,7 +644,7 @@ func (d *Droiddoc) doclavaDocsFlags(ctx android.ModuleContext, cmd *android.Rule
+ 		Flag("-J--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED").
+ 		Flag("-J--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED").
+ 		FlagWithArg("-hdf page.build ", ctx.Config().BuildId()+"-$(cat "+buildNumberFile.String()+")").OrderOnly(buildNumberFile).
+-		FlagWithArg("-hdf page.now ", `"$(date -d @$(cat `+ctx.Config().Getenv("BUILD_DATETIME_FILE")+`) "+%d %b %Y %k:%M")" `)
++		FlagWithArg("-hdf page.now ", `"$(TZ=UTC date -d @$(cat `+ctx.Config().Getenv("BUILD_DATETIME_FILE")+`) "+%d %b %Y %k:%M")" `)
+ 
+ 	if String(d.properties.Custom_template) == "" {
+ 		// TODO: This is almost always droiddoc-templates-sdk
+diff --git a/scripts/gen_build_prop.py b/scripts/gen_build_prop.py
+index cef7241fcb..7c51a5f116 100644
+--- a/scripts/gen_build_prop.py
++++ b/scripts/gen_build_prop.py
+@@ -85,7 +85,9 @@ def parse_args():
+   config["BuildVersionTags"] = build_version_tags
+ 
+   raw_date = args.date_file.read().strip()
+-  config["Date"] = subprocess.check_output(["date", "-d", f"@{raw_date}"], text=True).strip()
++  my_env = os.environ.copy()  # Create a copy of the current environment
++  my_env["TZ"] = "UTC" # Set the TZ env var to UTC
++  config["Date"] = subprocess.check_output(["date", "-d", f"@{raw_date}"], text=True, env=my_env).strip()
+   config["DateUtc"] = subprocess.check_output(["date", "-d", f"@{raw_date}", "+%s"], text=True).strip()
+ 
+   # build_desc is human readable strings that describe this build. This has the same info as the
+-- 
+2.39.5
+
