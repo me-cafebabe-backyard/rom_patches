@@ -1,0 +1,47 @@
+From d5c9d6498b964761cfa4d834e6a58871e930365b Mon Sep 17 00:00:00 2001
+From: hmtheboy154 <buingoc67@gmail.com>
+Date: Thu, 20 Mar 2025 07:02:14 -0400
+Subject: [PATCH] Rust: Use nehalem cpu-target when building with sandybridge
+ arch variant
+
+On Android, sandybridge doesn't include AVX support, so it's more like
+nehalem target on Rust toolchain or GCC.
+
+[cafebabe: This fixes booting on CPUs that does not support AVX, like LGA1156 ones, and LGA1150/LGA1155 Intel Celeron/Pentium]
+
+Change-Id: I281e8f5a91271241c48336021582a42acc6d0120
+Signed-off-by: hmtheboy154 <buingoc67@gmail.com>
+---
+ rust/config/x86_64_device.go | 2 +-
+ rust/config/x86_device.go    | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/rust/config/x86_64_device.go b/rust/config/x86_64_device.go
+index 3c484d894d..bcaf5fb4d2 100644
+--- a/rust/config/x86_64_device.go
++++ b/rust/config/x86_64_device.go
+@@ -36,7 +36,7 @@ var (
+ 		"goldmont-without-sha-xsaves": []string{"-C target-cpu=goldmont", "-C target-feature=-sha,-xsaves"},
+ 		"haswell":                     []string{"-C target-cpu=haswell"},
+ 		"ivybridge":                   []string{"-C target-cpu=ivybridge"},
+-		"sandybridge":                 []string{"-C target-cpu=sandybridge"},
++		"sandybridge":                 []string{"-C target-cpu=nehalem"},
+ 		"silvermont":                  []string{"-C target-cpu=silvermont"},
+ 		"skylake":                     []string{"-C target-cpu=skylake"},
+ 		//TODO: Add target-cpu=stoneyridge when rustc supports it.
+diff --git a/rust/config/x86_device.go b/rust/config/x86_device.go
+index 3c597cc23f..d31b8761fd 100644
+--- a/rust/config/x86_device.go
++++ b/rust/config/x86_device.go
+@@ -35,7 +35,7 @@ var (
+ 		"goldmont-without-sha-xsaves": []string{"-C target-cpu=goldmont", "-C target-feature=-sha,-xsaves"},
+ 		"haswell":                     []string{"-C target-cpu=haswell"},
+ 		"ivybridge":                   []string{"-C target-cpu=ivybridge"},
+-		"sandybridge":                 []string{"-C target-cpu=sandybridge"},
++		"sandybridge":                 []string{"-C target-cpu=nehalem"},
+ 		"silvermont":                  []string{"-C target-cpu=silvermont"},
+ 		"skylake":                     []string{"-C target-cpu=skylake"},
+ 		//TODO: Add target-cpu=stoneyridge when rustc supports it.
+-- 
+2.39.5
+
