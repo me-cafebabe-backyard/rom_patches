@@ -1,0 +1,36 @@
+From 77050dcd9874287b77eedc7cc23fb0368639abc3 Mon Sep 17 00:00:00 2001
+From: Android Build Server 2 <build@AndroidBuild-2>
+Date: Thu, 12 Jun 2025 13:38:25 +0000
+Subject: [PATCH] Inherit vendor/extra
+
+Change-Id: I6c8fc193086bfc8e8d9e78434e3695fd3922b39c
+---
+ core/board_config.mk           | 1 +
+ target/product/base_product.mk | 2 ++
+ 2 files changed, 3 insertions(+)
+
+diff --git a/core/board_config.mk b/core/board_config.mk
+index cf01c8416c..5f1eec9a58 100644
+--- a/core/board_config.mk
++++ b/core/board_config.mk
+@@ -242,6 +242,7 @@ endif
+ $(call dump-phase-start,BOARD,,,, build/make/core/board_config.mk)
+ ifndef RBC_PRODUCT_CONFIG
+ include $(board_config_mk)
++-include vendor/extra/BoardConfigExtra.mk
+ else
+   $(shell mkdir -p $(OUT_DIR)/rbc)
+   $(call dump-variables-rbc, $(OUT_DIR)/rbc/make_vars_pre_board_config.mk)
+diff --git a/target/product/base_product.mk b/target/product/base_product.mk
+index acfc6534f8..58f4b1e9f4 100644
+--- a/target/product/base_product.mk
++++ b/target/product/base_product.mk
+@@ -30,3 +30,5 @@ PRODUCT_PACKAGES += \
+ # Packages included only for eng or userdebug builds, previously debug tagged
+ PRODUCT_PACKAGES_DEBUG += \
+     adb_keys \
++
++$(call inherit-product-if-exists, vendor/extra/product.mk)
+-- 
+2.39.5
+

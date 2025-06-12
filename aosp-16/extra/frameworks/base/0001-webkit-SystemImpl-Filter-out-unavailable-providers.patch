@@ -1,0 +1,52 @@
+From e2356aab4437fd2736712910b9e55d0e0800a5bc Mon Sep 17 00:00:00 2001
+From: LuK1337 <priv.luk@gmail.com>
+Date: Thu, 10 Oct 2024 19:52:11 +0200
+Subject: [PATCH] webkit: SystemImpl: Filter out unavailable providers
+
+Change-Id: Ibb70503caeeeabd35dbb0e9c54223e306b3dbdca
+---
+ .../java/com/android/server/webkit/SystemImpl.java | 14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
+
+diff --git a/services/core/java/com/android/server/webkit/SystemImpl.java b/services/core/java/com/android/server/webkit/SystemImpl.java
+index 915d143c91e2..1b67ade72413 100644
+--- a/services/core/java/com/android/server/webkit/SystemImpl.java
++++ b/services/core/java/com/android/server/webkit/SystemImpl.java
+@@ -47,6 +47,7 @@ import org.xmlpull.v1.XmlPullParserException;
+ 
+ import java.io.IOException;
+ import java.util.ArrayList;
++import java.util.Arrays;
+ import java.util.Collections;
+ import java.util.List;
+ 
+@@ -142,7 +143,9 @@ public class SystemImpl implements SystemInterface {
+      * */
+     @Override
+     public WebViewProviderInfo[] getWebViewPackages() {
+-        return mWebViewProviderPackages;
++        return Arrays.stream(mWebViewProviderPackages)
++                .filter(x -> isProviderAvailable(x.packageName))
++                .toArray(WebViewProviderInfo[]::new);
+     }
+ 
+     public long getFactoryPackageVersion(String packageName) throws NameNotFoundException {
+@@ -151,6 +154,15 @@ public class SystemImpl implements SystemInterface {
+                 .getLongVersionCode();
+     }
+ 
++    private boolean isProviderAvailable(String packageName) {
++        try {
++            getFactoryPackageVersion(packageName);
++            return true;
++        } catch (NameNotFoundException e) {
++            return false;
++        }
++    }
++
+     /**
+      * Reads all signatures at the current depth (within the current provider) from the XML parser.
+      */
+-- 
+2.39.5
+
