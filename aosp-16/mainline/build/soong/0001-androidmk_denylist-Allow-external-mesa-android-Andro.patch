@@ -1,0 +1,25 @@
+From 37a603382e2a0138f2844aa9a9215fc4acd0cb29 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Thu, 12 Jun 2025 13:53:51 +0000
+Subject: [PATCH] androidmk_denylist: Allow external/mesa/android/Android.mk
+
+Change-Id: I61fdb0ea33f86a05413df6faf9501d6e4958cd43
+---
+ ui/build/androidmk_denylist.go | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/ui/build/androidmk_denylist.go b/ui/build/androidmk_denylist.go
+index 82666548d4..036d807cdd 100644
+--- a/ui/build/androidmk_denylist.go
++++ b/ui/build/androidmk_denylist.go
+@@ -62,6 +62,7 @@ var androidmk_denylist []string = []string{
+ var androidmk_allowlist []string = []string{
+ 	"art/Android.mk",
+ 	"bootable/deprecated-ota/updater/Android.mk",
++	"external/mesa/android/Android.mk",
+ 	"tools/vendor/google_prebuilts/arc/Android.mk",
+ }
+ 
+-- 
+2.39.5
+
