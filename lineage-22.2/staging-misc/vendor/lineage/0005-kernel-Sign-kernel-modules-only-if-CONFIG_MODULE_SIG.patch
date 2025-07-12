@@ -1,7 +1,7 @@
-From 855c2536942072ae0e64f3da8760356d7e54b88b Mon Sep 17 00:00:00 2001
+From 2e789a234c2b6816b22050c560a13b02229d1cf3 Mon Sep 17 00:00:00 2001
 From: Yumi Yukimura <me.cafebabe@gmail.com>
 Date: Mon, 19 May 2025 03:15:52 +0800
-Subject: [PATCH 07/10] kernel: Sign kernel modules only if
+Subject: [PATCH 5/8] kernel: Sign kernel modules only if
  CONFIG_MODULE_SIG_FORMAT=y
 
 Change-Id: If8ef12f2b751390fc1689edb551379ca2e4e78be
@@ -10,10 +10,10 @@ Change-Id: If8ef12f2b751390fc1689edb551379ca2e4e78be
  1 file changed, 7 insertions(+), 5 deletions(-)
 
 diff --git a/build/tasks/kernel.mk b/build/tasks/kernel.mk
-index 23d02f88..f849eff2 100644
+index b1209a98..2eb47699 100644
 --- a/build/tasks/kernel.mk
 +++ b/build/tasks/kernel.mk
-@@ -591,11 +591,13 @@ $(TARGET_PREBUILT_INT_KERNEL): $(KERNEL_CONFIG) $(DEPMOD) $(DTC) $(KERNEL_MODULE
+@@ -597,11 +597,13 @@ $(TARGET_PREBUILT_INT_KERNEL): $(KERNEL_CONFIG) $(DEPMOD) $(DTC) $(KERNEL_MODULE
  					if [[ ! "$(SYSTEM_KERNEL_MODULES)" =~ "$$module_name" ]]; then echo $$n; fi; \
  				done); \
  				($(call build-image-kernel-modules-lineage,$$filtered_modules,$(KERNEL_MODULES_OUT),$(KERNEL_MODULE_MOUNTPOINT)/,$(KERNEL_DEPMOD_STAGING_DIR),$(BOARD_VENDOR_KERNEL_MODULES_LOAD),,$(KERNEL_MODULES_PARTITION_FILE_LIST),$(SYSTEM_KERNEL_DEPMOD_STAGING_DIR)/lib/modules/0.0/$(SYSTEM_KERNEL_MODULE_MOUNTPOINT))) || exit "$$?"; \

@@ -1,7 +1,7 @@
-From 2af7430321b5816ae3cf50f28364369789a27721 Mon Sep 17 00:00:00 2001
+From de4609be072cbcb41546b5fae26106e856547db8 Mon Sep 17 00:00:00 2001
 From: Yumi Yukimura <me.cafebabe@gmail.com>
 Date: Mon, 19 May 2025 03:04:27 +0800
-Subject: [PATCH 06/10] kernel: Fix build when device does not set
+Subject: [PATCH 4/8] kernel: Fix build when device does not set
  BOARD_SYSTEM_KERNEL_MODULES_LOAD
 
 ... but sets SYSTEM_KERNEL_MODULES
@@ -15,7 +15,7 @@ Change-Id: I581da33bf0321f171aa6a20bdb023e1ee824cb18
  1 file changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/build/tasks/kernel.mk b/build/tasks/kernel.mk
-index cfd06b0a..23d02f88 100644
+index d7c24e4e..b1209a98 100644
 --- a/build/tasks/kernel.mk
 +++ b/build/tasks/kernel.mk
 @@ -93,6 +93,9 @@ ifneq ($(TARGET_NO_KERNEL_OVERRIDE),true)
@@ -28,12 +28,12 @@ index cfd06b0a..23d02f88 100644
  # kernel configuration - mandatory
  MERGE_ALL_KERNEL_CONFIGS_AT_ONCE ?= false
  KERNEL_DEFCONFIG := $(TARGET_KERNEL_CONFIG)
-@@ -582,7 +585,7 @@ $(TARGET_PREBUILT_INT_KERNEL): $(KERNEL_CONFIG) $(DEPMOD) $(DTC) $(KERNEL_MODULE
+@@ -588,7 +591,7 @@ $(TARGET_PREBUILT_INT_KERNEL): $(KERNEL_CONFIG) $(DEPMOD) $(DTC) $(KERNEL_MODULE
  					if [ -n "$$p" ]; then echo $$p; else echo "ERROR: $$m from SYSTEM_KERNEL_MODULES was not found" 1>&2 && exit 1; fi; \
  				done); \
  				[ $$? -ne 0 ] && exit 1; \
--				($(call build-image-kernel-modules-lineage,$$gki_modules,$(SYSTEM_KERNEL_MODULES_OUT),$(SYSTEM_KERNEL_MODULE_MOUNTPOINT)/,$(SYSTEM_KERNEL_DEPMOD_STAGING_DIR),$(BOARD_SYSTEM_KERNEL_MODULES_LOAD),/$(GKI_SUFFIX),$(SYSTEM_KERNEL_MODULES_PARTITION_FILE_LIST),)) || exit "$$?"; \
-+				($(call build-image-kernel-modules-lineage,$$gki_modules,$(SYSTEM_KERNEL_MODULES_OUT),$(SYSTEM_KERNEL_MODULE_MOUNTPOINT)/,$(SYSTEM_KERNEL_DEPMOD_STAGING_DIR),$(SYSTEM_KERNEL_MODULES_LOAD),/$(GKI_SUFFIX),$(SYSTEM_KERNEL_MODULES_PARTITION_FILE_LIST),)) || exit "$$?"; \
+-				($(call build-image-kernel-modules-lineage,$$gki_modules,$(SYSTEM_KERNEL_MODULES_OUT),$(SYSTEM_KERNEL_MODULE_MOUNTPOINT)/,$(SYSTEM_KERNEL_DEPMOD_STAGING_DIR),$(BOARD_SYSTEM_KERNEL_MODULES_LOAD),$(GKI_SUFFIX),$(SYSTEM_KERNEL_MODULES_PARTITION_FILE_LIST),)) || exit "$$?"; \
++				($(call build-image-kernel-modules-lineage,$$gki_modules,$(SYSTEM_KERNEL_MODULES_OUT),$(SYSTEM_KERNEL_MODULE_MOUNTPOINT)/,$(SYSTEM_KERNEL_DEPMOD_STAGING_DIR),$(SYSTEM_KERNEL_MODULES_LOAD),$(GKI_SUFFIX),$(SYSTEM_KERNEL_MODULES_PARTITION_FILE_LIST),)) || exit "$$?"; \
  				filtered_modules=$$(for n in $$all_modules; do \
  					module_name=$$(basename $$n); \
  					if [[ ! "$(SYSTEM_KERNEL_MODULES)" =~ "$$module_name" ]]; then echo $$n; fi; \
