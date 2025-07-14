@@ -1,0 +1,98 @@
+From 4120cdd75fcfc4039b53a3e4b8796e6ea1434cdb Mon Sep 17 00:00:00 2001
+From: Inhishonor <inhishonor@protonmail.com>
+Date: Wed, 2 Jul 2025 13:56:45 -0700
+Subject: [PATCH] SetupWizard: Add option to skip setup wizard on eng builds
+
+Change-Id: I160e95f7985b60740a94d059506ec5716d85cc41
+---
+ res/layout-sw600dp/welcome_activity.xml            |  7 +++++++
+ res/layout-television/welcome_activity.xml         |  7 +++++++
+ res/layout/welcome_activity.xml                    | 13 +++++++++++++
+ src/org/lineageos/setupwizard/WelcomeActivity.java |  6 ++++++
+ 4 files changed, 33 insertions(+)
+
+diff --git a/res/layout-sw600dp/welcome_activity.xml b/res/layout-sw600dp/welcome_activity.xml
+index 6ffebf5..2ea0a5e 100644
+--- a/res/layout-sw600dp/welcome_activity.xml
++++ b/res/layout-sw600dp/welcome_activity.xml
+@@ -82,5 +82,12 @@
+             android:text="@string/accessibility_settings"
+             style="@style/SudGlifButton.Secondary" />
+ 
++        <Button
++            android:id="@+id/skip"
++            style="@style/SudGlifButton.Secondary"
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content"
++            android:text="@string/skip"
++            android:visibility="gone" />
+     </LinearLayout>
+ </LinearLayout>
+diff --git a/res/layout-television/welcome_activity.xml b/res/layout-television/welcome_activity.xml
+index 6ffebf5..2ea0a5e 100644
+--- a/res/layout-television/welcome_activity.xml
++++ b/res/layout-television/welcome_activity.xml
+@@ -82,5 +82,12 @@
+             android:text="@string/accessibility_settings"
+             style="@style/SudGlifButton.Secondary" />
+ 
++        <Button
++            android:id="@+id/skip"
++            style="@style/SudGlifButton.Secondary"
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content"
++            android:text="@string/skip"
++            android:visibility="gone" />
+     </LinearLayout>
+ </LinearLayout>
+diff --git a/res/layout/welcome_activity.xml b/res/layout/welcome_activity.xml
+index 402d842..97ea0b2 100644
+--- a/res/layout/welcome_activity.xml
++++ b/res/layout/welcome_activity.xml
+@@ -108,6 +108,19 @@
+                 android:layout_height="0.0dip"
+                 android:layout_weight="1.0" />
+ 
++            <Button
++                android:id="@+id/skip"
++                style="@style/SudGlifButton.Secondary"
++                android:layout_width="wrap_content"
++                android:layout_height="wrap_content"
++                android:text="@string/skip"
++                android:visibility="gone" />
++
++            <Space
++                android:layout_width="0.0dip"
++                android:layout_height="0.0dip"
++                android:layout_weight="1.0" />
++
+             <Button
+                 android:id="@id/start"
+                 style="@style/SudGlifButton.Primary"
+diff --git a/src/org/lineageos/setupwizard/WelcomeActivity.java b/src/org/lineageos/setupwizard/WelcomeActivity.java
+index 4dc594e..34b82b1 100644
+--- a/src/org/lineageos/setupwizard/WelcomeActivity.java
++++ b/src/org/lineageos/setupwizard/WelcomeActivity.java
+@@ -36,6 +36,7 @@ public class WelcomeActivity extends SubBaseActivity {
+         setNextText(R.string.start);
+         Button startButton = findViewById(R.id.start);
+         Button emergButton = findViewById(R.id.emerg_dialer);
++        Button skipButton = findViewById(R.id.skip);
+         startButton.setOnClickListener(view -> onNextPressed());
+         findViewById(R.id.launch_accessibility)
+                 .setOnClickListener(
+@@ -60,6 +61,11 @@ public class WelcomeActivity extends SubBaseActivity {
+             welcomeTitle.setText(getString(R.string.setup_welcome_message,
+                     getString(R.string.os_name)));
+         }
++
++        skipButton.setVisibility(View.VISIBLE);
++        skipButton.setOnClickListener(v -> {
++            SetupWizardUtils.finishSetupWizard(WelcomeActivity.this);
++        });
+     }
+ 
+     @Override
+-- 
+2.39.5
+
