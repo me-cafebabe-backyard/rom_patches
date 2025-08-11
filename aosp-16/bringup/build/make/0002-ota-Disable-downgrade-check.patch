@@ -1,7 +1,7 @@
 From 5f24f3b862ed3fd2a494ccb12c426ae9557e11d0 Mon Sep 17 00:00:00 2001
 From: Andrew Dodd <atd7@cornell.edu>
 Date: Mon, 2 Dec 2013 23:15:30 -0500
-Subject: [PATCH 2/4] ota: Disable downgrade check
+Subject: [PATCH 2/5] ota: Disable downgrade check
 
 We want users to be able to downgrade their packages.
 

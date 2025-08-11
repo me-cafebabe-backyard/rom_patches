@@ -1,7 +1,7 @@
 From 6c118c78c8c29fb0f5f8979458c083c7876908d6 Mon Sep 17 00:00:00 2001
 From: LuK1337 <priv.luk@gmail.com>
 Date: Tue, 23 Nov 2021 16:14:57 +0200
-Subject: [PATCH 4/4] core: Allow overriding device/model/name/fingerprint
+Subject: [PATCH 4/5] core: Allow overriding device/model/name/fingerprint
  properties
 
 Change-Id: I84c4ecb4d20fe6954551e4f07f739e04bfffd647

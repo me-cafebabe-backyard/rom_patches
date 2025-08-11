@@ -1,7 +1,7 @@
 From 91ff7e1ecb20c8d129e3e25869c36ffe2727e595 Mon Sep 17 00:00:00 2001
 From: Luca Stefani <luca.stefani.ge1@gmail.com>
 Date: Sat, 7 Sep 2024 11:50:02 +0200
-Subject: [PATCH 3/4] Export PRODUCT_BUILD_PROP_OVERRIDES to soong
+Subject: [PATCH 3/5] Export PRODUCT_BUILD_PROP_OVERRIDES to soong
 
 Change-Id: I6b6da3ef5b76cec5274f58b9337974d61771cecd
 ---
