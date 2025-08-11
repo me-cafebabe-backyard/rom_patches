@@ -1,7 +1,7 @@
-From 2a6e94ac6dfc79968360679e51507c2b1c56fcf9 Mon Sep 17 00:00:00 2001
+From 3177aa5a539dde42cb5d922bcefc364d4c75276b Mon Sep 17 00:00:00 2001
 From: Dyneteve <dyneteve@hentaios.com>
 Date: Wed, 1 Dec 2021 14:42:39 +0100
-Subject: [PATCH 2/3] healthd: Add support for HVDCP_3P5 chargers
+Subject: [PATCH 2/6] healthd: Add support for HVDCP_3P5 chargers
 
 Change-Id: I810e2e051329edeec54fc24255d785993066eece
 ---

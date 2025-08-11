@@ -1,0 +1,722 @@
+From 9f64287c6ff36355817b81b50ea59c9e3b28d5c3 Mon Sep 17 00:00:00 2001
+From: Nolen Johnson <johnsonnolen@gmail.com>
+Date: Mon, 10 Mar 2025 13:28:22 -0400
+Subject: [PATCH 5/6] Revert "libprocessgroup: Remove schedtune support"
+
+This reverts commit 981664df08619b66ad51daf52356ff02f98a2b77.
+
+Reason: 4.19 isn't EOL for us, hell, 4.4 isn't even.
+Change-Id: I62bbfd0aa2b2262340c40a923aa02f221787f9cb
+---
+ libcutils/sched_policy_test.cpp               |   7 +
+ .../include/processgroup/sched_policy.h       |   8 +
+ libprocessgroup/profiles/Android.bp           |  46 +++++
+ libprocessgroup/profiles/cgroups_28.json      |  11 ++
+ libprocessgroup/profiles/cgroups_29.json      |  11 ++
+ libprocessgroup/profiles/cgroups_30.json      |  12 ++
+ .../profiles/task_profiles_28.json            | 160 ++++++++++++++++++
+ .../profiles/task_profiles_29.json            | 160 ++++++++++++++++++
+ .../profiles/task_profiles_30.json            | 160 ++++++++++++++++++
+ libprocessgroup/sched_policy.cpp              |  15 +-
+ 10 files changed, 588 insertions(+), 2 deletions(-)
+ create mode 100644 libprocessgroup/profiles/cgroups_28.json
+ create mode 100644 libprocessgroup/profiles/cgroups_29.json
+ create mode 100644 libprocessgroup/profiles/cgroups_30.json
+ create mode 100644 libprocessgroup/profiles/task_profiles_28.json
+ create mode 100644 libprocessgroup/profiles/task_profiles_29.json
+ create mode 100644 libprocessgroup/profiles/task_profiles_30.json
+
+diff --git a/libcutils/sched_policy_test.cpp b/libcutils/sched_policy_test.cpp
+index 2641743097..50bd6d0b87 100644
+--- a/libcutils/sched_policy_test.cpp
++++ b/libcutils/sched_policy_test.cpp
+@@ -67,6 +67,13 @@ static void AssertPolicy(SchedPolicy expected_policy) {
+ }
+ 
+ TEST(SchedPolicy, set_sched_policy) {
++    if (!schedboost_enabled()) {
++        // schedboost_enabled() (i.e. CONFIG_CGROUP_SCHEDTUNE) is optional;
++        // it's only needed on devices using energy-aware scheduler.
++        GTEST_LOG_(INFO) << "skipping test that requires CONFIG_CGROUP_SCHEDTUNE";
++        return;
++    }
++
+     ASSERT_EQ(0, set_sched_policy(0, SP_BACKGROUND));
+     ASSERT_EQ(0, set_cpuset_policy(0, SP_BACKGROUND));
+     AssertPolicy(SP_BACKGROUND);
+diff --git a/libprocessgroup/include/processgroup/sched_policy.h b/libprocessgroup/include/processgroup/sched_policy.h
+index 92cd367bfb..1b6ea669d7 100644
+--- a/libprocessgroup/include/processgroup/sched_policy.h
++++ b/libprocessgroup/include/processgroup/sched_policy.h
+@@ -29,6 +29,14 @@ extern "C" {
+  */
+ extern bool cpusets_enabled();
+ 
++/*
++ * Check if Linux kernel enables SCHEDTUNE feature (only available in Android
++ * common kernel or Linaro LSK, not in mainline Linux as of v4.9)
++ *
++ * Return value: 1 if Linux kernel CONFIG_CGROUP_SCHEDTUNE=y; 0 otherwise.
++ */
++extern bool schedboost_enabled();
++
+ /* Keep in sync with THREAD_GROUP_* in frameworks/base/core/java/android/os/Process.java */
+ typedef enum {
+     SP_DEFAULT = -1,
+diff --git a/libprocessgroup/profiles/Android.bp b/libprocessgroup/profiles/Android.bp
+index baa4546464..52ebca94c7 100644
+--- a/libprocessgroup/profiles/Android.bp
++++ b/libprocessgroup/profiles/Android.bp
+@@ -20,6 +20,11 @@ package {
+ prebuilt_etc {
+     name: "cgroups.json",
+     src: "cgroups.json",
++    required: [
++        "cgroups_28.json",
++        "cgroups_29.json",
++        "cgroups_30.json",
++    ],
+ }
+ 
+ prebuilt_etc {
+@@ -29,9 +34,50 @@ prebuilt_etc {
+     src: "cgroups.recovery.json",
+ }
+ 
++prebuilt_etc {
++    name: "cgroups_28.json",
++    src: "cgroups_28.json",
++    sub_dir: "task_profiles",
++}
++
++prebuilt_etc {
++    name: "cgroups_29.json",
++    src: "cgroups_29.json",
++    sub_dir: "task_profiles",
++}
++
++prebuilt_etc {
++    name: "cgroups_30.json",
++    src: "cgroups_30.json",
++    sub_dir: "task_profiles",
++}
++
+ prebuilt_etc {
+     name: "task_profiles.json",
+     src: "task_profiles.json",
++    required: [
++        "task_profiles_28.json",
++        "task_profiles_29.json",
++        "task_profiles_30.json",
++    ],
++}
++
++prebuilt_etc {
++    name: "task_profiles_28.json",
++    src: "task_profiles_28.json",
++    sub_dir: "task_profiles",
++}
++
++prebuilt_etc {
++    name: "task_profiles_29.json",
++    src: "task_profiles_29.json",
++    sub_dir: "task_profiles",
++}
++
++prebuilt_etc {
++    name: "task_profiles_30.json",
++    src: "task_profiles_30.json",
++    sub_dir: "task_profiles",
+ }
+ 
+ cc_defaults {
+diff --git a/libprocessgroup/profiles/cgroups_28.json b/libprocessgroup/profiles/cgroups_28.json
+new file mode 100644
+index 0000000000..17d4929497
+--- /dev/null
++++ b/libprocessgroup/profiles/cgroups_28.json
+@@ -0,0 +1,11 @@
++{
++  "Cgroups": [
++    {
++      "Controller": "schedtune",
++      "Path": "/dev/stune",
++      "Mode": "0755",
++      "UID": "system",
++      "GID": "system"
++    }
++  ]
++}
+diff --git a/libprocessgroup/profiles/cgroups_29.json b/libprocessgroup/profiles/cgroups_29.json
+new file mode 100644
+index 0000000000..17d4929497
+--- /dev/null
++++ b/libprocessgroup/profiles/cgroups_29.json
+@@ -0,0 +1,11 @@
++{
++  "Cgroups": [
++    {
++      "Controller": "schedtune",
++      "Path": "/dev/stune",
++      "Mode": "0755",
++      "UID": "system",
++      "GID": "system"
++    }
++  ]
++}
+diff --git a/libprocessgroup/profiles/cgroups_30.json b/libprocessgroup/profiles/cgroups_30.json
+new file mode 100644
+index 0000000000..80a074bf1c
+--- /dev/null
++++ b/libprocessgroup/profiles/cgroups_30.json
+@@ -0,0 +1,12 @@
++{
++  "Cgroups": [
++    {
++      "Controller": "schedtune",
++      "Path": "/dev/stune",
++      "Mode": "0755",
++      "UID": "system",
++      "GID": "system",
++      "Optional": true
++    }
++  ]
++}
+diff --git a/libprocessgroup/profiles/task_profiles_28.json b/libprocessgroup/profiles/task_profiles_28.json
+new file mode 100644
+index 0000000000..e7be5487d1
+--- /dev/null
++++ b/libprocessgroup/profiles/task_profiles_28.json
+@@ -0,0 +1,160 @@
++{
++  "Attributes": [
++    {
++      "Name": "STuneBoost",
++      "Controller": "schedtune",
++      "File": "schedtune.boost"
++    },
++    {
++      "Name": "STunePreferIdle",
++      "Controller": "schedtune",
++      "File": "schedtune.prefer_idle"
++    }
++  ],
++
++  "Profiles": [
++    {
++      "Name": "HighEnergySaving",
++      "Actions": [
++        {
++          "Name": "JoinCgroup",
++          "Params":
++          {
++            "Controller": "schedtune",
++            "Path": "background"
++          }
++        }
++      ]
++    },
++    {
++      "Name": "NormalPerformance",
++      "Actions": [
++        {
++          "Name": "JoinCgroup",
++          "Params":
++          {
++            "Controller": "schedtune",
++            "Path": ""
++          }
++        }
++      ]
++    },
++    {
++      "Name": "ServicePerformance",
++      "Actions": [
++        {
++          "Name": "JoinCgroup",
++          "Params":
++          {
++            "Controller": "schedtune",
++            "Path": "background"
++          }
++        }
++      ]
++    },
++    {
++      "Name": "HighPerformance",
++      "Actions": [
++        {
++          "Name": "JoinCgroup",
++          "Params":
++          {
++            "Controller": "schedtune",
++            "Path": "foreground"
++          }
++        }
++      ]
++    },
++    {
++      "Name": "MaxPerformance",
++      "Actions": [
++        {
++          "Name": "JoinCgroup",
++          "Params":
++          {
++            "Controller": "schedtune",
++            "Path": "top-app"
++          }
++        }
++      ]
++    },
++    {
++      "Name": "RealtimePerformance",
++      "Actions": [
++        {
++          "Name": "JoinCgroup",
++          "Params":
++          {
++            "Controller": "schedtune",
++            "Path": "rt"
++          }
++        }
++      ]
++    },
++    {
++      "Name": "CameraServicePerformance",
++      "Actions": [
++        {
++          "Name": "JoinCgroup",
++          "Params":
++          {
++            "Controller": "schedtune",
++            "Path": "camera-daemon"
++          }
++        }
++      ]
++    },
++    {
++      "Name": "NNApiHALPerformance",
++      "Actions": [
++        {
++          "Name": "JoinCgroup",
++          "Params":
++          {
++            "Controller": "schedtune",
++            "Path": "nnapi-hal"
++          }
++        }
++      ]
++    },
++    {
++      "Name": "Dex2oatPerformance",
++      "Actions": [
++        {
++          "Name": "JoinCgroup",
++          "Params":
++          {
++            "Controller": "schedtune",
++            "Path": "background"
++          }
++        }
++      ]
++    },
++    {
++      "Name": "CpuPolicySpread",
++      "Actions": [
++        {
++          "Name": "SetAttribute",
++          "Params":
++          {
++            "Name": "STunePreferIdle",
++            "Value": "1"
++          }
++        }
++      ]
++    },
++    {
++      "Name": "CpuPolicyPack",
++      "Actions": [
++        {
++          "Name": "SetAttribute",
++          "Params":
++          {
++            "Name": "STunePreferIdle",
++            "Value": "0"
++          }
++        }
++      ]
++    }
++  ]
++}
+diff --git a/libprocessgroup/profiles/task_profiles_29.json b/libprocessgroup/profiles/task_profiles_29.json
+new file mode 100644
+index 0000000000..6174c8d0fa
+--- /dev/null
++++ b/libprocessgroup/profiles/task_profiles_29.json
+@@ -0,0 +1,160 @@
++{
++  "Attributes": [
++    {
++      "Name": "STuneBoost",
++      "Controller": "schedtune",
++      "File": "schedtune.boost"
++    },
++    {
++      "Name": "STunePreferIdle",
++      "Controller": "schedtune",
++      "File": "schedtune.prefer_idle"
++    }
++  ],
++
++  "Profiles": [
++    {
++      "Name": "HighEnergySaving",
++      "Actions": [
++        {
++          "Name": "JoinCgroup",
++          "Params":
++          {
++            "Controller": "schedtune",
++            "Path": "background"
++          }
++        }
++      ]
++    },
++    {
++      "Name": "NormalPerformance",
++      "Actions": [
++        {
++          "Name": "JoinCgroup",
++          "Params":
++          {
++            "Controller": "schedtune",
++            "Path": ""
++          }
++        }
++      ]
++    },
++    {
++      "Name": "HighPerformance",
++      "Actions": [
++        {
++          "Name": "JoinCgroup",
++          "Params":
++          {
++            "Controller": "schedtune",
++            "Path": "foreground"
++          }
++        }
++      ]
++    },
++    {
++      "Name": "ServicePerformance",
++      "Actions": [
++        {
++          "Name": "JoinCgroup",
++          "Params":
++          {
++            "Controller": "schedtune",
++            "Path": "background"
++          }
++        }
++      ]
++    },
++    {
++      "Name": "MaxPerformance",
++      "Actions": [
++        {
++          "Name": "JoinCgroup",
++          "Params":
++          {
++            "Controller": "schedtune",
++            "Path": "top-app"
++          }
++        }
++      ]
++    },
++    {
++      "Name": "RealtimePerformance",
++      "Actions": [
++        {
++          "Name": "JoinCgroup",
++          "Params":
++          {
++            "Controller": "schedtune",
++            "Path": "rt"
++          }
++        }
++      ]
++    },
++    {
++      "Name": "CameraServicePerformance",
++      "Actions": [
++        {
++          "Name": "JoinCgroup",
++          "Params":
++          {
++            "Controller": "schedtune",
++            "Path": "camera-daemon"
++          }
++        }
++      ]
++    },
++    {
++      "Name": "NNApiHALPerformance",
++      "Actions": [
++        {
++          "Name": "JoinCgroup",
++          "Params":
++          {
++            "Controller": "schedtune",
++            "Path": "nnapi-hal"
++          }
++        }
++      ]
++    },
++    {
++      "Name": "Dex2oatPerformance",
++      "Actions": [
++        {
++          "Name": "JoinCgroup",
++          "Params":
++          {
++            "Controller": "schedtune",
++            "Path": "background"
++          }
++        }
++      ]
++    },
++    {
++      "Name": "CpuPolicySpread",
++      "Actions": [
++        {
++          "Name": "SetAttribute",
++          "Params":
++          {
++            "Name": "STunePreferIdle",
++            "Value": "1"
++          }
++        }
++      ]
++    },
++    {
++      "Name": "CpuPolicyPack",
++      "Actions": [
++        {
++          "Name": "SetAttribute",
++          "Params":
++          {
++            "Name": "STunePreferIdle",
++            "Value": "0"
++          }
++        }
++      ]
++    }
++  ]
++}
+diff --git a/libprocessgroup/profiles/task_profiles_30.json b/libprocessgroup/profiles/task_profiles_30.json
+new file mode 100644
+index 0000000000..e7be5487d1
+--- /dev/null
++++ b/libprocessgroup/profiles/task_profiles_30.json
+@@ -0,0 +1,160 @@
++{
++  "Attributes": [
++    {
++      "Name": "STuneBoost",
++      "Controller": "schedtune",
++      "File": "schedtune.boost"
++    },
++    {
++      "Name": "STunePreferIdle",
++      "Controller": "schedtune",
++      "File": "schedtune.prefer_idle"
++    }
++  ],
++
++  "Profiles": [
++    {
++      "Name": "HighEnergySaving",
++      "Actions": [
++        {
++          "Name": "JoinCgroup",
++          "Params":
++          {
++            "Controller": "schedtune",
++            "Path": "background"
++          }
++        }
++      ]
++    },
++    {
++      "Name": "NormalPerformance",
++      "Actions": [
++        {
++          "Name": "JoinCgroup",
++          "Params":
++          {
++            "Controller": "schedtune",
++            "Path": ""
++          }
++        }
++      ]
++    },
++    {
++      "Name": "ServicePerformance",
++      "Actions": [
++        {
++          "Name": "JoinCgroup",
++          "Params":
++          {
++            "Controller": "schedtune",
++            "Path": "background"
++          }
++        }
++      ]
++    },
++    {
++      "Name": "HighPerformance",
++      "Actions": [
++        {
++          "Name": "JoinCgroup",
++          "Params":
++          {
++            "Controller": "schedtune",
++            "Path": "foreground"
++          }
++        }
++      ]
++    },
++    {
++      "Name": "MaxPerformance",
++      "Actions": [
++        {
++          "Name": "JoinCgroup",
++          "Params":
++          {
++            "Controller": "schedtune",
++            "Path": "top-app"
++          }
++        }
++      ]
++    },
++    {
++      "Name": "RealtimePerformance",
++      "Actions": [
++        {
++          "Name": "JoinCgroup",
++          "Params":
++          {
++            "Controller": "schedtune",
++            "Path": "rt"
++          }
++        }
++      ]
++    },
++    {
++      "Name": "CameraServicePerformance",
++      "Actions": [
++        {
++          "Name": "JoinCgroup",
++          "Params":
++          {
++            "Controller": "schedtune",
++            "Path": "camera-daemon"
++          }
++        }
++      ]
++    },
++    {
++      "Name": "NNApiHALPerformance",
++      "Actions": [
++        {
++          "Name": "JoinCgroup",
++          "Params":
++          {
++            "Controller": "schedtune",
++            "Path": "nnapi-hal"
++          }
++        }
++      ]
++    },
++    {
++      "Name": "Dex2oatPerformance",
++      "Actions": [
++        {
++          "Name": "JoinCgroup",
++          "Params":
++          {
++            "Controller": "schedtune",
++            "Path": "background"
++          }
++        }
++      ]
++    },
++    {
++      "Name": "CpuPolicySpread",
++      "Actions": [
++        {
++          "Name": "SetAttribute",
++          "Params":
++          {
++            "Name": "STunePreferIdle",
++            "Value": "1"
++          }
++        }
++      ]
++    },
++    {
++      "Name": "CpuPolicyPack",
++      "Actions": [
++        {
++          "Name": "SetAttribute",
++          "Params":
++          {
++            "Name": "STunePreferIdle",
++            "Value": "0"
++          }
++        }
++      ]
++    }
++  ]
++}
+diff --git a/libprocessgroup/sched_policy.cpp b/libprocessgroup/sched_policy.cpp
+index 5a53c35de7..042bcd24c4 100644
+--- a/libprocessgroup/sched_policy.cpp
++++ b/libprocessgroup/sched_policy.cpp
+@@ -148,10 +148,20 @@ bool cpusets_enabled() {
+     return enabled;
+ }
+ 
++static bool schedtune_enabled() {
++    return (CgroupMap::GetInstance().FindController("schedtune").IsUsable());
++}
++
+ static bool cpuctl_enabled() {
+     return (CgroupMap::GetInstance().FindController("cpu").IsUsable());
+ }
+ 
++bool schedboost_enabled() {
++    static bool enabled = schedtune_enabled() || cpuctl_enabled();
++
++    return enabled;
++}
++
+ static int getCGroupSubsys(pid_t tid, const char* subsys, std::string& subgroup) {
+     auto controller = CgroupMap::GetInstance().FindController(subsys);
+ 
+@@ -191,8 +201,9 @@ int get_sched_policy(pid_t tid, SchedPolicy* policy) {
+     }
+ 
+     std::string group;
+-    if (cpuctl_enabled()) {
+-        if (getCGroupSubsys(tid, "cpu", group) < 0) {
++    if (schedboost_enabled()) {
++        if ((getCGroupSubsys(tid, "schedtune", group) < 0) &&
++            (getCGroupSubsys(tid, "cpu", group) < 0)) {
+             LOG(ERROR) << "Failed to find cpu cgroup for tid " << tid;
+             return -1;
+         }
+-- 
+2.39.5
+

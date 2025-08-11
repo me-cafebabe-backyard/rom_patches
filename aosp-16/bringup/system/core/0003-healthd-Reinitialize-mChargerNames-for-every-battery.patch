@@ -1,7 +1,7 @@
-From e4d5e4c99261fd064dab10fef91fbe10ef9d203f Mon Sep 17 00:00:00 2001
+From f1b61f82b690a4034feeae420cc511e7fe461fc0 Mon Sep 17 00:00:00 2001
 From: Abhijeet Dharmapurikar <adharmap@codeaurora.org>
 Date: Tue, 24 May 2016 15:12:11 -0700
-Subject: [PATCH 3/3] healthd: Reinitialize mChargerNames for every battery
+Subject: [PATCH 3/6] healthd: Reinitialize mChargerNames for every battery
  update
 
 Booting up the device without usb, the kernel sets the usb power supply
