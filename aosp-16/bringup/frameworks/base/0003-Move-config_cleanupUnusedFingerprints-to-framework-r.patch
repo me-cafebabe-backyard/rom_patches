@@ -1,0 +1,58 @@
+From 352dca19ddcd0e0a4759fde38962dd14fc9a358b Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Mon, 11 Aug 2025 14:09:45 +0800
+Subject: [PATCH 3/3] Move config_cleanupUnusedFingerprints to framework-res
+
+Change-Id: I6c1360732c212121eaee98dc4cd5a5d3b525acb3
+---
+ core/res/res/values/config.xml                                | 4 ++++
+ core/res/res/values/symbols.xml                               | 4 ++++
+ .../sensors/fingerprint/aidl/FingerprintProvider.java         | 2 +-
+ 3 files changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/core/res/res/values/config.xml b/core/res/res/values/config.xml
+index 59c7fd027a79..3ce1d2d2a383 100644
+--- a/core/res/res/values/config.xml
++++ b/core/res/res/values/config.xml
+@@ -24,6 +24,10 @@
+      entries do not follow the convention, but all new entries should. -->
+ 
+ <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
++    <!-- Whether to cleanup fingerprints upon connection to the daemon and when
++         user switches -->
++    <bool name="config_cleanupUnusedFingerprints">true</bool>
++
+     <!-- Do not translate. Defines the slots for the right-hand side icons.  That is to say, the
+          icons in the status bar that are not notifications. -->
+     <string-array name="config_statusBarIcons">
+diff --git a/core/res/res/values/symbols.xml b/core/res/res/values/symbols.xml
+index 70e3356a46fe..33f2db7e71ee 100644
+--- a/core/res/res/values/symbols.xml
++++ b/core/res/res/values/symbols.xml
+@@ -15,6 +15,10 @@
+ */
+ -->
+ <resources>
++  <!-- Whether to cleanup fingerprints upon connection to the daemon and when
++       user switches -->
++  <java-symbol type="bool" name="config_cleanupUnusedFingerprints" />
++
+   <!-- Private symbols that we need to reference from framework code.  See
+        frameworks/base/core/res/MakeJavaSymbols.sed for how to easily generate
+        this.
+diff --git a/services/core/java/com/android/server/biometrics/sensors/fingerprint/aidl/FingerprintProvider.java b/services/core/java/com/android/server/biometrics/sensors/fingerprint/aidl/FingerprintProvider.java
+index ac05e93bcefa..6636756b8a43 100644
+--- a/services/core/java/com/android/server/biometrics/sensors/fingerprint/aidl/FingerprintProvider.java
++++ b/services/core/java/com/android/server/biometrics/sensors/fingerprint/aidl/FingerprintProvider.java
+@@ -209,7 +209,7 @@ public class FingerprintProvider implements IBinder.DeathRecipient, ServiceProvi
+         mBiometricHandlerProvider = biometricHandlerProvider;
+ 
+         mCleanup = context.getResources().getBoolean(
+-                org.lineageos.platform.internal.R.bool.config_cleanupUnusedFingerprints);
++                com.android.internal.R.bool.config_cleanupUnusedFingerprints);
+ 
+         initAuthenticationBroadcastReceiver();
+         initFingerprintDanglingBroadcastReceiver();
+-- 
+2.39.5
+

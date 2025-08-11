@@ -1,0 +1,43 @@
+From d8355bcc79967d88a582805acf94a86ac4b250d1 Mon Sep 17 00:00:00 2001
+From: Nolen Johnson <johnsonnolen@gmail.com>
+Date: Sun, 17 Jul 2022 21:33:52 -0400
+Subject: [PATCH 4/5] private: Exempt system_app from adbd_config_prop
+ neverallow
+
+* ATV can't use the newer mobile method for ADB over Wi-Fi
+  as ethernet is a massive usecase for us, and that implementation
+  refuses to play nicely with any interface but Wi-Fi.
+
+* Therefore, to avoid having to carry the crappy intermediate prop
+  solutions in device/lineage/atv, relax this, as it's still a
+  system namespace and still a limited context that is allowed to
+  set the property.
+
+Change-Id: Id87ebae6d0552bb8b9faac3114dca42128eaf5b0
+---
+ private/property.te | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/private/property.te b/private/property.te
+index f3f97feb5..2fbe4aa8c 100644
+--- a/private/property.te
++++ b/private/property.te
+@@ -528,13 +528,14 @@ neverallow {
+   system_adbd_prop
+ }:property_service set;
+ 
+-# Let (vendor_)init, adbd, and system_server set service.adb.tcp.port
++# Let (vendor_)init, adbd, system_app, and system_server set service.adb.tcp.port
+ neverallow {
+   domain
+   -init
+   -vendor_init
+   -adbd
+   -adbd_tradeinmode
++  -system_app
+   -system_server
+ } {
+   adbd_config_prop
+-- 
+2.39.5
+

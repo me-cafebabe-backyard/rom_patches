@@ -1,0 +1,51 @@
+From f1dd85a426e25a5719eee6b7ae390e0faa9568f0 Mon Sep 17 00:00:00 2001
+From: Alexander Koskovich <akoskovich@pm.me>
+Date: Fri, 25 Apr 2025 22:51:50 -0400
+Subject: [PATCH 1/2] DeviceAsWebcam: Don't set VIDEO_ENCODE flag if device
+ opts out
+
+DeviceAsWebcam is using USAGE_VIDEO_ENCODE [1] for buffers and
+this results in combined usage: (VIDEO_ENCODER | CAMERA_OUTPUT).
+
+On Qcom devices DeviceAsWebcam has red & blue colors swapped.
+
+Originally we tried swapping HAL_PIXEL_FORMAT_YCbCr_420_SP_VENUS
+with HAL_PIXEL_FORMAT_YCrCb_420_SP_VENUS in libgrallocutils,
+however that inverted regular camera recording colors in some cases.
+
+[1] https://android.googlesource.com/platform/packages/services/DeviceAsWebcam/+/d079a82ba4f773210c01d488d2dfa1d4d25be8e2
+
+Change-Id: I3179b5c5a0a89989b65f41143caa6c4afe068ce7
+---
+ impl/src/com/android/deviceaswebcam/CameraController.java | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/impl/src/com/android/deviceaswebcam/CameraController.java b/impl/src/com/android/deviceaswebcam/CameraController.java
+index 4ed61e2..310c9a7 100644
+--- a/impl/src/com/android/deviceaswebcam/CameraController.java
++++ b/impl/src/com/android/deviceaswebcam/CameraController.java
+@@ -44,6 +44,7 @@ import android.media.ImageWriter;
+ import android.os.ConditionVariable;
+ import android.os.Handler;
+ import android.os.HandlerThread;
++import android.os.SystemProperties;
+ import android.util.ArrayMap;
+ import android.util.Log;
+ import android.util.Range;
+@@ -680,7 +681,12 @@ public class CameraController {
+                             + fps);
+         }
+         synchronized (mSerializationLock) {
+-            long usage = HardwareBuffer.USAGE_CPU_READ_OFTEN | HardwareBuffer.USAGE_VIDEO_ENCODE;
++            boolean disableVideoEncodeFlag =
++                    SystemProperties.getBoolean("ro.usb.uvc.disable_video_encode_flag", false);
++            long usage = HardwareBuffer.USAGE_CPU_READ_OFTEN;
++            if (!disableVideoEncodeFlag) {
++                usage |= HardwareBuffer.USAGE_VIDEO_ENCODE;
++            }
+             mStreamConfigs = new StreamConfigs(width, height, fps);
+             synchronized (mImgReaderLock) {
+                 if (mImgReader != null) {
+-- 
+2.39.5
+

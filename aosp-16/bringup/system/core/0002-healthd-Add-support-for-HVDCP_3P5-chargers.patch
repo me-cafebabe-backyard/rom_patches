@@ -1,0 +1,25 @@
+From 2a6e94ac6dfc79968360679e51507c2b1c56fcf9 Mon Sep 17 00:00:00 2001
+From: Dyneteve <dyneteve@hentaios.com>
+Date: Wed, 1 Dec 2021 14:42:39 +0100
+Subject: [PATCH 2/3] healthd: Add support for HVDCP_3P5 chargers
+
+Change-Id: I810e2e051329edeec54fc24255d785993066eece
+---
+ healthd/BatteryMonitor.cpp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/healthd/BatteryMonitor.cpp b/healthd/BatteryMonitor.cpp
+index 5ab54124ec..dc79997149 100644
+--- a/healthd/BatteryMonitor.cpp
++++ b/healthd/BatteryMonitor.cpp
+@@ -308,6 +308,7 @@ static BatteryMonitor::PowerSupplyType readPowerSupplyType(const String8& path)
+             {"USB_DCP", BatteryMonitor::ANDROID_POWER_SUPPLY_TYPE_AC},
+             {"USB_HVDCP", BatteryMonitor::ANDROID_POWER_SUPPLY_TYPE_AC},
+             {"USB_HVDCP_3", BatteryMonitor::ANDROID_POWER_SUPPLY_TYPE_AC},
++            {"USB_HVDCP_3P5", BatteryMonitor::ANDROID_POWER_SUPPLY_TYPE_AC},
+             {"USB_CDP", BatteryMonitor::ANDROID_POWER_SUPPLY_TYPE_AC},
+             {"USB_ACA", BatteryMonitor::ANDROID_POWER_SUPPLY_TYPE_AC},
+             {"USB_C", BatteryMonitor::ANDROID_POWER_SUPPLY_TYPE_AC},
+-- 
+2.39.5
+

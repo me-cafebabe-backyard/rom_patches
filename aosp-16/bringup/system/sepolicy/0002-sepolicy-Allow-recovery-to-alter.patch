@@ -1,0 +1,30 @@
+From 87932f9ab9979754e50d79418c5ad33271b64381 Mon Sep 17 00:00:00 2001
+From: Gabriele M <moto.falcon.git@gmail.com>
+Date: Wed, 25 Jan 2017 02:09:04 +0100
+Subject: [PATCH 2/5] sepolicy: Allow recovery to alter /
+
+This is needed for /etc/fstab, /adb_keys and volmgr
+
+Change-Id: I53332a57ce7879d7ba63c4ea3e27add01f5a3a90
+---
+ private/domain.te | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/private/domain.te b/private/domain.te
+index 40b835417..269bc23d9 100644
+--- a/private/domain.te
++++ b/private/domain.te
+@@ -758,8 +758,8 @@ neverallow {
+   userdebug_or_eng(`-overlay_remounter')
+ } exec_type:dir_file_class_set mounton;
+ 
+-# Nothing should be writing to files in the rootfs.
+-neverallow * rootfs:file { create write setattr relabelto append unlink link rename };
++# Nothing should be writing to files in the rootfs, except recovery.
++neverallow { domain -recovery } rootfs:file { create write setattr relabelto append unlink link rename };
+ 
+ # Restrict context mounts to specific types marked with
+ # the contextmount_type attribute.
+-- 
+2.39.5
+

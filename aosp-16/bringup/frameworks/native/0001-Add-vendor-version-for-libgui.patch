@@ -1,0 +1,56 @@
+From 6f8bd102247c5f5a973a75b451aaead9de6d5707 Mon Sep 17 00:00:00 2001
+From: Vinay Verma <vvinay@codeaurora.org>
+Date: Tue, 12 Jun 2018 18:04:44 +0530
+Subject: [PATCH] Add vendor version for libgui
+
+libstagefright_omx library need to be extended to vendor which
+is depenednet on libgui which is a vndk_private lib.
+Creating vendor version so that libstagefright_omx_ext can link
+to libgui_vendor.
+
+CRs-Fixed: 2258968
+Change-Id: I777eebffc405c8bb74aab270e9f272c806501458
+Signed-off-by: Volodymyr Zhdanov <wight554@gmail.com>
+Signed-off-by: SamarV-121 <samarvispute121@pm.me>
+---
+ libs/gui/Android.bp | 19 +++++++++++++++----
+ 1 file changed, 15 insertions(+), 4 deletions(-)
+
+diff --git a/libs/gui/Android.bp b/libs/gui/Android.bp
+index 2117c987e4..ae42e71e76 100644
+--- a/libs/gui/Android.bp
++++ b/libs/gui/Android.bp
+@@ -310,10 +310,8 @@ cc_defaults {
+     ],
+ }
+ 
+-cc_library_shared {
+-    name: "libgui",
+-    vendor_available: true,
+-    double_loadable: true,
++cc_defaults {
++    name: "libgui_defaults",
+ 
+     defaults: [
+         "libgui-defaults",
+@@ -514,4 +512,17 @@ cc_library_static {
+     ],
+ }
+ 
++cc_library_shared {
++    name: "libgui",
++    double_loadable: true,
++    vendor_available: true,
++    defaults: ["libgui_defaults"]
++}
++
++cc_library_shared {
++    name: "libgui_vendor",
++    vendor: true,
++    defaults: ["libgui_defaults"]
++}
++
+ subdirs = ["tests"]
+-- 
+2.39.5
+

@@ -1,0 +1,53 @@
+From 5fedf820b6db926dc8d7a664729984b18c50042f Mon Sep 17 00:00:00 2001
+From: LuK1337 <priv.luk@gmail.com>
+Date: Tue, 7 Apr 2020 13:12:18 +0200
+Subject: [PATCH 3/5] sepolicy: Add sdcard_posix_contextmount_type attribute
+
+* Since we can't use contextmount_type for sdcard_posix
+  due to contextmount_type being read only by design we
+  need to declare our own attribute to bypass relabelto
+  neverallow. That way we can mount external ext4/f2fs
+  SD with sdcard_posix context and write permissions.
+
+Test: m -j selinux_policy
+Change-Id: I0dfe49cc0b34dfcce2840198843bde1272cbc61c
+---
+ private/attributes | 4 ++++
+ private/domain.te  | 2 +-
+ 2 files changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/private/attributes b/private/attributes
+index 93bf29578..8e151eb71 100644
+--- a/private/attributes
++++ b/private/attributes
+@@ -28,6 +28,9 @@ attribute sdk_sandbox_current;
+ # Common to adbd and adbd_tradeinmode.
+ attribute adbd_common;
+ 
++# All types used for sdcard_posix context= mounts.
++attribute sdcard_posix_contextmount_type;
++
+ # Provides access to platform update services.
+ # WARNING: USING THE update_provider ATTRIBUTE WILL CAUSE CTS TO FAIL!
+ attribute update_provider;
+@@ -44,3 +47,4 @@ until_board_api(202504, `
+ until_board_api(202504, `
+     hal_attribute(hwcrypto);
+ ')
++
+diff --git a/private/domain.te b/private/domain.te
+index 269bc23d9..fc3cfefb1 100644
+--- a/private/domain.te
++++ b/private/domain.te
+@@ -763,7 +763,7 @@ neverallow { domain -recovery } rootfs:file { create write setattr relabelto app
+ 
+ # Restrict context mounts to specific types marked with
+ # the contextmount_type attribute.
+-neverallow * {fs_type -contextmount_type}:filesystem relabelto;
++neverallow * {fs_type -contextmount_type -sdcard_posix_contextmount_type}:filesystem relabelto;
+ 
+ # Ensure that context mount types are not writable, to ensure that
+ # the write to /system restriction above is not bypassed via context=
+-- 
+2.39.5
+

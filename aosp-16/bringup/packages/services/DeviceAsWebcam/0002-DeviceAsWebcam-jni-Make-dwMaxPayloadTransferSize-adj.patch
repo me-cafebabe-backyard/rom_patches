@@ -1,0 +1,71 @@
+From 259ff0d014b54247286651efc635d4aafaa4900f Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Thu, 10 Oct 2024 16:02:34 +0800
+Subject: [PATCH 2/2] DeviceAsWebcam: jni: Make dwMaxPayloadTransferSize
+ adjustable via property
+
+* Thanks to nift4 for inspiration, this needs to be overridden on some devices.
+
+Change-Id: Ic88f950ecdc27e8c4efea099a057518cbf504a85
+---
+ interface/jni/Android.bp      |  1 +
+ interface/jni/UVCProvider.cpp | 18 +++++++++++++++++-
+ 2 files changed, 18 insertions(+), 1 deletion(-)
+
+diff --git a/interface/jni/Android.bp b/interface/jni/Android.bp
+index 2af0cb2..25ec0e3 100644
+--- a/interface/jni/Android.bp
++++ b/interface/jni/Android.bp
+@@ -8,6 +8,7 @@ cc_library_shared {
+     stl: "c++_static",
+     shared_libs: [
+         "libandroid",
++        "libbase",
+         "libjpeg",
+         "liblog",
+         "libmediandk",
+diff --git a/interface/jni/UVCProvider.cpp b/interface/jni/UVCProvider.cpp
+index 3ff61bc..0710869 100644
+--- a/interface/jni/UVCProvider.cpp
++++ b/interface/jni/UVCProvider.cpp
+@@ -33,12 +33,16 @@
+ #include <SdkFrameProvider.h>
+ #include <UVCProvider.h>
+ #include <Utils.h>
++#include <android-base/properties.h>
+ #include <log/log.h>
+ 
++using android::base::GetUintProperty;
++
+ constexpr int MAX_EVENTS = 10;
+ constexpr uint32_t NUM_BUFFERS_ALLOC = 4;
+ constexpr uint32_t USB_PAYLOAD_TRANSFER_SIZE = 3072;
+ constexpr char kDeviceGlobPattern[] = "/dev/video*";
++constexpr char kUsbPayloadTransferSizeProperty[] = "vendor.usb.uvc.payload_transfer_size";
+ 
+ // Taken from UVC UAPI. The kernel handles mapping these back to actual USB interfaces set up by the
+ // UVC gadget function.
+@@ -512,7 +516,19 @@ void UVCProvider::UVCDevice::setStreamingControl(struct uvc_streaming_control* s
+     streamingControl->bFormatIndex = chosenFormatIndex;
+     streamingControl->bFrameIndex = chosenFrameIndex;
+     streamingControl->dwFrameInterval = reqFrameInterval;
+-    streamingControl->dwMaxPayloadTransferSize = USB_PAYLOAD_TRANSFER_SIZE;
++    streamingControl->dwMaxPayloadTransferSize = GetUintProperty(kUsbPayloadTransferSizeProperty,
++                                                                 USB_PAYLOAD_TRANSFER_SIZE);
++    switch (streamingControl->dwMaxPayloadTransferSize) {
++        case 1024:
++        case 2048:
++        case 3072:
++            break;
++        default:
++            ALOGE("%s Invalid dwMaxPayloadTransferSize from property: %d",
++                  __FUNCTION__, streamingControl->dwMaxPayloadTransferSize);
++            streamingControl->dwMaxPayloadTransferSize = USB_PAYLOAD_TRANSFER_SIZE;
++            break;
++    }
+     switch (chosenFormat.fcc) {
+         case V4L2_PIX_FMT_YUYV:
+         case V4L2_PIX_FMT_MJPEG:
+-- 
+2.39.5
+

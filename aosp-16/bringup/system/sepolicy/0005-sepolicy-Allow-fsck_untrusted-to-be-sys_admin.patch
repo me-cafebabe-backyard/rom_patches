@@ -1,0 +1,28 @@
+From 5ce399d69fc5b6e7c8f9376b3df48cf58300e15c Mon Sep 17 00:00:00 2001
+From: someone5678 <someone5678@users.noreply.github.com>
+Date: Sat, 7 Oct 2023 14:35:41 +0900
+Subject: [PATCH 5/5] sepolicy: Allow fsck_untrusted to be sys_admin
+
+* Needed for custom filesystem support
+
+Change-Id: I98a6116cf2a3c06eb2de599bbaf1a77373fa0a23
+---
+ private/fsck_untrusted.te | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/private/fsck_untrusted.te b/private/fsck_untrusted.te
+index 4b55a57e5..964a4c743 100644
+--- a/private/fsck_untrusted.te
++++ b/private/fsck_untrusted.te
+@@ -52,7 +52,7 @@ neverallow fsck_untrusted { file_type fs_type -fsck_exec }:file entrypoint;
+ # fsck_untrusted should never have sys_admin permissions. If it requires sys_admin
+ # permissions, that is a code mistake that needs to be fixed, not a permission that
+ # should be granted. Same with setgid and setuid.
+-neverallow fsck_untrusted self:global_capability_class_set { setgid setuid sys_admin };
++neverallow fsck_untrusted self:global_capability_class_set { setgid setuid };
+ 
+ ###
+ ### dontaudit rules
+-- 
+2.39.5
+
