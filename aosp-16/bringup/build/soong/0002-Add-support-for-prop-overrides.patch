@@ -1,7 +1,7 @@
 From 3aeee6ba2a86b21b897ade353910fbf887e133d6 Mon Sep 17 00:00:00 2001
 From: Luca Stefani <luca.stefani.ge1@gmail.com>
 Date: Sat, 7 Sep 2024 11:49:03 +0200
-Subject: [PATCH 2/3] Add support for prop overrides
+Subject: [PATCH 2/5] Add support for prop overrides
 
 The format of the overrides is KEY=VALUE
 Where KEY is one of the dict keys used in config

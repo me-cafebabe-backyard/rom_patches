@@ -1,0 +1,59 @@
+From 64ac5059efc8c1d114b1a6ed6a004b09e0f2b035 Mon Sep 17 00:00:00 2001
+From: Luca Stefani <luca.stefani.ge1@gmail.com>
+Date: Fri, 11 Apr 2025 13:57:17 +0200
+Subject: [PATCH 5/5] install_symlink: Make symlink target configurable
+
+Can be useful on trees supporting multiple QCOM families where
+firmware may have different mount points and there's a generic
+installed symlink pointing to the correct path.
+
+Test: m
+Change-Id: Id2c5c62e8e6f7cc8326ba213ddaacb5e4e2c13e6
+---
+ etc/install_symlink.go | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/etc/install_symlink.go b/etc/install_symlink.go
+index aa33445e12..31da3f653b 100644
+--- a/etc/install_symlink.go
++++ b/etc/install_symlink.go
+@@ -18,6 +18,8 @@ import (
+ 	"android/soong/android"
+ 	"path/filepath"
+ 	"strings"
++
++	"github.com/google/blueprint/proptools"
+ )
+ 
+ func init() {
+@@ -52,7 +54,7 @@ type InstallSymlinkProperties struct {
+ 	// properties.
+ 	Installed_location string
+ 	// The target of the symlink, aka where the symlink points.
+-	Symlink_target string
++	Symlink_target proptools.Configurable[string]
+ }
+ 
+ type InstallSymlink struct {
+@@ -64,7 +66,8 @@ type InstallSymlink struct {
+ }
+ 
+ func (m *InstallSymlink) GenerateAndroidBuildActions(ctx android.ModuleContext) {
+-	if filepath.Clean(m.properties.Symlink_target) != m.properties.Symlink_target {
++	symlink_target := m.properties.Symlink_target.GetOrDefault(ctx, "")
++	if filepath.Clean(symlink_target) != symlink_target {
+ 		ctx.PropertyErrorf("symlink_target", "Should be a clean filepath")
+ 		return
+ 	}
+@@ -83,7 +86,7 @@ func (m *InstallSymlink) GenerateAndroidBuildActions(ctx android.ModuleContext)
+ 
+ 	name := filepath.Base(m.properties.Installed_location)
+ 	installDir := android.PathForModuleInstall(ctx, filepath.Dir(m.properties.Installed_location))
+-	m.installedPath = ctx.InstallAbsoluteSymlink(installDir, name, m.properties.Symlink_target)
++	m.installedPath = ctx.InstallAbsoluteSymlink(installDir, name, symlink_target)
+ }
+ 
+ func (m *InstallSymlink) AndroidMkEntries() []android.AndroidMkEntries {
+-- 
+2.39.5
+

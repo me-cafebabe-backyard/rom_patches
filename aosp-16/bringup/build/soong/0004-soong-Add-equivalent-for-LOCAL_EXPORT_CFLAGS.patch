@@ -1,0 +1,66 @@
+From 4c4cfb512c2b589d721f8e06f31b2370a02ab69e Mon Sep 17 00:00:00 2001
+From: Alessandro Astone <ales.astone@gmail.com>
+Date: Thu, 1 Oct 2020 12:59:27 +0200
+Subject: [PATCH 4/5] soong: Add equivalent for LOCAL_EXPORT_CFLAGS
+
+Co-authored-by: Michael Bestas <mkbestas@lineageos.org>
+Change-Id: I1802648b3a624aacf699beccb710fbee40425f16
+---
+ androidmk/androidmk/android.go | 7 +++++++
+ cc/library.go                  | 8 ++++++++
+ 2 files changed, 15 insertions(+)
+
+diff --git a/androidmk/androidmk/android.go b/androidmk/androidmk/android.go
+index 6485cc51df..1cc437d662 100644
+--- a/androidmk/androidmk/android.go
++++ b/androidmk/androidmk/android.go
+@@ -760,6 +760,13 @@ func cflags(ctx variableAssignmentContext) error {
+ 	return includeVariableNow(bpVariable{"cflags", bpparser.ListType}, ctx)
+ }
+ 
++func exportCflags(ctx variableAssignmentContext) error {
++	// The Soong replacement for EXPORT_CFLAGS doesn't need the same extra escaped quotes that were present in Make
++	ctx.mkvalue = ctx.mkvalue.Clone()
++	ctx.mkvalue.ReplaceLiteral(`\"`, `"`)
++	return includeVariableNow(bpVariable{"export_cflags", bpparser.ListType}, ctx)
++}
++
+ func protoOutputParams(ctx variableAssignmentContext) error {
+ 	// The Soong replacement for LOCAL_PROTO_JAVA_OUTPUT_PARAMS doesn't need ","
+ 	ctx.mkvalue = ctx.mkvalue.Clone()
+diff --git a/cc/library.go b/cc/library.go
+index 5299771ca6..7b854864f7 100644
+--- a/cc/library.go
++++ b/cc/library.go
+@@ -203,6 +203,9 @@ type FlagExporterProperties struct {
+ 	// using -isystem for this module and any module that links against this module.
+ 	Export_system_include_dirs []string `android:"arch_variant,variant_prepend"`
+ 
++	// list of plain cc flags to be used for any module that links against this module.
++	Export_cflags proptools.Configurable[[]string] `android:"arch_variant"`
++
+ 	Target struct {
+ 		Vendor, Product struct {
+ 			// list of exported include directories, like
+@@ -327,6 +330,10 @@ func (f *flagExporter) exportIncludes(ctx ModuleContext) {
+ 	f.systemDirs = append(f.systemDirs, android.PathsForModuleSrc(ctx, f.Properties.Export_system_include_dirs)...)
+ }
+ 
++func (f *flagExporter) exportExtraFlags(ctx ModuleContext) {
++	f.flags = append(f.flags, f.Properties.Export_cflags.GetOrDefault(ctx, nil)...)
++}
++
+ // exportIncludesAsSystem registers the include directories and system include directories to be
+ // exported transitively both as system include directories to modules depending on this module.
+ func (f *flagExporter) exportIncludesAsSystem(ctx ModuleContext) {
+@@ -1757,6 +1764,7 @@ func (library *libraryDecorator) link(ctx ModuleContext,
+ 
+ 	// Export include paths and flags to be propagated up the tree.
+ 	library.exportIncludes(ctx)
++	library.exportExtraFlags(ctx)
+ 	library.reexportDirs(deps.ReexportedDirs...)
+ 	library.reexportSystemDirs(deps.ReexportedSystemDirs...)
+ 	library.reexportFlags(deps.ReexportedFlags...)
+-- 
+2.39.5
+

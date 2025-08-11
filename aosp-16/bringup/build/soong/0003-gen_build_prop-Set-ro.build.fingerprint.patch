@@ -1,7 +1,7 @@
 From 4bf7419e921e1d38563222d4325e86de2556264c Mon Sep 17 00:00:00 2001
 From: Michael Bestas <mkbestas@gmail.com>
 Date: Thu, 17 Oct 2024 06:10:07 +0300
-Subject: [PATCH 3/3] gen_build_prop: Set ro.build.fingerprint
+Subject: [PATCH 3/5] gen_build_prop: Set ro.build.fingerprint
 
 Change-Id: I0e40b6f8154f8bc9a7b8450ecb4af4c44ab3d46d
 ---
