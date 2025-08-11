@@ -1,4 +1,4 @@
-From 8a885ebbf187e5abd59c857ddd07fb3b32bd5c7f Mon Sep 17 00:00:00 2001
+From c45750c25a3adb344b428dc0ac67a1a5c9d78c56 Mon Sep 17 00:00:00 2001
 From: Yumi Yukimura <me.cafebabe@gmail.com>
 Date: Fri, 14 Mar 2025 05:14:08 +0800
 Subject: [PATCH 2/2] soong: Treat vendor/extra* as release-keys
@@ -23,7 +23,7 @@ index 3d95ab59a7..18bcc1d569 100644
  	}
  	return "dev-keys"
 diff --git a/scripts/gen_build_prop.py b/scripts/gen_build_prop.py
-index 0903c37551..e9c0b147ae 100644
+index 4132416c14..5c70d03ab9 100644
 --- a/scripts/gen_build_prop.py
 +++ b/scripts/gen_build_prop.py
 @@ -43,7 +43,7 @@ def get_build_keys(product_config):

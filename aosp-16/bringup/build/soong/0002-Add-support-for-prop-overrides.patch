@@ -1,4 +1,4 @@
-From b4dc4f540063b0c3d45f8ffd36817f70074ce74e Mon Sep 17 00:00:00 2001
+From 3aeee6ba2a86b21b897ade353910fbf887e133d6 Mon Sep 17 00:00:00 2001
 From: Luca Stefani <luca.stefani.ge1@gmail.com>
 Date: Sat, 7 Sep 2024 11:49:03 +0200
 Subject: [PATCH 2/3] Add support for prop overrides
@@ -23,11 +23,11 @@ Change-Id: Ib44a3bb573d08d492acc092e104cb4f687f3b168
  1 file changed, 20 insertions(+)
 
 diff --git a/scripts/gen_build_prop.py b/scripts/gen_build_prop.py
-index e9c0b147ae..57af957500 100644
+index cef7241fcb..135f375942 100644
 --- a/scripts/gen_build_prop.py
 +++ b/scripts/gen_build_prop.py
-@@ -47,6 +47,24 @@ def get_build_keys(product_config):
-     return "release-keys"
+@@ -45,6 +45,24 @@ def get_build_keys(product_config):
+     return "test-keys"
    return "dev-keys"
  
 +def override_config(config):
@@ -51,7 +51,7 @@ index e9c0b147ae..57af957500 100644
  def parse_args():
    """Parse commandline arguments."""
    parser = argparse.ArgumentParser()
-@@ -104,6 +122,8 @@ def parse_args():
+@@ -100,6 +118,8 @@ def parse_args():
    if args.build_thumbprint_file:
      config["BuildThumbprint"] = args.build_thumbprint_file.read().strip()
  
