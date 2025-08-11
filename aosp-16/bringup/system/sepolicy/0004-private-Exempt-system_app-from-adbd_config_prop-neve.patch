@@ -1,7 +1,7 @@
-From d8355bcc79967d88a582805acf94a86ac4b250d1 Mon Sep 17 00:00:00 2001
+From f37348503f7567c01629f189e8cbda969942b6f0 Mon Sep 17 00:00:00 2001
 From: Nolen Johnson <johnsonnolen@gmail.com>
 Date: Sun, 17 Jul 2022 21:33:52 -0400
-Subject: [PATCH 4/5] private: Exempt system_app from adbd_config_prop
+Subject: [PATCH 4/6] private: Exempt system_app from adbd_config_prop
  neverallow
 
 * ATV can't use the newer mobile method for ADB over Wi-Fi

@@ -1,0 +1,29 @@
+From 3dd06d376df1bbf50f43d29a46df10750c88ba4f Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Mon, 11 Aug 2025 09:53:12 +0000
+Subject: [PATCH 6/6] sepolicy: private: Exempt hal_drm and hal_widevine_system
+ from vendor_file_type neverallow
+
+Violated by device/qcom/sepolicy-legacy-um/legacy/vendor/common/hal_drm.te:33
+
+Change-Id: I4e81d40c84d439ea6b128abd4bf0820332d37e97
+---
+ private/domain.te | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/private/domain.te b/private/domain.te
+index fc3cfefb1..6c1e4f7a3 100644
+--- a/private/domain.te
++++ b/private/domain.te
+@@ -2110,6 +2110,8 @@ full_treble_only(`
+     -ueventd # reads /vendor/ueventd.rc
+     -vold # loads incremental fs driver
+     userdebug_or_eng(`-overlay_remounter')
++    -hal_drm
++    -hal_widevine_system
+   } {
+     vendor_file_type
+     -same_process_hal_file
+-- 
+2.39.5
+

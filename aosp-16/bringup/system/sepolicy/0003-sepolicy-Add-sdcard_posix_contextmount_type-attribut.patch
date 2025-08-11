@@ -1,7 +1,7 @@
-From 5fedf820b6db926dc8d7a664729984b18c50042f Mon Sep 17 00:00:00 2001
+From 2c8de926dff17aa74e500f431958d5028b21b999 Mon Sep 17 00:00:00 2001
 From: LuK1337 <priv.luk@gmail.com>
 Date: Tue, 7 Apr 2020 13:12:18 +0200
-Subject: [PATCH 3/5] sepolicy: Add sdcard_posix_contextmount_type attribute
+Subject: [PATCH 3/6] sepolicy: Add sdcard_posix_contextmount_type attribute
 
 * Since we can't use contextmount_type for sdcard_posix
   due to contextmount_type being read only by design we
