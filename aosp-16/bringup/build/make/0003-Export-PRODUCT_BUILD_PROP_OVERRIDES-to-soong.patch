@@ -1,0 +1,26 @@
+From 91ff7e1ecb20c8d129e3e25869c36ffe2727e595 Mon Sep 17 00:00:00 2001
+From: Luca Stefani <luca.stefani.ge1@gmail.com>
+Date: Sat, 7 Sep 2024 11:50:02 +0200
+Subject: [PATCH 3/4] Export PRODUCT_BUILD_PROP_OVERRIDES to soong
+
+Change-Id: I6b6da3ef5b76cec5274f58b9337974d61771cecd
+---
+ core/soong_extra_config.mk | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/core/soong_extra_config.mk b/core/soong_extra_config.mk
+index 8eee50ae00..bbeef99c71 100644
+--- a/core/soong_extra_config.mk
++++ b/core/soong_extra_config.mk
+@@ -45,6 +45,8 @@ $(call add_json_list, PRODUCT_ODM_PROPERTIES,            $(call collapse-prop-pa
+ $(call add_json_list, PRODUCT_PROPERTY_OVERRIDES,        $(call collapse-prop-pairs,PRODUCT_PROPERTY_OVERRIDES))
+ $(call add_json_list, PRODUCT_DEFAULT_PROPERTY_OVERRIDES,        $(call collapse-prop-pairs,PRODUCT_DEFAULT_PROPERTY_OVERRIDES))
+ 
++$(call add_json_list, PRODUCT_BUILD_PROP_OVERRIDES,      $(call collapse-prop-pairs,PRODUCT_BUILD_PROP_OVERRIDES))
++
+ $(call add_json_str, BootloaderBoardName, $(TARGET_BOOTLOADER_BOARD_NAME))
+ 
+ $(call add_json_bool, SdkBuild, $(filter sdk sdk_addon,$(MAKECMDGOALS)))
+-- 
+2.39.5
+
