@@ -1,7 +1,7 @@
-From a5fa6935331e476b42e385f1c611bdbd74a51821 Mon Sep 17 00:00:00 2001
+From 3c6642b6a326aed7f0bfe194ea38e179937057de Mon Sep 17 00:00:00 2001
 From: Yumi Yukimura <me.cafebabe@gmail.com>
 Date: Wed, 19 Mar 2025 23:33:01 +0800
-Subject: [PATCH 2/2] compatibility_matrices: Bring HIDL Radio entries to FCM 7
+Subject: [PATCH 2/3] compatibility_matrices: Bring HIDL Radio entries to FCM 7
 
 * For radiocompat to use.
 

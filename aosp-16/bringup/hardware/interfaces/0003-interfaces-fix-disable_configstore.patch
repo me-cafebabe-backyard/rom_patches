@@ -1,0 +1,27 @@
+From 49431d1011271b9ff13852d4880289ca32eb7d8c Mon Sep 17 00:00:00 2001
+From: Dmitrii <bankersenator@gmail.com>
+Date: Fri, 13 Jun 2025 23:22:16 +0000
+Subject: [PATCH 3/3] interfaces: fix disable_configstore
+
+make it installable again
+Change-Id: I44b5dbba49558016089abf68d8c957d2daf827af
+Signed-off-by: Dmitrii <bankersenator@gmail.com>
+---
+ configstore/1.1/default/Android.bp | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/configstore/1.1/default/Android.bp b/configstore/1.1/default/Android.bp
+index 34470ade4c..7e85db8591 100644
+--- a/configstore/1.1/default/Android.bp
++++ b/configstore/1.1/default/Android.bp
+@@ -135,7 +135,6 @@ prebuilt_etc {
+ // disable configstore
+ cc_binary {
+     name: "disable_configstore",
+-    installable: false,
+     srcs: ["disable_configstore.cpp"],
+     overrides: ["android.hardware.configstore@1.1-service"],
+     vendor: true,
+-- 
+2.39.5
+
