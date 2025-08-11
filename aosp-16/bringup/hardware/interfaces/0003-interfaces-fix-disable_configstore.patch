@@ -1,7 +1,7 @@
 From 49431d1011271b9ff13852d4880289ca32eb7d8c Mon Sep 17 00:00:00 2001
 From: Dmitrii <bankersenator@gmail.com>
 Date: Fri, 13 Jun 2025 23:22:16 +0000
-Subject: [PATCH 3/3] interfaces: fix disable_configstore
+Subject: [PATCH 3/4] interfaces: fix disable_configstore
 
 make it installable again
 Change-Id: I44b5dbba49558016089abf68d8c957d2daf827af
