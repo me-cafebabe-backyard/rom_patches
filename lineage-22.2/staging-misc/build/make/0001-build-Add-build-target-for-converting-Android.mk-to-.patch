@@ -1,0 +1,411 @@
+From ccbf4a29dcd8e286f75ccddd7121448ee2bb37b8 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Tue, 12 Aug 2025 14:23:50 +0800
+Subject: [PATCH] build: Add build target for converting Android.mk to
+ Android.bp
+
+Usage:
+1. Set `LOCAL_CONVERT_TO_ANDROIDBP := true` before the first module
+   which you want to convert
+2. Set `LOCAL_CONVERT_TO_ANDROIDBP:=` after the last module which you
+   want to convert (important! or it'll convert unwanted modules)
+3. Execute `m convert-to-androidbp`
+4. Verify all the generated Android_bp files
+5. Execute `m convert-to-androidbp-apply`
+
+Change-Id: Ib6c4095a21d890ee235884dfd8e8d9ad9235c1c1
+---
+ core/base_rules.mk                            |   4 +
+ core/clear_vars.mk                            |   3 +
+ core/config.mk                                |   2 +
+ core/definitions.mk                           |   1 +
+ core/dump_androidmk.mk                        |  88 +++++++++++
+ core/main.mk                                  |  15 ++
+ core/prebuilt.mk                              |   5 +
+ ...droidmk_wanted_conditional_vars_prefix.txt |  21 +++
+ core/soong_androidmk_wanted_vars.txt          | 145 ++++++++++++++++++
+ 9 files changed, 284 insertions(+)
+ create mode 100644 core/dump_androidmk.mk
+ create mode 100644 core/soong_androidmk_wanted_conditional_vars_prefix.txt
+ create mode 100644 core/soong_androidmk_wanted_vars.txt
+
+diff --git a/core/base_rules.mk b/core/base_rules.mk
+index 5363e0fbf9..1bfd2c89e6 100644
+--- a/core/base_rules.mk
++++ b/core/base_rules.mk
+@@ -14,6 +14,10 @@
+ # limitations under the License.
+ #
+ 
++ifeq ($(LOCAL_CONVERT_TO_ANDROIDBP),true)
++include $(DUMP_ANDROIDMK)
++endif
++
+ # Catch users that directly include base_rules.mk
+ $(call record-module-type,base_rules)
+ 
+diff --git a/core/clear_vars.mk b/core/clear_vars.mk
+index fed19e6d45..eeafecb6d9 100644
+--- a/core/clear_vars.mk
++++ b/core/clear_vars.mk
+@@ -224,6 +224,7 @@ LOCAL_PROTO_JAVA_OUTPUT_PARAMS:=
+ LOCAL_PROVIDES_USES_LIBRARY:=
+ LOCAL_R8_FLAG_FILES:=
+ LOCAL_RECORDED_MODULE_TYPE:=
++LOCAL_RECORDED_MODULE_TYPE_IS:=
+ LOCAL_RENDERSCRIPT_CC:=
+ LOCAL_RENDERSCRIPT_COMPATIBILITY:=
+ LOCAL_RENDERSCRIPT_FLAGS:=
+@@ -488,6 +489,8 @@ non_system_module :=
+ 
+ module_license_metadata :=
+ 
++LOCAL_DUMP_ANDROIDMK_FINISHED :=
++
+ # Trim MAKEFILE_LIST so that $(call my-dir) doesn't need to
+ # iterate over thousands of entries every time.
+ # Leave the current makefile to make sure we don't break anything
+diff --git a/core/config.mk b/core/config.mk
+index d60c0b90df..4ef82bd0f1 100644
+--- a/core/config.mk
++++ b/core/config.mk
+@@ -218,6 +218,8 @@ BUILD_COMBOS :=$= $(BUILD_SYSTEM)/combo
+ 
+ CLEAR_VARS :=$= $(BUILD_SYSTEM)/clear_vars.mk
+ 
++DUMP_ANDROIDMK :=$= $(BUILD_SYSTEM)/dump_androidmk.mk
++
+ BUILD_HOST_STATIC_LIBRARY :=$= $(BUILD_SYSTEM)/host_static_library.mk
+ BUILD_HOST_SHARED_LIBRARY :=$= $(BUILD_SYSTEM)/host_shared_library.mk
+ BUILD_STATIC_LIBRARY :=$= $(BUILD_SYSTEM)/static_library.mk
+diff --git a/core/definitions.mk b/core/definitions.mk
+index 686af53883..b8e1a93aa9 100644
+--- a/core/definitions.mk
++++ b/core/definitions.mk
+@@ -3645,6 +3645,7 @@ $(strip $(if $(LOCAL_RECORDED_MODULE_TYPE),,
+   $(if $(filter-out $(SOONG_ANDROID_MK),$(LOCAL_MODULE_MAKEFILE)),
+     $(if $(filter $(1),$(STATS.MODULE_TYPE)),
+       $(eval LOCAL_RECORDED_MODULE_TYPE := true)
++      $(eval LOCAL_RECORDED_MODULE_TYPE_IS := $(1))
+         $(eval STATS.MODULE_TYPE.$(1) += 1),
+       $(error Invalid module type: $(1))))))
+ endef
+diff --git a/core/dump_androidmk.mk b/core/dump_androidmk.mk
+new file mode 100644
+index 0000000000..90a1ac8f04
+--- /dev/null
++++ b/core/dump_androidmk.mk
+@@ -0,0 +1,88 @@
++ifneq ($(LOCAL_DUMP_ANDROIDMK_FINISHED),true)
++
++ifeq ($(LOCAL_RECORDED_MODULE_TYPE_IS),)
++$(warning LOCAL_RECORDED_MODULE_TYPE_IS is empty for module $(LOCAL_MODULE))
++endif
++
++_out := $(LOCAL_PATH)/Android_mk_dump
++
++# Only if it's the first time processing this Android.mk
++ifeq ($(filter $(LOCAL_PATH),$(ALL_DUMP_ANDROIDMK_LOCAL_PATH)),)
++# Override the output file with header
++$(shell echo 'LOCAL_PATH := $$(call my-dir)' > $(_out))
++$(shell echo >> $(_out))
++ALL_DUMP_ANDROIDMK_LOCAL_PATH += $(LOCAL_PATH)
++$(warning Dump Android.mk in $(LOCAL_PATH))
++endif
++
++# Beginning of module
++$(shell echo 'include $$(CLEAR_VARS)' >> $(_out))
++
++BAK_LOCAL_C_INCLUDES := $(LOCAL_C_INCLUDES)
++LOCAL_C_INCLUDES :=
++# Process LOCAL_C_INCLUDES. If the path is present, remove "../"; If absent, print warning and skip it.
++$(foreach inc,$(BAK_LOCAL_C_INCLUDES),\
++	$(if $(wildcard $(inc)),\
++		$(eval LOCAL_C_INCLUDES += $(shell realpath $(inc) --relative-to=$$ANDROID_BUILD_TOP))\
++	,\
++		$(warning Include path $(inc) is missing for module $(LOCAL_MODULE))\
++	))
++
++# Clear variables set by clear_vars.mk
++ifeq ($(LOCAL_CXX_STL),default)
++BAK_LOCAL_CXX_STL := $(LOCAL_CXX_STL)
++LOCAL_CXX_STL :=
++endif
++ifeq ($(LOCAL_SYSTEM_SHARED_LIBRARIES),none)
++BAK_LOCAL_SYSTEM_SHARED_LIBRARIES := $(LOCAL_SYSTEM_SHARED_LIBRARIES)
++LOCAL_SYSTEM_SHARED_LIBRARIES :=
++endif
++
++_conditional_vars :=
++# Collect a list of variables like LOCAL_SRC_FILES_arm64
++$(foreach prefix,$(shell cat $(BUILD_SYSTEM)/soong_androidmk_wanted_conditional_vars_prefix.txt),\
++	$(foreach suffix,32 64 arm arm64 x86 x86_64,\
++		$(eval _conditional_vars += $(prefix)$(suffix))))
++
++# Dump the variable to output if it's not empty
++$(foreach var,$(shell cat $(BUILD_SYSTEM)/soong_androidmk_wanted_vars.txt) $(_conditional_vars),\
++	$(eval val := $(subst ',,$(strip $($(var)))))\
++	$(if $(val),\
++		$(shell echo '$(var) := $(val)' >> $(_out))))
++
++# Restore modified variables
++LOCAL_C_INCLUDES := $(BAK_LOCAL_C_INCLUDES)
++BAK_LOCAL_C_INCLUDES :=
++ifneq ($(BAK_LOCAL_CXX_STL),)
++LOCAL_CXX_STL := $(BAK_LOCAL_CXX_STL)
++BAK_LOCAL_CXX_STL :=
++endif
++ifneq ($(BAK_LOCAL_SYSTEM_SHARED_LIBRARIES),)
++LOCAL_SYSTEM_SHARED_LIBRARIES := $(BAK_LOCAL_SYSTEM_SHARED_LIBRARIES)
++BAK_LOCAL_SYSTEM_SHARED_LIBRARIES :=
++endif
++
++# End of module
++$(shell echo 'include $$(BUILD_$(LOCAL_RECORDED_MODULE_TYPE_IS))' >> $(_out))
++$(shell echo >> $(_out))
++
++# Replace full paths with variables
++$(shell sed -i 's|$(LOCAL_PATH)|$$(LOCAL_PATH)|g' $(_out))
++$(shell sed -i 's|$(TARGET_OUT)|$$(TARGET_OUT)|g' $(_out))
++
++$(foreach dir,ROOT RECOVERY_ROOT RECOVERY RAMDISK VENDOR_RAMDISK SYSTEM_DLKM,\
++	$(shell sed -i 's|$(TARGET_$(dir)_OUT)|$$(TARGET_$(dir)_OUT)|g' $(_out)))
++
++$(foreach dir,SYSTEM_EXT PRODUCT ODM VENDOR VENDOR_DLKM,\
++	$(shell sed -i 's|$(TARGET_OUT_$(dir))|$$(TARGET_OUT_$(dir))|g' $(_out)))
++
++# Clear the locally used variables which we've set
++_conditional_vars:=
++_out:=
++inc:=
++val:=
++var:=
++
++# Avoid processing the same module again
++LOCAL_DUMP_ANDROIDMK_FINISHED := true
++endif # !LOCAL_DUMP_ANDROIDMK_FINISHED
+diff --git a/core/main.mk b/core/main.mk
+index 137f68a578..989609e6f7 100644
+--- a/core/main.mk
++++ b/core/main.mk
+@@ -304,8 +304,23 @@ subdir_makefiles += $(SOONG_OUT_DIR)/late-$(TARGET_PRODUCT)$(COVERAGE_SUFFIX).mk
+ subdir_makefiles_total := $(words int $(subdir_makefiles) post finish)
+ .KATI_READONLY := subdir_makefiles_total
+ 
++ALL_DUMP_ANDROIDMK_LOCAL_PATH :=
++
+ $(foreach mk,$(subdir_makefiles),$(info [$(call inc_and_print,subdir_makefiles_inc)/$(subdir_makefiles_total)] including $(mk) ...)$(eval include $(mk)))
+ 
++.PHONY: convert-to-androidbp
++convert-to-androidbp: $(HOST_OUT_EXECUTABLES)/androidmk
++	$(foreach lp,$(ALL_DUMP_ANDROIDMK_LOCAL_PATH),\
++		echo Convert Android.mk to Android.bp in $(lp) &&\
++		$(HOST_OUT_EXECUTABLES)/androidmk $(lp)/Android_mk_dump > $(lp)/Android_bp &&) true
++
++.PHONY: convert-to-androidbp-apply
++convert-to-androidbp-apply: convert-to-androidbp
++	$(foreach lp,$(ALL_DUMP_ANDROIDMK_LOCAL_PATH),\
++		echo Apply conversion from Android.mk to Android.bp in $(lp) &&\
++		cat $(lp)/Android_bp >> $(lp)/Android.bp &&\
++		rm $(lp)/Android.mk $(lp)/Android_mk_dump $(lp)/Android_bp &&) true
++
+ # Build bootloader.img/radio.img, and unpack the partitions.
+ -include vendor/google_devices/$(TARGET_SOC)/prebuilts/misc_bins/update_bootloader_radio_image.mk
+ 
+diff --git a/core/prebuilt.mk b/core/prebuilt.mk
+index 4512cd9e8a..ff2fb10049 100644
+--- a/core/prebuilt.mk
++++ b/core/prebuilt.mk
+@@ -7,6 +7,11 @@
+ ###########################################################
+ $(call record-module-type,PREBUILT)
+ 
++# Include $(DUMP_ANDROIDMK) early to avoid LOCAL_SRC_FILES getting cleared
++ifeq ($(LOCAL_CONVERT_TO_ANDROIDBP),true)
++include $(DUMP_ANDROIDMK)
++endif
++
+ ifdef LOCAL_IS_HOST_MODULE
+   my_prefix := HOST_
+   LOCAL_HOST_PREFIX :=
+diff --git a/core/soong_androidmk_wanted_conditional_vars_prefix.txt b/core/soong_androidmk_wanted_conditional_vars_prefix.txt
+new file mode 100644
+index 0000000000..37311dbaa3
+--- /dev/null
++++ b/core/soong_androidmk_wanted_conditional_vars_prefix.txt
+@@ -0,0 +1,21 @@
++LOCAL_ASFLAGS_
++LOCAL_CFLAGS_
++LOCAL_C_INCLUDES_
++LOCAL_CLANG_
++LOCAL_CLANG_ASFLAGS_
++LOCAL_CLANG_CFLAGS_
++LOCAL_CLANG_CPPFLAGS_
++LOCAL_CLANG_LDFLAGS_
++LOCAL_CPPFLAGS_
++LOCAL_GENERATED_SOURCES_
++LOCAL_HEADER_LIBRARIES_
++LOCAL_LDFLAGS_
++LOCAL_LDLIBS_
++LOCAL_PACK_MODULE_RELOCATIONS_
++LOCAL_REQUIRED_MODULES_
++LOCAL_SHARED_LIBRARIES_
++LOCAL_SRC_FILES_
++LOCAL_SRC_FILES_EXCLUDE_
++LOCAL_STATIC_LIBRARIES_
++LOCAL_STRIP_MODULE_
++LOCAL_WHOLE_STATIC_LIBRARIES_
+diff --git a/core/soong_androidmk_wanted_vars.txt b/core/soong_androidmk_wanted_vars.txt
+new file mode 100644
+index 0000000000..745953dc22
+--- /dev/null
++++ b/core/soong_androidmk_wanted_vars.txt
+@@ -0,0 +1,145 @@
++LOCAL_32_BIT_ONLY
++LOCAL_AAPT_FLAGS
++LOCAL_AAPT_INCLUDE_ALL_RESOURCES
++LOCAL_ADDITIONAL_CERTIFICATES
++LOCAL_ADDITIONAL_DEPENDENCIES
++LOCAL_AIDL_INCLUDES
++LOCAL_ALLOW_UNDEFINED_SYMBOLS
++LOCAL_ANNOTATION_PROCESSOR_CLASSES
++LOCAL_ANNOTATION_PROCESSORS
++LOCAL_ARM_MODE_HACK
++LOCAL_ASFLAGS
++LOCAL_ASSET_DIR
++LOCAL_BUILT_MODULE_STEM
++LOCAL_CERTIFICATE
++LOCAL_CERTIFICATE_LINEAGE
++LOCAL_CFLAGS
++LOCAL_CHECK_ELF_FILES
++LOCAL_C_INCLUDES
++LOCAL_CLANG
++LOCAL_CLANG_ASFLAGS
++LOCAL_CLANG_CFLAGS
++LOCAL_COMPATIBILITY_SUITE
++LOCAL_COMPATIBILITY_SUPPORT_FILES
++LOCAL_CONLYFLAGS
++LOCAL_CPP_EXTENSION
++LOCAL_CPPFLAGS
++LOCAL_CTS_TEST_PACKAGE
++LOCAL_CXX_STL
++LOCAL_DEX_PREOPT
++LOCAL_DEX_PREOPT_APP_IMAGE
++LOCAL_DEX_PREOPT_GENERATE_PROFILE
++LOCAL_DEX_PREOPT_PROFILE_CLASS_LISTING
++LOCAL_DISABLE_AUTO_GENERATE_TEST_CONFIG
++LOCAL_DONT_MERGE_MANIFESTS
++LOCAL_DX_FLAGS
++LOCAL_ENFORCE_USES_LIBRARIES
++LOCAL_ERROR_PRONE_FLAGS
++LOCAL_EXPORT_C_INCLUDE_DIRS
++LOCAL_EXPORT_HEADER_LIBRARY_HEADERS
++LOCAL_EXPORT_PACKAGE_RESOURCES
++LOCAL_EXPORT_SHARED_LIBRARY_HEADERS
++LOCAL_EXPORT_STATIC_LIBRARY_HEADERS
++LOCAL_FORCE_STATIC_EXECUTABLE
++LOCAL_FULL_LIBS_MANIFEST_FILES
++LOCAL_GENERATED_SOURCES
++LOCAL_HEADER_LIBRARIES
++LOCAL_HOST_REQUIRED_MODULES
++LOCAL_INIT_RC
++LOCAL_INSTRUMENTATION_FOR
++LOCAL_IS_HOST_MODULE
++LOCAL_IS_UNIT_TEST
++LOCAL_JACK_COVERAGE_EXCLUDE_FILTER
++LOCAL_JACK_COVERAGE_INCLUDE_FILTER
++LOCAL_JACK_ENABLED
++LOCAL_JACK_FLAGS
++LOCAL_JAR_EXCLUDE_FILES
++LOCAL_JARJAR_RULES
++LOCAL_JAR_MANIFEST
++LOCAL_JAVACFLAGS
++LOCAL_JAVA_LANGUAGE_VERSION
++LOCAL_JAVA_LIBRARIES
++LOCAL_JAVA_RESOURCE_DIRS
++LOCAL_JAVA_RESOURCE_FILES
++LOCAL_JETIFIER_ENABLED
++LOCAL_JNI_SHARED_LIBRARIES
++LOCAL_LDFLAGS
++LOCAL_LDLIBS
++LOCAL_LICENSE_CONDITIONS
++LOCAL_LICENSE_KINDS
++LOCAL_MANIFEST_FILE
++LOCAL_MIN_SDK_VERSION
++LOCAL_MODULE
++LOCAL_MODULE_CLASS
++LOCAL_MODULE_HOST_OS
++LOCAL_MODULE_OWNER
++LOCAL_MODULE_PATH
++LOCAL_MODULE_RELATIVE_PATH
++LOCAL_MODULE_STEM
++LOCAL_MODULE_SUFFIX
++LOCAL_MODULE_TAGS
++LOCAL_MULTILIB
++LOCAL_NATIVE_COVERAGE
++LOCAL_NDK_STL_VARIANT
++LOCAL_NO_CRT
++LOCAL_NOTICE_FILE
++LOCAL_ODM_MODULE
++LOCAL_OPTIONAL_USES_LIBRARIES
++LOCAL_OVERRIDES_MODULES
++LOCAL_OVERRIDES_PACKAGES
++LOCAL_PACKAGE_NAME
++LOCAL_PACKAGE_SPLITS
++LOCAL_PACK_MODULE_RELOCATIONS
++LOCAL_PATH
++LOCAL_PRELINK_MODULE
++LOCAL_PRIVATE_PLATFORM_APIS
++LOCAL_PRIVILEGED_MODULE
++LOCAL_PRODUCT_MODULE
++LOCAL_PRODUCT_SERVICES_MODULE
++LOCAL_PROGUARD_ENABLED
++LOCAL_PROGUARD_FLAG_FILES
++LOCAL_PROGUARD_FLAGS
++LOCAL_PROPRIETARY_MODULE
++LOCAL_PROTOC_FLAGS
++LOCAL_PROTOC_OPTIMIZE_TYPE
++LOCAL_PROTO_JAVA_OUTPUT_PARAMS
++LOCAL_RENDERSCRIPT_FLAGS
++LOCAL_RENDERSCRIPT_INCLUDES
++LOCAL_RENDERSCRIPT_TARGET_API
++LOCAL_REPLACE_PREBUILT_APK_INSTALLED
++LOCAL_REQUIRED_MODULES
++LOCAL_RESOURCE_DIR
++LOCAL_RRO_THEME
++LOCAL_RTTI_FLAG
++LOCAL_SANITIZE
++LOCAL_SANITIZE_DIAG
++LOCAL_SANITIZE_RECOVER
++LOCAL_SDK_VERSION
++LOCAL_SHARED_ANDROID_LIBRARIES
++LOCAL_SHARED_LIBRARIES
++LOCAL_SOONG_LOGTAGS_FILES
++LOCAL_SRC_FILES
++LOCAL_SRC_FILES_EXCLUDE
++LOCAL_STATIC_ANDROID_LIBRARIES
++LOCAL_STATIC_JAVA_LIBRARIES
++LOCAL_STATIC_LIBRARIES
++LOCAL_STRIP_MODULE
++LOCAL_SYSTEM_EXT_MODULE
++LOCAL_SYSTEM_SHARED_LIBRARIES
++LOCAL_TARGET_REQUIRED_MODULES
++LOCAL_TARGET_SDK_VERSION
++LOCAL_TEST_CONFIG
++LOCAL_TIDY
++LOCAL_TIDY_CHECKS
++LOCAL_TIDY_FLAGS
++LOCAL_UNINSTALLABLE_MODULE
++LOCAL_USE_AAPT2
++LOCAL_USE_CLANG_LLD
++LOCAL_USE_EMBEDDED_DEX
++LOCAL_USE_EMBEDDED_NATIVE_LIBS
++LOCAL_USES_LIBRARIES
++LOCAL_VENDOR_MODULE
++LOCAL_VINTF_FRAGMENTS
++LOCAL_WHOLE_STATIC_LIBRARIES
++LOCAL_XTS_TEST_PACKAGE
++LOCAL_YACCFLAGS
+-- 
+2.39.5
+
