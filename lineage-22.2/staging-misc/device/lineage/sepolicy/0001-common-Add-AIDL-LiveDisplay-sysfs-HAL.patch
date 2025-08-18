@@ -1,0 +1,38 @@
+From a8f2d6ba99d0c4c47b941f403da349896ca784ab Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Sat, 16 Aug 2025 15:01:50 +0800
+Subject: [PATCH] common: Add AIDL LiveDisplay sysfs HAL
+
+Change-Id: I656e1c9b71ef2e12aa97bd6aba25b86ea3567716
+---
+ common/vendor/file_contexts                    | 1 +
+ common/vendor/hal_lineage_livedisplay_sysfs.te | 2 ++
+ 2 files changed, 3 insertions(+)
+
+diff --git a/common/vendor/file_contexts b/common/vendor/file_contexts
+index 3e72827..a90805e 100644
+--- a/common/vendor/file_contexts
++++ b/common/vendor/file_contexts
+@@ -14,6 +14,7 @@
+ /(vendor|system/vendor)/bin/hw/android\.hardware\.light-service\.lineage u:object_r:hal_light_default_exec:s0
+ 
+ # LiveDisplay HAL
++/(vendor|system/vendor)/bin/hw/vendor\.lineage\.livedisplay-service.sysfs         u:object_r:hal_lineage_livedisplay_sysfs_exec:s0
+ /(vendor|system/vendor)/bin/hw/vendor\.lineage\.livedisplay@2\.0-service-sysfs    u:object_r:hal_lineage_livedisplay_sysfs_exec:s0
+ 
+ # Power HAL
+diff --git a/common/vendor/hal_lineage_livedisplay_sysfs.te b/common/vendor/hal_lineage_livedisplay_sysfs.te
+index 0b6783c..98ef45e 100644
+--- a/common/vendor/hal_lineage_livedisplay_sysfs.te
++++ b/common/vendor/hal_lineage_livedisplay_sysfs.te
+@@ -4,5 +4,7 @@ hal_server_domain(hal_lineage_livedisplay_sysfs, hal_lineage_livedisplay)
+ type hal_lineage_livedisplay_sysfs_exec, exec_type, vendor_file_type, file_type;
+ init_daemon_domain(hal_lineage_livedisplay_sysfs)
+ 
++binder_call(hal_lineage_livedisplay_sysfs, servicemanager)
++
+ # Grant access over LiveDisplay tuneables
+ allow hal_lineage_livedisplay_sysfs sysfs_livedisplay_tuneable:file rw_file_perms;
+-- 
+2.39.5
+

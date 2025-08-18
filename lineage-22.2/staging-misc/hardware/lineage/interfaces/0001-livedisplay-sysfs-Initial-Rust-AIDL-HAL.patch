@@ -1,0 +1,508 @@
+From 5715c49a23a6d1dc2cce75380bb31b50ca17807e Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Fri, 15 Aug 2025 23:38:33 +0800
+Subject: [PATCH] livedisplay: sysfs: Initial Rust AIDL HAL
+
+Change-Id: I7ee3acfe125a5fcfcbef72904352c1b0c591d8d7
+---
+ livedisplay/aidl/sysfs/Android.bp             |  19 ++++
+ livedisplay/aidl/sysfs/adaptive_backlight.rs  |  49 +++++++++
+ .../aidl/sysfs/display_color_calibration.rs   |  40 +++++++
+ livedisplay/aidl/sysfs/livedisplay_utils.rs   |  80 ++++++++++++++
+ livedisplay/aidl/sysfs/main.rs                | 104 ++++++++++++++++++
+ livedisplay/aidl/sysfs/simple_mode.rs         |  59 ++++++++++
+ .../aidl/sysfs/sunlight_enhancement.rs        |  58 ++++++++++
+ ...endor.lineage.livedisplay-service.sysfs.rc |  23 ++++
+ 8 files changed, 432 insertions(+)
+ create mode 100644 livedisplay/aidl/sysfs/Android.bp
+ create mode 100644 livedisplay/aidl/sysfs/adaptive_backlight.rs
+ create mode 100644 livedisplay/aidl/sysfs/display_color_calibration.rs
+ create mode 100644 livedisplay/aidl/sysfs/livedisplay_utils.rs
+ create mode 100644 livedisplay/aidl/sysfs/main.rs
+ create mode 100644 livedisplay/aidl/sysfs/simple_mode.rs
+ create mode 100644 livedisplay/aidl/sysfs/sunlight_enhancement.rs
+ create mode 100644 livedisplay/aidl/sysfs/vendor.lineage.livedisplay-service.sysfs.rc
+
+diff --git a/livedisplay/aidl/sysfs/Android.bp b/livedisplay/aidl/sysfs/Android.bp
+new file mode 100644
+index 0000000..241028f
+--- /dev/null
++++ b/livedisplay/aidl/sysfs/Android.bp
+@@ -0,0 +1,19 @@
++//
++// SPDX-FileCopyrightText: The LineageOS Project
++// SPDX-License-Identifier: Apache-2.0
++//
++
++rust_binary {
++    name: "vendor.lineage.livedisplay-service.sysfs",
++    relative_install_path: "hw",
++    init_rc: ["vendor.lineage.livedisplay-service.sysfs.rc"],
++    vendor: true,
++    rustlibs: [
++        "libbinder_rs",
++        "liblog_rust",
++        "liblogger",
++        "vendor.lineage.livedisplay-V1-rust",
++    ],
++    srcs: ["*.rs"],
++    crate_root: "main.rs",
++}
+diff --git a/livedisplay/aidl/sysfs/adaptive_backlight.rs b/livedisplay/aidl/sysfs/adaptive_backlight.rs
+new file mode 100644
+index 0000000..74981f3
+--- /dev/null
++++ b/livedisplay/aidl/sysfs/adaptive_backlight.rs
+@@ -0,0 +1,49 @@
++/*
++ * SPDX-FileCopyrightText: 2025 The LineageOS Project
++ * SPDX-License-Identifier: Apache-2.0
++ */
++
++use binder::{Interface, Result as BinderResult};
++
++use vendor_lineage_livedisplay::aidl::vendor::lineage::livedisplay::IAdaptiveBacklight::IAdaptiveBacklight;
++
++use crate::livedisplay_utils;
++
++const FILE_ACL: &str = "/sys/class/graphics/fb0/acl";
++const FILE_CABC: &str = "/sys/class/graphics/fb0/cabc";
++
++pub struct AdaptiveBacklight {
++    file: Option<String>,
++}
++
++impl AdaptiveBacklight {
++    pub fn new() -> Self {
++        if livedisplay_utils::is_path_accessible(FILE_ACL) {
++            Self {
++                file: Some(FILE_ACL.to_string()),
++            }
++        } else if livedisplay_utils::is_path_accessible(FILE_CABC) {
++            Self {
++                file: Some(FILE_CABC.to_string()),
++            }
++        } else {
++            Self { file: None }
++        }
++    }
++
++    pub fn is_supported(&self) -> bool {
++        self.file.is_some()
++    }
++}
++
++impl Interface for AdaptiveBacklight {}
++
++impl IAdaptiveBacklight for AdaptiveBacklight {
++    fn getEnabled(&self) -> BinderResult<bool> {
++        livedisplay_utils::get_enabled(&self.file.clone().unwrap())
++    }
++
++    fn setEnabled(&self, enabled: bool) -> BinderResult<()> {
++        livedisplay_utils::set_enabled_bool(&self.file.clone().unwrap(), enabled)
++    }
++}
+diff --git a/livedisplay/aidl/sysfs/display_color_calibration.rs b/livedisplay/aidl/sysfs/display_color_calibration.rs
+new file mode 100644
+index 0000000..e8d4142
+--- /dev/null
++++ b/livedisplay/aidl/sysfs/display_color_calibration.rs
+@@ -0,0 +1,40 @@
++/*
++ * SPDX-FileCopyrightText: 2025 The LineageOS Project
++ * SPDX-License-Identifier: Apache-2.0
++ */
++
++use binder::{Interface, Result as BinderResult};
++
++use vendor_lineage_livedisplay::aidl::vendor::lineage::livedisplay::IDisplayColorCalibration::IDisplayColorCalibration;
++
++use crate::livedisplay_utils;
++
++const FILE_RGB: &str = "/sys/class/graphics/fb0/rgb";
++
++pub struct DisplayColorCalibration;
++
++impl DisplayColorCalibration {
++    pub fn is_supported(&self) -> bool {
++        livedisplay_utils::is_path_accessible(FILE_RGB)
++    }
++}
++
++impl Interface for DisplayColorCalibration {}
++
++impl IDisplayColorCalibration for DisplayColorCalibration {
++    fn getMaxValue(&self) -> BinderResult<i32> {
++        Ok(32768)
++    }
++
++    fn getMinValue(&self) -> BinderResult<i32> {
++        Ok(255)
++    }
++
++    fn getCalibration(&self) -> BinderResult<Vec<i32>> {
++        livedisplay_utils::get_array(FILE_RGB)
++    }
++
++    fn setCalibration(&self, rgb: &[i32]) -> BinderResult<()> {
++        livedisplay_utils::set_array(FILE_RGB, rgb)
++    }
++}
+diff --git a/livedisplay/aidl/sysfs/livedisplay_utils.rs b/livedisplay/aidl/sysfs/livedisplay_utils.rs
+new file mode 100644
+index 0000000..3ec7957
+--- /dev/null
++++ b/livedisplay/aidl/sysfs/livedisplay_utils.rs
+@@ -0,0 +1,80 @@
++/*
++ * SPDX-FileCopyrightText: 2025 The LineageOS Project
++ * SPDX-License-Identifier: Apache-2.0
++ */
++
++use binder::{Result as BinderResult, StatusCode};
++use std::fs;
++
++pub fn is_path_accessible(path: &str) -> bool {
++    fs::OpenOptions::new()
++        .read(true)
++        .write(true)
++        .open(path)
++        .is_ok()
++}
++
++pub fn get_array(path: &str) -> BinderResult<Vec<i32>> {
++    fs::read_to_string(path)
++        .map_err(|err| {
++            log::error!("Failed to read from {}: {}", path, err);
++            StatusCode::UNKNOWN_ERROR.into()
++        })
++        .and_then(|s| {
++            s.trim()
++                .trim_end_matches('\0')
++                .split_whitespace()
++                .map(|s| {
++                    s.parse::<i32>().map_err(|err| {
++                        log::error!("Failed to parse number: {}", err);
++                        StatusCode::UNKNOWN_ERROR.into()
++                    })
++                })
++                .collect()
++        })
++}
++
++pub fn get_enabled(path: &str) -> BinderResult<bool> {
++    fs::read_to_string(path)
++        .map_err(|err| {
++            log::error!("Failed to read from {}: {}", path, err);
++            StatusCode::UNKNOWN_ERROR.into()
++        })
++        .and_then(|s| {
++            s.trim()
++                .trim_end_matches('\0')
++                .parse::<i32>()
++                .map(|value| value > 0)
++                .map_err(|err| {
++                    log::error!("Failed to parse number: {}", err);
++                    StatusCode::UNKNOWN_ERROR.into()
++                })
++        })
++}
++
++pub fn set_array(path: &str, values: &[i32]) -> BinderResult<()> {
++    let s = values
++        .iter()
++        .map(|&i| i.to_string())
++        .collect::<Vec<String>>()
++        .join(" ");
++
++    fs::write(path, s).map_err(|err| {
++        log::error!("Failed to write to file {}: {}", path, err);
++        StatusCode::UNKNOWN_ERROR.into()
++    })
++}
++
++pub fn set_enabled_bool(path: &str, enabled: bool) -> BinderResult<()> {
++    fs::write(path, if enabled { "1" } else { "0" }).map_err(|err| {
++        log::error!("Failed to write to {}: {}", path, err);
++        StatusCode::UNKNOWN_ERROR.into()
++    })
++}
++
++pub fn set_enabled_mode(path: &str, enabled_mode: i32) -> BinderResult<()> {
++    fs::write(path, enabled_mode.to_string()).map_err(|err| {
++        log::error!("Failed to write to {}: {}", path, err);
++        StatusCode::UNKNOWN_ERROR.into()
++    })
++}
+diff --git a/livedisplay/aidl/sysfs/main.rs b/livedisplay/aidl/sysfs/main.rs
+new file mode 100644
+index 0000000..fee302d
+--- /dev/null
++++ b/livedisplay/aidl/sysfs/main.rs
+@@ -0,0 +1,104 @@
++/*
++ * SPDX-FileCopyrightText: 2025 The LineageOS Project
++ * SPDX-License-Identifier: Apache-2.0
++ */
++
++//! This implements the Lineage LiveDisplay sysfs HAL.
++mod adaptive_backlight;
++mod display_color_calibration;
++mod livedisplay_utils;
++mod simple_mode;
++mod sunlight_enhancement;
++
++use log::LevelFilter;
++
++use vendor_lineage_livedisplay::aidl::vendor::lineage::livedisplay::{
++    IAdaptiveBacklight::BnAdaptiveBacklight, IAdaptiveBacklight::IAdaptiveBacklight,
++    IAutoContrast::BnAutoContrast, IAutoContrast::IAutoContrast,
++    IColorEnhancement::BnColorEnhancement, IColorEnhancement::IColorEnhancement,
++    IDisplayColorCalibration::BnDisplayColorCalibration,
++    IDisplayColorCalibration::IDisplayColorCalibration, IReadingEnhancement::BnReadingEnhancement,
++    IReadingEnhancement::IReadingEnhancement, ISunlightEnhancement::BnSunlightEnhancement,
++    ISunlightEnhancement::ISunlightEnhancement,
++};
++
++use crate::adaptive_backlight::AdaptiveBacklight;
++use crate::display_color_calibration::DisplayColorCalibration;
++use crate::simple_mode::{AutoContrast, ColorEnhancement, ReadingEnhancement, SimpleModeTrait};
++use crate::sunlight_enhancement::SunlightEnhancement;
++
++const LOG_TAG: &str = "livedisplay-hal-sysfs";
++
++fn register_as_services() {
++    let my_service = AdaptiveBacklight::new();
++    if my_service.is_supported() {
++        let my_service_binder =
++            BnAdaptiveBacklight::new_binder(my_service, binder::BinderFeatures::default());
++        let service_name = format!("{}/default", AdaptiveBacklight::get_descriptor());
++        binder::add_service(&service_name, my_service_binder.as_binder())
++            .expect("Failed to register AdaptiveBacklight service");
++    }
++
++    let my_service = AutoContrast;
++    if my_service.is_supported() {
++        let my_service_binder =
++            BnAutoContrast::new_binder(my_service, binder::BinderFeatures::default());
++        let service_name = format!("{}/default", AutoContrast::get_descriptor());
++        binder::add_service(&service_name, my_service_binder.as_binder())
++            .expect("Failed to register AutoContrast service");
++    }
++
++    let my_service = ColorEnhancement;
++    if my_service.is_supported() {
++        let my_service_binder =
++            BnColorEnhancement::new_binder(my_service, binder::BinderFeatures::default());
++        let service_name = format!("{}/default", ColorEnhancement::get_descriptor());
++        binder::add_service(&service_name, my_service_binder.as_binder())
++            .expect("Failed to register ColorEnhancement service");
++    }
++
++    let my_service = DisplayColorCalibration;
++    if my_service.is_supported() {
++        let my_service_binder =
++            BnDisplayColorCalibration::new_binder(my_service, binder::BinderFeatures::default());
++        let service_name = format!("{}/default", DisplayColorCalibration::get_descriptor());
++        binder::add_service(&service_name, my_service_binder.as_binder())
++            .expect("Failed to register DisplayColorCalibration service");
++    }
++
++    let my_service = ReadingEnhancement;
++    if my_service.is_supported() {
++        let my_service_binder =
++            BnReadingEnhancement::new_binder(my_service, binder::BinderFeatures::default());
++        let service_name = format!("{}/default", ReadingEnhancement::get_descriptor());
++        binder::add_service(&service_name, my_service_binder.as_binder())
++            .expect("Failed to register ReadingEnhancement service");
++    }
++
++    let my_service = SunlightEnhancement::new();
++    if my_service.is_supported() {
++        let my_service_binder =
++            BnSunlightEnhancement::new_binder(my_service, binder::BinderFeatures::default());
++        let service_name = format!("{}/default", SunlightEnhancement::get_descriptor());
++        binder::add_service(&service_name, my_service_binder.as_binder())
++            .expect("Failed to register SunlightEnhancement service");
++    }
++}
++
++fn main() {
++    let logger_success = logger::init(
++        logger::Config::default()
++            .with_tag_on_device(LOG_TAG)
++            .with_max_level(LevelFilter::Trace),
++    );
++    if !logger_success {
++        panic!("{LOG_TAG}: Failed to start logger.");
++    }
++
++    binder::ProcessState::start_thread_pool();
++
++    register_as_services();
++
++    // Does not return.
++    binder::ProcessState::join_thread_pool()
++}
+diff --git a/livedisplay/aidl/sysfs/simple_mode.rs b/livedisplay/aidl/sysfs/simple_mode.rs
+new file mode 100644
+index 0000000..d3a0ab2
+--- /dev/null
++++ b/livedisplay/aidl/sysfs/simple_mode.rs
+@@ -0,0 +1,59 @@
++/*
++ * SPDX-FileCopyrightText: 2025 The LineageOS Project
++ * SPDX-License-Identifier: Apache-2.0
++ */
++
++use binder::{Interface, Result as BinderResult};
++
++use vendor_lineage_livedisplay::aidl::vendor::lineage::livedisplay::{
++    IAutoContrast::IAutoContrast, IColorEnhancement::IColorEnhancement,
++    IReadingEnhancement::IReadingEnhancement,
++};
++
++use crate::livedisplay_utils;
++
++pub trait SimpleModeTrait {
++    const NODE: &'static str;
++
++    fn is_supported(&self) -> bool {
++        livedisplay_utils::is_path_accessible(Self::NODE)
++    }
++}
++
++macro_rules! define_livedisplay_feature {
++    (
++        $service_name:ident,
++        $interface_name:ty,
++        $node_path:expr
++    ) => {
++        pub struct $service_name;
++
++        impl SimpleModeTrait for $service_name {
++            const NODE: &'static str = $node_path;
++        }
++
++        impl Interface for $service_name {}
++
++        impl $interface_name for $service_name {
++            fn getEnabled(&self) -> BinderResult<bool> {
++                livedisplay_utils::get_enabled(Self::NODE)
++            }
++
++            fn setEnabled(&self, enabled: bool) -> BinderResult<()> {
++                livedisplay_utils::set_enabled_bool(Self::NODE, enabled)
++            }
++        }
++    };
++}
++
++define_livedisplay_feature!(AutoContrast, IAutoContrast, "/sys/class/graphics/fb0/aco");
++define_livedisplay_feature!(
++    ColorEnhancement,
++    IColorEnhancement,
++    "/sys/class/graphics/fb0/color_enhance"
++);
++define_livedisplay_feature!(
++    ReadingEnhancement,
++    IReadingEnhancement,
++    "/sys/class/graphics/fb0/reading_mode"
++);
+diff --git a/livedisplay/aidl/sysfs/sunlight_enhancement.rs b/livedisplay/aidl/sysfs/sunlight_enhancement.rs
+new file mode 100644
+index 0000000..b2ca0d3
+--- /dev/null
++++ b/livedisplay/aidl/sysfs/sunlight_enhancement.rs
+@@ -0,0 +1,58 @@
++/*
++ * SPDX-FileCopyrightText: 2025 The LineageOS Project
++ * SPDX-License-Identifier: Apache-2.0
++ */
++
++use binder::{Interface, Result as BinderResult};
++
++use vendor_lineage_livedisplay::aidl::vendor::lineage::livedisplay::ISunlightEnhancement::ISunlightEnhancement;
++
++use crate::livedisplay_utils;
++
++const FILE_HBM: &str = "/sys/class/graphics/fb0/hbm";
++const FILE_SRE: &str = "/sys/class/graphics/fb0/sre";
++
++pub struct SunlightEnhancement {
++    file: Option<String>,
++    enabled_mode: i32,
++}
++
++impl SunlightEnhancement {
++    pub fn new() -> Self {
++        if livedisplay_utils::is_path_accessible(FILE_HBM) {
++            Self {
++                file: Some(FILE_HBM.to_string()),
++                enabled_mode: 1,
++            }
++        } else if livedisplay_utils::is_path_accessible(FILE_SRE) {
++            Self {
++                file: Some(FILE_SRE.to_string()),
++                enabled_mode: 2,
++            }
++        } else {
++            Self {
++                file: None,
++                enabled_mode: 0,
++            }
++        }
++    }
++
++    pub fn is_supported(&self) -> bool {
++        self.file.is_some()
++    }
++}
++
++impl Interface for SunlightEnhancement {}
++
++impl ISunlightEnhancement for SunlightEnhancement {
++    fn getEnabled(&self) -> BinderResult<bool> {
++        livedisplay_utils::get_enabled(&self.file.clone().unwrap())
++    }
++
++    fn setEnabled(&self, enabled: bool) -> BinderResult<()> {
++        livedisplay_utils::set_enabled_mode(
++            &self.file.clone().unwrap(),
++            if enabled { self.enabled_mode } else { 0 },
++        )
++    }
++}
+diff --git a/livedisplay/aidl/sysfs/vendor.lineage.livedisplay-service.sysfs.rc b/livedisplay/aidl/sysfs/vendor.lineage.livedisplay-service.sysfs.rc
+new file mode 100644
+index 0000000..8c216f5
+--- /dev/null
++++ b/livedisplay/aidl/sysfs/vendor.lineage.livedisplay-service.sysfs.rc
+@@ -0,0 +1,23 @@
++on init
++    # LiveDisplay sysfs
++    chown system system /sys/devices/virtual/graphics/fb0/acl
++    chmod 0660 /sys/devices/virtual/graphics/fb0/acl
++    chown system system /sys/devices/virtual/graphics/fb0/aco
++    chmod 0660 /sys/devices/virtual/graphics/fb0/aco
++    chown system system /sys/devices/virtual/graphics/fb0/cabc
++    chmod 0660 /sys/devices/virtual/graphics/fb0/cabc
++    chown system system /sys/devices/virtual/graphics/fb0/hbm
++    chmod 0660 /sys/devices/virtual/graphics/fb0/hbm
++    chown system system /sys/devices/virtual/graphics/fb0/rgb
++    chmod 0660 /sys/devices/virtual/graphics/fb0/rgb
++    chown system system /sys/devices/virtual/graphics/fb0/sre
++    chmod 0660 /sys/devices/virtual/graphics/fb0/sre
++    chown system system /sys/devices/virtual/graphics/fb0/color_enhance
++    chmod 0660 /sys/devices/virtual/graphics/fb0/color_enhance
++    chown system system /sys/devices/virtual/graphics/fb0/reading_mode
++    chmod 0660 /sys/devices/virtual/graphics/fb0/reading_mode
++
++service vendor.livedisplay-sysfs /vendor/bin/hw/vendor.lineage.livedisplay-service.sysfs
++    class late_start
++    user system
++    group system
+-- 
+2.39.5
+
