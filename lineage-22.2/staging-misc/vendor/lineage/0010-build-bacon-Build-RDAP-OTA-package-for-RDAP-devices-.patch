@@ -1,0 +1,41 @@
+From 32af684b38df5cd4620d572d6396041656137ad2 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Mon, 16 Oct 2023 04:09:08 +0800
+Subject: [PATCH 10/10] build: bacon: Build RDAP OTA package for RDAP devices
+ (useful for A/B)
+
+* No longer need to flash super_empty.img for the first time
+
+Test:
+1) Zero out super metadata partition
+2) Flash the build (without flashing super_empty.img)
+
+Change-Id: I95754f893b8e53a22a13b6923effbcc55bbdca40
+---
+ build/tasks/bacon.mk | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/build/tasks/bacon.mk b/build/tasks/bacon.mk
+index 272a4b8e..e5aee721 100644
+--- a/build/tasks/bacon.mk
++++ b/build/tasks/bacon.mk
+@@ -20,8 +20,14 @@ LINEAGE_TARGET_PACKAGE := $(PRODUCT_OUT)/lineage-$(LINEAGE_VERSION).zip
+ 
+ SHA256 := prebuilts/build-tools/path/$(HOST_PREBUILT_TAG)/sha256sum
+ 
+-$(LINEAGE_TARGET_PACKAGE): $(INTERNAL_OTA_PACKAGE_TARGET)
+-	$(hide) ln -f $(INTERNAL_OTA_PACKAGE_TARGET) $(LINEAGE_TARGET_PACKAGE)
++ifeq ($(BOARD_BUILD_RETROFIT_DYNAMIC_PARTITIONS_OTA_PACKAGE),true)
++LINEAGE_OTA_PACKAGE_TARGET := $(INTERNAL_OTA_RETROFIT_DYNAMIC_PARTITIONS_PACKAGE_TARGET)
++else
++LINEAGE_OTA_PACKAGE_TARGET := $(INTERNAL_OTA_PACKAGE_TARGET)
++endif
++
++$(LINEAGE_TARGET_PACKAGE): $(LINEAGE_OTA_PACKAGE_TARGET)
++	$(hide) ln -f $(LINEAGE_OTA_PACKAGE_TARGET) $(LINEAGE_TARGET_PACKAGE)
+ 	$(hide) $(SHA256) $(LINEAGE_TARGET_PACKAGE) | sed "s|$(PRODUCT_OUT)/||" > $(LINEAGE_TARGET_PACKAGE).sha256sum
+ 	@echo "Package Complete: $(LINEAGE_TARGET_PACKAGE)" >&2
+ 
+-- 
+2.39.5
+

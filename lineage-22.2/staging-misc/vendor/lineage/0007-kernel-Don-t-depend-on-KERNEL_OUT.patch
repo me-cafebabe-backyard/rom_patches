@@ -1,7 +1,7 @@
-From 7a7c7d96598ceacfc49cbfca33e147938310fadf Mon Sep 17 00:00:00 2001
+From ae6ed8b14e395cb842a1c51afe335032188fbe90 Mon Sep 17 00:00:00 2001
 From: Yumi Yukimura <me.cafebabe@gmail.com>
 Date: Fri, 11 Apr 2025 03:54:35 +0800
-Subject: [PATCH 6/8] kernel: Don't depend on $(KERNEL_OUT)
+Subject: [PATCH 07/10] kernel: Don't depend on $(KERNEL_OUT)
 
 * Avoids rebuilding kernel config unnecessarily.
 
@@ -11,10 +11,10 @@ Change-Id: I231945a1755c51b9b81db3add930ba9c40b7d2d5
  1 file changed, 7 insertions(+), 11 deletions(-)
 
 diff --git a/build/tasks/kernel.mk b/build/tasks/kernel.mk
-index 2eb47699..ed895924 100644
+index 9cbb83cf..c9f0da85 100644
 --- a/build/tasks/kernel.mk
 +++ b/build/tasks/kernel.mk
-@@ -339,6 +339,7 @@ endef
+@@ -337,6 +337,7 @@ endef
  # $(1): Output path (The value passed to O=)
  # $(2): The defconfig to process (full path to file)
  define make-kernel-config
@@ -22,7 +22,7 @@ index 2eb47699..ed895924 100644
  	$(if $(VARIANT_DEFCONFIG)$(SELINUX_DEFCONFIG), \
  		$(call internal-make-kernel-target,$(1),VARIANT_DEFCONFIG=$(VARIANT_DEFCONFIG) SELINUX_DEFCONFIG=$(SELINUX_DEFCONFIG) $(notdir $(word 1,$(2)))) \
  	, \
-@@ -543,10 +544,7 @@ KERNEL_RECOVERY_MODULES_OUT := $(TARGET_RECOVERY_ROOT_OUT)
+@@ -541,10 +542,7 @@ KERNEL_RECOVERY_MODULES_OUT := $(TARGET_RECOVERY_ROOT_OUT)
  $(recovery_uncompressed_ramdisk): $(TARGET_PREBUILT_INT_KERNEL)
  endif
  
@@ -34,7 +34,7 @@ index 2eb47699..ed895924 100644
  	@echo "Building Kernel Config"
  	$(call make-kernel-config,$(KERNEL_OUT),$(ALL_KERNEL_DEFCONFIG_SRCS))
  
-@@ -631,20 +629,21 @@ kerneltags: $(KERNEL_CONFIG)
+@@ -629,20 +627,21 @@ kerneltags: $(KERNEL_CONFIG)
  
  .PHONY: kernelsavedefconfig alldefconfig kernelconfig recoverykernelconfig
  

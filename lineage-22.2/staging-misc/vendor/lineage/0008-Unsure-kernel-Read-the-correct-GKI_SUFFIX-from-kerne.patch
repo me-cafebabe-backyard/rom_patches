@@ -1,8 +1,8 @@
-From cd4ac1f4086e9cfab174e3744065e1c07cf7bbcd Mon Sep 17 00:00:00 2001
+From 1f4a2f9e49c80a9eb14230cb4783a64d0d2af2e9 Mon Sep 17 00:00:00 2001
 From: Yumi Yukimura <me.cafebabe@gmail.com>
 Date: Mon, 19 May 2025 03:29:12 +0800
-Subject: [PATCH 8/8] [Unsure] kernel: Read the correct GKI_SUFFIX from kernel
- source
+Subject: [PATCH 08/10] [Unsure] kernel: Read the correct GKI_SUFFIX from
+ kernel source
 
 Change-Id: I1aa9d5a8ad9e587b97e0d832aa7a4d5c103aea5e
 ---
@@ -10,13 +10,13 @@ Change-Id: I1aa9d5a8ad9e587b97e0d832aa7a4d5c103aea5e
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/build/tasks/kernel.mk b/build/tasks/kernel.mk
-index 187eb4c4..7a50e76c 100644
+index c9f0da85..15b7dd71 100644
 --- a/build/tasks/kernel.mk
 +++ b/build/tasks/kernel.mk
-@@ -137,7 +137,7 @@ RECOVERY_KERNEL_RELEASE := $(RECOVERY_KERNEL_OUT)/include/config/kernel.release
+@@ -135,7 +135,7 @@ RECOVERY_KERNEL_RELEASE := $(RECOVERY_KERNEL_OUT)/include/config/kernel.release
  ifeq ($(BOARD_USES_QCOM_HARDWARE),true)
- ifeq ($(shell expr $(TARGET_KERNEL_VERSION) \>= 5.15), 1)
- ifeq ($(shell expr $(TARGET_KERNEL_VERSION) \<= 6.1), 1)
+ ifeq ($(call is-version-greater-or-equal,$(TARGET_KERNEL_VERSION),5.15),true)
+ ifeq ($(call is-version-lower-or-equal,$(TARGET_KERNEL_VERSION),6.1),true)
 -GKI_SUFFIX := /$(shell echo android$(PLATFORM_VERSION)-$(TARGET_KERNEL_VERSION))
 +GKI_SUFFIX := /$(shell grep -h 'BRANCH=' $(KERNEL_SRC)/build.config.* 2>/dev/null | cut -c 8-)
  endif

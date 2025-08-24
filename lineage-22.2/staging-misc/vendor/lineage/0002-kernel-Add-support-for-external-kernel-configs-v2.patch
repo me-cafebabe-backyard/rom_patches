@@ -1,7 +1,7 @@
-From 746ddb57f2ac6dde1f82b194fffc10631e913e6c Mon Sep 17 00:00:00 2001
+From 19627b6f9725736a7b1e0696c9768014155d2311 Mon Sep 17 00:00:00 2001
 From: Yumi Yukimura <me.cafebabe@gmail.com>
 Date: Fri, 11 Apr 2025 00:13:18 +0800
-Subject: [PATCH 2/8] kernel: Add support for external kernel configs (v2)
+Subject: [PATCH 02/10] kernel: Add support for external kernel configs (v2)
 
 For targets that uses mainline kernel, the kernel tree usually only
 contains configs on top of the upstream repository.
@@ -24,7 +24,7 @@ Change-Id: Ibafd0afa7ec06df643ba290a6149a4f0781d67fb
  1 file changed, 45 insertions(+), 11 deletions(-)
 
 diff --git a/build/tasks/kernel.mk b/build/tasks/kernel.mk
-index 4f255458..f737b7d4 100644
+index b8640062..67c23f85 100644
 --- a/build/tasks/kernel.mk
 +++ b/build/tasks/kernel.mk
 @@ -26,6 +26,10 @@
@@ -50,7 +50,7 @@ index 4f255458..f737b7d4 100644
  #   NEED_KERNEL_MODULE_ROOT            = Optional, if true, install kernel
  #                                          modules in root instead of vendor
  #   NEED_KERNEL_MODULE_SYSTEM          = Optional, if true, install kernel
-@@ -85,10 +94,20 @@ ifneq ($(TARGET_NO_KERNEL_OVERRIDE),true)
+@@ -86,10 +95,20 @@ ifneq ($(TARGET_NO_KERNEL_OVERRIDE),true)
  ## Externally influenced variables
  KERNEL_SRC := $(TARGET_KERNEL_SOURCE)
  # kernel configuration - mandatory
@@ -69,9 +69,9 @@ index 4f255458..f737b7d4 100644
 +    endif
 +endif
  # dtb generation - optional
- ifneq ($(TARGET_MERGE_DTBS_WILDCARD),)
- TARGET_DTB_LIST_WILDCARD ?= $(TARGET_MERGE_DTBS_WILDCARD)
-@@ -126,12 +145,13 @@ else
+ TARGET_MERGE_DTBS_WILDCARD ?= *
+ TARGET_DTB_LIST_WILDCARD ?= *
+@@ -124,12 +143,13 @@ else
  KERNEL_DEFCONFIG_ARCH := $(KERNEL_ARCH)
  endif
  KERNEL_DEFCONFIG_DIR := $(KERNEL_SRC)/arch/$(KERNEL_DEFCONFIG_ARCH)/configs
@@ -87,7 +87,7 @@ index 4f255458..f737b7d4 100644
  BASE_RECOVERY_KERNEL_DEFCONFIG_SRC := $(word 1, $(ALL_RECOVERY_KERNEL_DEFCONFIG_SRCS))
  
  ifeq ($(TARGET_PREBUILT_KERNEL),)
-@@ -184,7 +204,7 @@ ifeq "$(wildcard $(KERNEL_SRC) )" ""
+@@ -182,7 +202,7 @@ ifeq "$(wildcard $(KERNEL_SRC) )" ""
      endif
  else
      NEEDS_KERNEL_COPY := true
@@ -96,7 +96,7 @@ index 4f255458..f737b7d4 100644
          $(warning **********************************************************)
          $(warning * Kernel source found, but no configuration was defined  *)
          $(warning * Please add the TARGET_KERNEL_CONFIG variable to your   *)
-@@ -314,9 +334,23 @@ endef
+@@ -312,9 +332,23 @@ endef
  
  # Generate kernel .config from a given defconfig
  # $(1): Output path (The value passed to O=)
@@ -122,7 +122,7 @@ index 4f255458..f737b7d4 100644
  	$(hide) if [ "$(KERNEL_LTO)" = "none" ]; then \
  			$(KERNEL_SRC)/scripts/config --file $(1)/.config \
  			-d LTO_CLANG \
-@@ -505,7 +539,7 @@ $(KERNEL_OUT):
+@@ -503,7 +537,7 @@ $(KERNEL_OUT):
  
  $(KERNEL_CONFIG): $(KERNEL_OUT) $(ALL_KERNEL_DEFCONFIG_SRCS)
  	@echo "Building Kernel Config"
@@ -131,7 +131,7 @@ index 4f255458..f737b7d4 100644
  
  $(TARGET_PREBUILT_INT_KERNEL): $(KERNEL_CONFIG) $(DEPMOD) $(DTC) $(KERNEL_MODULES_PARTITION_FILE_LIST) $(SYSTEM_KERNEL_MODULES_PARTITION_FILE_LIST)
  	@echo "Building Kernel Image ($(BOARD_KERNEL_IMAGE_NAME))"
-@@ -587,7 +621,7 @@ kerneltags: $(KERNEL_CONFIG)
+@@ -585,7 +619,7 @@ kerneltags: $(KERNEL_CONFIG)
  .PHONY: kernelsavedefconfig alldefconfig kernelconfig recoverykernelconfig
  
  kernelsavedefconfig: $(KERNEL_OUT)
@@ -140,7 +140,7 @@ index 4f255458..f737b7d4 100644
  	$(call make-kernel-target,savedefconfig)
  	cp $(KERNEL_OUT)/defconfig $(BASE_KERNEL_DEFCONFIG_SRC)
  
-@@ -597,11 +631,11 @@ alldefconfig: $(KERNEL_OUT)
+@@ -595,11 +629,11 @@ alldefconfig: $(KERNEL_OUT)
  
  kernelconfig: $(KERNEL_OUT) $(ALL_KERNEL_DEFCONFIG_SRCS)
  	@echo "Building Kernel Config"
@@ -154,7 +154,7 @@ index 4f255458..f737b7d4 100644
  
  ifeq (true,$(filter true, $(TARGET_NEEDS_DTBOIMAGE) $(BOARD_KERNEL_SEPARATED_DTBO)))
  ifneq ($(BOARD_CUSTOM_DTBOIMG_MK),)
-@@ -669,7 +703,7 @@ ifeq ($(TARGET_WANTS_EMPTY_DTB),true)
+@@ -667,7 +701,7 @@ ifeq ($(TARGET_WANTS_EMPTY_DTB),true)
  else
  	@echo "Building dtb.img"
  	$(hide) find $(DTB_OUT)/arch/$(KERNEL_ARCH)/boot/dts -type f -name "*.dtb" | xargs rm -f

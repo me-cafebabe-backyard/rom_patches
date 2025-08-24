@@ -1,0 +1,51 @@
+From ae62293c476cfe904a07ec8554c5438e76277592 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Sun, 4 May 2025 15:23:57 +0800
+Subject: [PATCH 01/10] kernel: Enhancements to searching DTBs during non-QCOM
+ DTB image generation
+
+* Allow wildcard pattern
+* Support searching in specified directory
+* Add variable that accepts a list of such patterns
+
+Change-Id: I35da8ed19447b4ab69142152d7dc8e60bc55bf14
+---
+ build/tasks/kernel.mk | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/build/tasks/kernel.mk b/build/tasks/kernel.mk
+index 3f679028..b8640062 100644
+--- a/build/tasks/kernel.mk
++++ b/build/tasks/kernel.mk
+@@ -76,6 +76,9 @@
+ #
+ #   TARGET_MERGE_DTBS_WILDCARD         = Optional, limits the .dtb files used to generate the
+ #                                          final DTB image when using QCOM's merge_dtbs script.
++#   TARGET_DTB_LIST_WILDCARD           = Optional, limits the .dtb files used to generate the
++#                                          final DTB image when NOT using QCOM's merge_dtbs
++#                                          script. Allows multiple patterns.
+ 
+ ifneq ($(TARGET_NO_KERNEL),true)
+ ifneq ($(TARGET_NO_KERNEL_OVERRIDE),true)
+@@ -89,6 +92,7 @@ VARIANT_DEFCONFIG := $(TARGET_KERNEL_VARIANT_CONFIG)
+ SELINUX_DEFCONFIG := $(TARGET_KERNEL_SELINUX_CONFIG)
+ # dtb generation - optional
+ TARGET_MERGE_DTBS_WILDCARD ?= *
++TARGET_DTB_LIST_WILDCARD ?= *
+ # recovery modules.load fallback - optional
+ BOARD_RECOVERY_KERNEL_MODULES_LOAD ?= $(BOARD_RECOVERY_RAMDISK_KERNEL_MODULES_LOAD)
+ 
+@@ -675,7 +679,9 @@ ifeq ($(BOARD_USES_QCOM_MERGE_DTBS_SCRIPT),true)
+ 	PATH=$(abspath $(HOST_OUT_EXECUTABLES)):$${PATH} python3 $(BUILD_TOP)/vendor/lineage/build/tools/merge_dtbs.py --base $(DTBS_BASE) --techpack $(DTB_OUT)/arch/$(KERNEL_ARCH)/boot/dts/vendor/qcom --out $(DTBS_OUT)
+ 	cat $(shell find $(DTBS_OUT) -type f -name "${TARGET_MERGE_DTBS_WILDCARD}.dtb" | sort) > $@
+ else
+-	cat $(shell find $(DTB_OUT)/arch/$(KERNEL_ARCH)/boot/dts -type f -name "*.dtb" | sort) > $@
++	@rm -f $@
++	$(foreach dtb,$(TARGET_DTB_LIST_WILDCARD),\
++		cat `find $(DTB_OUT)/arch/$(KERNEL_ARCH)/boot/dts/$(dir $(dtb)) -type f -name "$(notdir $(dtb)).dtb" | sort` >> $@;)
+ endif # BOARD_USES_QCOM_MERGE_DTBS_SCRIPT
+ endif # BOARD_DTB_CFG
+ 	$(hide) touch -c $(DTB_OUT)
+-- 
+2.39.5
+
