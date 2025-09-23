@@ -1,0 +1,31 @@
+From e03dcc9e47591c1d0d7bcb5f51f80b35cdcda0e5 Mon Sep 17 00:00:00 2001
+From: Build Server <build@localhost>
+Date: Wed, 30 Mar 2022 09:57:23 +0000
+Subject: [PATCH] skip verify
+
+---
+ install/install.cpp | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/install/install.cpp b/install/install.cpp
+index f8fe92f5..2af96f65 100644
+--- a/install/install.cpp
++++ b/install/install.cpp
+@@ -661,12 +661,14 @@ static InstallResult VerifyAndInstallPackage(Package* package, bool* wipe_cache,
+   ui->ShowProgress(VERIFICATION_PROGRESS_FRACTION, VERIFICATION_PROGRESS_TIME);
+ 
+   // Verify package.
++/*
+   if (!verify_package(package, ui)) {
+     log_buffer->push_back(android::base::StringPrintf("error: %d", kZipVerificationFailure));
+     if (!ui->IsTextVisible() || !ask_to_continue_unverified(ui->GetDevice())) {
+         return INSTALL_CORRUPT;
+     }
+   }
++*/
+ 
+   // Verify and install the contents of the package.
+   ui->Print("Installing update...\n");
+-- 
+2.47.3
+

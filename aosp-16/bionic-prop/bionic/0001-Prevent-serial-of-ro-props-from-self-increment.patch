@@ -1,0 +1,29 @@
+From 907eb964245016806d2ca3fe49154eab377864bd Mon Sep 17 00:00:00 2001
+From: LoveSy <shana@zju.edu.cn>
+Date: Fri, 12 Apr 2024 23:46:38 +0800
+Subject: [PATCH 1/2] Prevent serial of ro props from self increment
+
+This avoids triggering update of ro props for apps using property_wait,
+and matches original behavior.
+
+Co-authored-by: canyie <a1364259@163.com>
+---
+ libc/system_properties/system_properties.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libc/system_properties/system_properties.cpp b/libc/system_properties/system_properties.cpp
+index 9dd5e35ce..37ad0f571 100644
+--- a/libc/system_properties/system_properties.cpp
++++ b/libc/system_properties/system_properties.cpp
+@@ -312,7 +312,7 @@ int SystemProperties::Update(prop_info* pi, const char* value, unsigned int len)
+   // Now the primary value property area is up-to-date. Let readers know that they should
+   // look at the property value instead of the backup area.
+   atomic_thread_fence(memory_order_release);
+-  int new_serial = (len << 24) | ((serial + 1) & 0xffffff);
++  int new_serial = (len << 24) | ((is_read_only(pi->name) ? 0u : (serial + 1)) & 0xffffff);
+   atomic_store_explicit(&pi->serial, new_serial, memory_order_relaxed);
+   if (have_override) {
+     atomic_store_explicit(&override_pi->serial, new_serial, memory_order_relaxed);
+-- 
+2.39.2
+

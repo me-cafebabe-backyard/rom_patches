@@ -1,0 +1,31 @@
+From f2cc91d58c17157710b27b952425ca279ce650c9 Mon Sep 17 00:00:00 2001
+From: canyie <a1364259@163.com>
+Date: Fri, 12 Apr 2024 23:48:29 +0800
+Subject: [PATCH 2/2] Ensure prop has zero padding
+
+This prevents undesirable behavior if apps directly reads
+prop info from devfs node.
+---
+ libc/system_properties/system_properties.cpp | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/libc/system_properties/system_properties.cpp b/libc/system_properties/system_properties.cpp
+index 37ad0f571..e359d6c08 100644
+--- a/libc/system_properties/system_properties.cpp
++++ b/libc/system_properties/system_properties.cpp
+@@ -304,10 +304,10 @@ int SystemProperties::Update(prop_info* pi, const char* value, unsigned int len)
+   atomic_thread_fence(memory_order_release);
+   serial |= 1;
+   atomic_store_explicit(&pi->serial, serial, memory_order_relaxed);
+-  strlcpy(pi->value, value, len + 1);
++  strncpy(pi->value, value, PROP_VALUE_MAX);
+   if (have_override) {
+     atomic_store_explicit(&override_pi->serial, serial, memory_order_relaxed);
+-    strlcpy(override_pi->value, value, len + 1);
++    strncpy(override_pi->value, value, PROP_VALUE_MAX);
+   }
+   // Now the primary value property area is up-to-date. Let readers know that they should
+   // look at the property value instead of the backup area.
+-- 
+2.39.2
+

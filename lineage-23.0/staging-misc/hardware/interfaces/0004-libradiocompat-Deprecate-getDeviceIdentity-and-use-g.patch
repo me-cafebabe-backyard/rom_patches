@@ -1,0 +1,54 @@
+From 53b9463596f728b5224bb57375f45c03a8bc7713 Mon Sep 17 00:00:00 2001
+From: Luofan Chen <clfbbn@gmail.com>
+Date: Wed, 30 Jul 2025 14:45:40 +0000
+Subject: [PATCH 4/4] libradiocompat: Deprecate getDeviceIdentity and use
+ getImei instead
+
+Change-Id: If38b98ad480e4a0e80200276bf73d4a60abf3b26
+---
+ radio/aidl/compat/libradiocompat/modem/RadioModem.cpp       | 6 +++---
+ .../compat/libradiocompat/modem/RadioResponse-modem.cpp     | 5 +++--
+ 2 files changed, 6 insertions(+), 5 deletions(-)
+
+diff --git a/radio/aidl/compat/libradiocompat/modem/RadioModem.cpp b/radio/aidl/compat/libradiocompat/modem/RadioModem.cpp
+index f088b10b19..439e37ede1 100644
+--- a/radio/aidl/compat/libradiocompat/modem/RadioModem.cpp
++++ b/radio/aidl/compat/libradiocompat/modem/RadioModem.cpp
+@@ -45,14 +45,14 @@ ScopedAStatus RadioModem::getBasebandVersion(int32_t serial) {
+ 
+ ScopedAStatus RadioModem::getDeviceIdentity(int32_t serial) {
+     LOG_CALL << serial;
+-    mHal1_5->getDeviceIdentity(serial);
++    LOG(ERROR) << " getDeviceIdentity is deprecated, use getImei instead";
++    respond()->getDeviceIdentityResponse(notSupported(serial), nullptr, nullptr, nullptr, nullptr);
+     return ok();
+ }
+ 
+ ScopedAStatus RadioModem::getImei(int32_t serial) {
+     LOG_CALL << serial;
+-    LOG(ERROR) << " getImei is unsupported by HIDL HALs";
+-    respond()->getImeiResponse(notSupported(serial), {});
++    mHal1_5->getDeviceIdentity(serial);
+     return ok();
+ }
+ 
+diff --git a/radio/aidl/compat/libradiocompat/modem/RadioResponse-modem.cpp b/radio/aidl/compat/libradiocompat/modem/RadioResponse-modem.cpp
+index 6e1a962903..9f1db7f7cf 100644
+--- a/radio/aidl/compat/libradiocompat/modem/RadioResponse-modem.cpp
++++ b/radio/aidl/compat/libradiocompat/modem/RadioResponse-modem.cpp
+@@ -51,9 +51,10 @@ Return<void> RadioResponse::getBasebandVersionResponse(const V1_0::RadioResponse
+ 
+ Return<void> RadioResponse::getDeviceIdentityResponse(  //
+         const V1_0::RadioResponseInfo& info, const hidl_string& imei, const hidl_string& imeisv,
+-        const hidl_string& esn, const hidl_string& meid) {
++        const hidl_string& /*esn*/, const hidl_string& /*meid*/) {
+     LOG_CALL << info.serial;
+-    modemCb()->getDeviceIdentityResponse(toAidl(info), imei, imeisv, esn, meid);
++    aidl::ImeiInfo imeiInfo(aidl::ImeiInfo::ImeiType::PRIMARY, imei, imeisv);
++    modemCb()->getImeiResponse(toAidl(info), imeiInfo);
+     return {};
+ }
+ 
+-- 
+2.39.5
+

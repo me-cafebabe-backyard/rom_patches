@@ -1,0 +1,30 @@
+From a0be8035a83f31f121a9cf490dd24d3115fba4eb Mon Sep 17 00:00:00 2001
+From: Pranav Vashi <neobuddy89@gmail.com>
+Date: Sat, 16 Oct 2021 00:12:03 +0530
+Subject: [PATCH] build: Always use release-keys
+
+* [@techyminati]
+  - Some payment/banking apps check for this and report device as rooted, I know this is dirty hack,
+    the proper fix should be signing builds , but since most of developers dont care about signing builds
+    lets hardcode 'release-keys' here.
+Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+---
+ core/config.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/core/config.mk b/core/config.mk
+index 191d69d9a7..977feeed9f 100644
+--- a/core/config.mk
++++ b/core/config.mk
+@@ -1356,7 +1356,7 @@ BUILD_KEYS := test-keys
+ else ifneq ($(filter vendor/lineage-priv/%,$(DEFAULT_SYSTEM_DEV_CERTIFICATE)),)
+ BUILD_KEYS := release-keys
+ else
+-BUILD_KEYS := dev-keys
++BUILD_KEYS := release-keys
+ endif
+ BUILD_VERSION_TAGS += $(BUILD_KEYS)
+ BUILD_VERSION_TAGS := $(subst $(space),$(comma),$(sort $(BUILD_VERSION_TAGS)))
+-- 
+2.47.3
+
