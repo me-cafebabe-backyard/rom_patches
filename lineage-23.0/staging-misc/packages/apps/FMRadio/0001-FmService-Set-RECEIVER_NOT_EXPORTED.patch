@@ -1,7 +1,7 @@
-From a4a1b1ab085b016bf3a238a326592b7534ade54c Mon Sep 17 00:00:00 2001
+From 4c831eb011139b82fc9fe2d8605e4c4994058e77 Mon Sep 17 00:00:00 2001
 From: Cyber Knight <cyberknight755@gmail.com>
 Date: Sat, 5 Jul 2025 18:59:11 +0800
-Subject: [PATCH] FmService: Set RECEIVER_NOT_EXPORTED
+Subject: [PATCH 1/2] FmService: Set RECEIVER_NOT_EXPORTED
 
 Change-Id: I00627c63d1da2a9a91585e3ff5ae55d260076fce
 Signed-off-by: Cyber Knight <cyberknight755@gmail.com>
@@ -41,5 +41,5 @@ index 18a698f..7205647 100644
  
      private void unregisterSdcardListener() {
 -- 
-2.39.5
+2.47.3
 

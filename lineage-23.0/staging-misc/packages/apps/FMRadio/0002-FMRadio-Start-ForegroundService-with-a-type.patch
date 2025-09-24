@@ -1,0 +1,68 @@
+From c10a9b815b0944a7cd1f2ba575e14ea56bf40d40 Mon Sep 17 00:00:00 2001
+From: Cyber Knight <cyberknight755@gmail.com>
+Date: Tue, 22 Jul 2025 16:53:47 +0800
+Subject: [PATCH 2/2] FMRadio: Start ForegroundService with a type
+
+- As per [1], this is needed to be done to fix this crash:
+
+07-22 10:36:50.055  8030  8030 E AndroidRuntime: Process: com.android.fmradio, PID: 8030
+07-22 10:36:50.055  8030  8030 E AndroidRuntime: java.lang.RuntimeException: Unable to stop activity {com.android.fmradio/com.android.fmradio.FmMainActivity}: android.app.MissingForegroundServiceTypeException: Starting FGS without a type  callerApp=ProcessRecord{250dd38 8030:com.android.fmradio/1000} targetSDK=30
+07-22 10:36:50.055  8030  8030 E AndroidRuntime: Caused by: android.app.MissingForegroundServiceTypeException: Starting FGS without a type  callerApp=ProcessRecord{250dd38 8030:com.android.fmradio/1000} targetSDK=30
+07-22 10:36:50.055  8030  8030 E AndroidRuntime: at com.android.fmradio.FmService.showPlayingNotification(FmService.java:2006)
+07-22 10:36:50.055  8030  8030 E AndroidRuntime: at com.android.fmradio.FmService.updatePlayingNotification(FmService.java:2028)
+07-22 10:36:50.055  8030  8030 E AndroidRuntime: at com.android.fmradio.FmMainActivity.onStop(FmMainActivity.java:713)
+07-22 10:36:50.061  1781  3763 W ActivityTaskManager:   Force finishing activity com.android.fmradio/.FmMainActivity
+
+[1]: https://developer.android.com/develop/background-work/services/fgs/service-types#media
+
+Signed-off-by: Cyber Knight <cyberknight755@gmail.com>
+Change-Id: I7e318fb63dcff9c8b8cd9e75df269ae50265c26d
+---
+ AndroidManifest.xml                    | 2 ++
+ src/com/android/fmradio/FmService.java | 3 ++-
+ 2 files changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/AndroidManifest.xml b/AndroidManifest.xml
+index 5fef79d..b5176fd 100644
+--- a/AndroidManifest.xml
++++ b/AndroidManifest.xml
+@@ -35,6 +35,7 @@
+     <uses-permission android:name="android.permission.CAPTURE_AUDIO_OUTPUT" />
+     <uses-permission android:name="android.permission.CAPTURE_TUNER_AUDIO_INPUT" />
+     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
++    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+     <uses-permission android:name="android.permission.INTERNET" />
+     <uses-permission android:name="android.permission.MODIFY_AUDIO_ROUTING" />
+     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+@@ -72,6 +73,7 @@
+ 
+         <service
+             android:name=".FmService"
++            android:foregroundServiceType="mediaPlayback"
+             android:exported="false" >
+             <intent-filter>
+                 <action android:name="com.android.fmradio.IFmRadioService" />
+diff --git a/src/com/android/fmradio/FmService.java b/src/com/android/fmradio/FmService.java
+index 7205647..4025310 100644
+--- a/src/com/android/fmradio/FmService.java
++++ b/src/com/android/fmradio/FmService.java
+@@ -31,6 +31,7 @@ import android.content.ContentValues;
+ import android.content.Context;
+ import android.content.Intent;
+ import android.content.IntentFilter;
++import android.content.pm.ServiceInfo;
+ import android.content.res.Configuration;
+ import android.database.Cursor;
+ import android.graphics.Bitmap;
+@@ -2003,7 +2004,7 @@ public class FmService extends Service implements FmRecorder.OnRecorderStateChan
+ 
+         Notification n = mNotificationBuilder.build();
+         n.flags &= ~Notification.FLAG_NO_CLEAR;
+-        startForeground(NOTIFICATION_ID, n);
++        startForeground(NOTIFICATION_ID, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
+     }
+ 
+     /**
+-- 
+2.47.3
+
