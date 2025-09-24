@@ -1,0 +1,49 @@
+From ba464ef89337f31d84022534dfc19160dd747852 Mon Sep 17 00:00:00 2001
+From: Michael Bestas <mkbestas@gmail.com>
+Date: Fri, 15 Mar 2024 14:59:21 +0200
+Subject: [PATCH 3/3] netd: Remove <5.4 kernel restrictions
+
+Change-Id: I4d4abbacd6b9589260de06663e2143bc37d8ea0f
+---
+ bpf/netd/BpfHandler.cpp | 20 --------------------
+ 1 file changed, 20 deletions(-)
+
+diff --git a/bpf/netd/BpfHandler.cpp b/bpf/netd/BpfHandler.cpp
+index 680c05eb00..8fe5a94aae 100644
+--- a/bpf/netd/BpfHandler.cpp
++++ b/bpf/netd/BpfHandler.cpp
+@@ -81,31 +81,11 @@ static Status initPrograms(const char* cg2_path) {
+     // This code was mainlined in T, so this should be trivially satisfied.
+     if (!isAtLeastT) return Status("S- platform is unsupported");
+ 
+-    // S requires eBPF support which was only added in 4.9, so this should be satisfied.
+-    if (!isAtLeastKernelVersion(4, 9, 0)) {
+-        return Status("kernel version < 4.9.0 is unsupported");
+-    }
+-
+-    // U bumps the kernel requirement up to 4.14
+-    if (isAtLeastU && !isAtLeastKernelVersion(4, 14, 0)) {
+-        return Status("U+ platform with kernel version < 4.14.0 is unsupported");
+-    }
+-
+     // U mandates this mount point (though it should also be the case on T)
+     if (isAtLeastU && !!strcmp(cg2_path, "/sys/fs/cgroup")) {
+         return Status("U+ platform with cg2_path != /sys/fs/cgroup is unsupported");
+     }
+ 
+-    // V bumps the kernel requirement up to 4.19
+-    if (isAtLeastV && !isAtLeastKernelVersion(4, 19, 0)) {
+-        return Status("V+ platform with kernel version < 4.19.0 is unsupported");
+-    }
+-
+-    // 25Q2 bumps the kernel requirement up to 5.4
+-    if (isAtLeast25Q2 && !isAtLeastKernelVersion(5, 4, 0)) {
+-        return Status("25Q2+ platform with kernel version < 5.4.0 is unsupported");
+-    }
+-
+     unique_fd cg_fd(open(cg2_path, O_DIRECTORY | O_RDONLY | O_CLOEXEC));
+     if (!cg_fd.ok()) return statusFromErrno(errno, "Opening cgroup dir failed");
+ 
+-- 
+2.47.3
+

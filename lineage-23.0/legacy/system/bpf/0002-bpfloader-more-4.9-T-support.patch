@@ -1,0 +1,44 @@
+From 2609ffa35f7b918f1a8564daec0e9f71556fa1aa Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Maciej=20=C5=BBenczykowski?= <maze@google.com>
+Date: Fri, 15 Mar 2024 19:03:13 +0000
+Subject: [PATCH 2/4] bpfloader: more 4.9-T support
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+(older kernels don't support naming maps/programs)
+
+Test: TreeHugger
+Signed-off-by: Maciej Żenczykowski <maze@google.com>
+Change-Id: If59b8947021394e1ce0a91326fee4272a5bddd38
+---
+ loader/Loader.cpp | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/loader/Loader.cpp b/loader/Loader.cpp
+index 1bec69d..8e177da 100644
+--- a/loader/Loader.cpp
++++ b/loader/Loader.cpp
+@@ -620,7 +620,8 @@ static int createMaps(const char* elfPath, ifstream& elfFile, vector<unique_fd>&
+               .max_entries = max_entries,
+               .map_flags = md[i].map_flags,
+             };
+-            strlcpy(req.map_name, mapNames[i].c_str(), sizeof(req.map_name));
++            if (isAtLeastKernelVersion(4, 14, 0))
++                strlcpy(req.map_name, mapNames[i].c_str(), sizeof(req.map_name));
+             fd.reset(bpf(BPF_MAP_CREATE, req));
+             saved_errno = errno;
+             ALOGV("bpf_create_map name %s, ret: %d", mapNames[i].c_str(), fd.get());
+@@ -779,7 +780,8 @@ static int loadCodeSections(const char* elfPath, vector<codeSection>& cs, const
+               .log_buf = ptr_to_u64(log_buf.data()),
+               .log_size = static_cast<__u32>(log_buf.size()),
+             };
+-            strlcpy(req.prog_name, cs[i].name.c_str(), sizeof(req.prog_name));
++            if (isAtLeastKernelVersion(4, 14, 0))
++                strlcpy(req.prog_name, cs[i].name.c_str(), sizeof(req.prog_name));
+             fd.reset(bpf(BPF_PROG_LOAD, req));
+ 
+             if (!fd.ok()) {
+-- 
+2.47.3
+

@@ -1,0 +1,43 @@
+From 5115376b7e298b40ae96932a70da432860a0b47b Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Maciej=20=C5=BBenczykowski?= <maze@google.com>
+Date: Tue, 23 Apr 2024 03:14:00 +0000
+Subject: [PATCH 4/4] bpfloader: prog names are only valid on 4.15+
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The following commit is only in 4.15:
+
+  commit cb4d2b3f03d8eed90be3a194e5b54b734ec4bbe9
+  Author: Martin KaFai Lau <kafai@fb.com>
+  Date:   Wed Sep 27 14:37:52 2017 -0700
+
+    bpf: Add name, load_time, uid and map_ids to bpf_prog_info
+
+  $ git describe cb4d2b3f03d8eed90be3a194e5b54b734ec4bbe9
+  v4.14-rc1-661-gcb4d2b3f03d8
+
+Bug: 335390828
+Test: TreeHugger
+Signed-off-by: Maciej Żenczykowski <maze@google.com>
+Change-Id: I246a7a8640bea1e939f12f3ffd3fedc25a0a6422
+---
+ loader/Loader.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/loader/Loader.cpp b/loader/Loader.cpp
+index c92f53b..fec8fac 100644
+--- a/loader/Loader.cpp
++++ b/loader/Loader.cpp
+@@ -780,7 +780,7 @@ static int loadCodeSections(const char* elfPath, vector<codeSection>& cs, const
+               .log_buf = ptr_to_u64(log_buf.data()),
+               .log_size = static_cast<__u32>(log_buf.size()),
+             };
+-            if (isAtLeastKernelVersion(4, 14, 0))
++            if (isAtLeastKernelVersion(4, 15, 0))
+                 strlcpy(req.prog_name, cs[i].name.c_str(), sizeof(req.prog_name));
+             fd.reset(bpf(BPF_PROG_LOAD, req));
+ 
+-- 
+2.47.3
+
