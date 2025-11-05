@@ -1,0 +1,60 @@
+From f73353a3da3eb770b127579a7b73bf48ae0f0894 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Fri, 11 Apr 2025 03:54:35 +0800
+Subject: [PATCH] kernel: Don't depend on $(KERNEL_OUT)
+
+* Avoids rebuilding kernel config unnecessarily.
+
+Change-Id: I231945a1755c51b9b81db3add930ba9c40b7d2d5
+---
+ build/tasks/kernel.mk | 13 ++++++-------
+ 1 file changed, 6 insertions(+), 7 deletions(-)
+
+diff --git a/build/tasks/kernel.mk b/build/tasks/kernel.mk
+index 7256a818..b1e78f9d 100644
+--- a/build/tasks/kernel.mk
++++ b/build/tasks/kernel.mk
+@@ -296,6 +296,7 @@ endef
+ # $(1): Output path (The value passed to O=)
+ # $(2): The defconfig to process (full path to file)
+ define make-kernel-config
++	mkdir -p $(1)
+ 	cp $(word 1,$(2)) $(1)/.config; \
+ 	$(call internal-make-kernel-target,$(1),olddefconfig); \
+ 	$(if $(filter true,$(MERGE_ALL_KERNEL_CONFIGS_AT_ONCE)),\
+@@ -498,10 +499,7 @@ endif # TARGET_KERNEL_PLATFORM_TARGET or FULL_KERNEL_BUILD
+ 
+ ifeq ($(FULL_KERNEL_BUILD),true)
+ 
+-$(KERNEL_OUT):
+-	mkdir -p $(KERNEL_OUT)
+-
+-$(KERNEL_CONFIG): $(KERNEL_OUT) $(ALL_KERNEL_DEFCONFIG_SRCS)
++$(KERNEL_CONFIG): $(ALL_KERNEL_DEFCONFIG_SRCS)
+ 	@echo "Building Kernel Config"
+ 	$(call make-kernel-config,$(KERNEL_OUT),$(ALL_KERNEL_DEFCONFIG_SRCS))
+ 
+@@ -586,16 +584,17 @@ kerneltags: $(KERNEL_CONFIG)
+ 
+ .PHONY: kernelsavedefconfig alldefconfig kernelconfig
+ 
+-kernelsavedefconfig: $(KERNEL_OUT)
++kernelsavedefconfig:
+ 	$(call make-kernel-config,$(KERNEL_OUT),$(BASE_KERNEL_DEFCONFIG_SRC))
+ 	$(call make-kernel-target,savedefconfig)
+ 	cp $(KERNEL_OUT)/defconfig $(BASE_KERNEL_DEFCONFIG_SRC)
+ 
+-alldefconfig: $(KERNEL_OUT)
++alldefconfig:
++	mkdir -p $(KERNEL_OUT)
+ 	env KCONFIG_NOTIMESTAMP=true \
+ 		 $(call make-kernel-target,alldefconfig)
+ 
+-kernelconfig: $(KERNEL_OUT) $(ALL_KERNEL_DEFCONFIG_SRCS)
++kernelconfig: $(ALL_KERNEL_DEFCONFIG_SRCS)
+ 	@echo "Building Kernel Config"
+ 	$(call make-kernel-config,$(KERNEL_OUT),$(ALL_KERNEL_DEFCONFIG_SRCS))
+ 
+-- 
+2.47.3
+
