@@ -1,0 +1,51 @@
+From c783f35d10c1cf48d8ca6eac56920dac64f1e432 Mon Sep 17 00:00:00 2001
+From: Nanhumly <admin@warbler.cc>
+Date: Sun, 10 Mar 2024 15:35:32 +0000
+Subject: [PATCH 1/3] netbpfload: Relax kernel version requirement
+
+Change-Id: Ic875fd15b407c0cb387fc51ee5a9dc6e132db2d1
+Signed-off-by: Nanhumly <admin@warbler.cc>
+---
+ bpf/loader/NetBpfLoad.cpp | 12 ++++--------
+ 1 file changed, 4 insertions(+), 8 deletions(-)
+
+diff --git a/bpf/loader/NetBpfLoad.cpp b/bpf/loader/NetBpfLoad.cpp
+index c61aec34a1..590d971ce8 100644
+--- a/bpf/loader/NetBpfLoad.cpp
++++ b/bpf/loader/NetBpfLoad.cpp
+@@ -1637,28 +1637,24 @@ static int doLoad(char** argv, char * const envp[]) {
+ 
+     // both S and T require kernel 4.9 (and eBpf support)
+     if (!isAtLeastKernelVersion(4, 9, 0)) {
+-        ALOGE("Android S & T require kernel 4.9.");
+-        return 1;
++        ALOGW("Android S & T require kernel 4.9.");
+     }
+ 
+     // U bumps the kernel requirement up to 4.14
+     if (isAtLeastU && !isAtLeastKernelVersion(4, 14, 0)) {
+-        ALOGE("Android U requires kernel 4.14.");
+-        return 1;
++        ALOGW("Android U requires kernel 4.14.");
+     }
+ 
+     // V bumps the kernel requirement up to 4.19
+     // see also: //system/netd/tests/kernel_test.cpp TestKernel419
+     if (isAtLeastV && !isAtLeastKernelVersion(4, 19, 0)) {
+-        ALOGE("Android V requires kernel 4.19.");
+-        return 1;
++        ALOGW("Android V requires kernel 4.19.");
+     }
+ 
+     // 25Q2 bumps the kernel requirement up to 5.4
+     // see also: //system/netd/tests/kernel_test.cpp TestKernel54
+     if (isAtLeast25Q2 && !isAtLeastKernelVersion(5, 4, 0)) {
+-        ALOGE("Android 25Q2 requires kernel 5.4.");
+-        return 1;
++        ALOGW("Android 25Q2 requires kernel 5.4.");
+     }
+ 
+     // 25Q4 bumps the kernel requirement up to 5.10
+-- 
+2.47.3
+

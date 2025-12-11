@@ -1,0 +1,29 @@
+From ae6de28de4984932c6481158795d723b12c57ce6 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Tue, 18 Mar 2025 03:46:20 +0800
+Subject: [PATCH 1/2] version: Use UTC timezone on build date
+
+Change-Id: I96c184cddb871cf5f04aa27fe2281e6200cd4b3a
+---
+ config/version.mk | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/config/version.mk b/config/version.mk
+index 3d73ce0e..0bcf6c9c 100644
+--- a/config/version.mk
++++ b/config/version.mk
+@@ -2,9 +2,9 @@ PRODUCT_VERSION_MAJOR = 23
+ PRODUCT_VERSION_MINOR = 1
+ 
+ ifeq ($(LINEAGE_VERSION_APPEND_TIME_OF_DAY),true)
+-    LINEAGE_BUILD_DATE := $(shell date -u +%Y%m%d_%H%M%S)
++    LINEAGE_BUILD_DATE := $(shell TZ=UTC date -u +%Y%m%d_%H%M%S)
+ else
+-    LINEAGE_BUILD_DATE := $(shell date -u +%Y%m%d)
++    LINEAGE_BUILD_DATE := $(shell TZ=UTC date -u +%Y%m%d)
+ endif
+ 
+ # Set LINEAGE_BUILDTYPE from the env RELEASE_TYPE, for jenkins compat
+-- 
+2.47.3
+

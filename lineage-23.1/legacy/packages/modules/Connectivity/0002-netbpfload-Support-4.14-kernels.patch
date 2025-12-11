@@ -1,0 +1,34 @@
+From 56a6fd1855f9fbb146a22424c6366cc658750fec Mon Sep 17 00:00:00 2001
+From: Michael Bestas <mkbestas@gmail.com>
+Date: Mon, 11 Mar 2024 01:52:21 +0200
+Subject: [PATCH 2/3] netbpfload: Support <4.14 kernels
+
+Change-Id: I3d6573c102c1d64a64209bf61ecb8ed0c4ecb64c
+---
+ bpf/loader/NetBpfLoad.cpp | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/bpf/loader/NetBpfLoad.cpp b/bpf/loader/NetBpfLoad.cpp
+index 590d971ce8..1681fd5a83 100644
+--- a/bpf/loader/NetBpfLoad.cpp
++++ b/bpf/loader/NetBpfLoad.cpp
+@@ -1821,12 +1821,14 @@ static int doLoad(char** argv, char * const envp[]) {
+         //  kernel does not have CONFIG_BPF_JIT=y)
+         // BPF_JIT is required by R VINTF (which means 4.14/4.19/5.4 kernels),
+         // but 4.14/4.19 were released with P & Q, and only 5.4 is new in R+.
+-        if (writeProcSysFile("/proc/sys/net/core/bpf_jit_enable", "1\n")) return 1;
++        if (writeProcSysFile("/proc/sys/net/core/bpf_jit_enable", "1\n") &&
++            android::bpf::isAtLeastKernelVersion(4, 14, 0)) return 1;
+ 
+         // Enable JIT kallsyms export for privileged users only
+         // (Note: this (open) will fail with ENOENT 'No such file or directory' if
+         //  kernel does not have CONFIG_HAVE_EBPF_JIT=y)
+-        if (writeProcSysFile("/proc/sys/net/core/bpf_jit_kallsyms", "1\n")) return 1;
++        if (writeProcSysFile("/proc/sys/net/core/bpf_jit_kallsyms", "1\n") &&
++            android::bpf::isAtLeastKernelVersion(4, 14, 0)) return 1;
+     }
+ 
+     if (runningAsRoot) {  // implies U QPR3+ and kernel 4.14+
+-- 
+2.47.3
+
