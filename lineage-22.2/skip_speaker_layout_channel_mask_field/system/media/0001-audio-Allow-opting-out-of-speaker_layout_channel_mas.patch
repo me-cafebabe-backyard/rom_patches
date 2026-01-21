@@ -1,0 +1,40 @@
+From a87d4f98dfa9d3e551952545ca76346276049e40 Mon Sep 17 00:00:00 2001
+From: LuK1337 <priv.luk@gmail.com>
+Date: Sun, 16 Nov 2025 10:55:27 +0100
+Subject: [PATCH] audio: Allow opting out of speaker_layout_channel_mask field
+
+Required for ABI compatibility with audio HAL compiled before 15 QPR2.
+
+Change-Id: I0bf7eafbeb19957326de04ecf7b903580315dc59
+---
+ audio/include/system/audio.h | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/audio/include/system/audio.h b/audio/include/system/audio.h
+index b0d5ba96..298e025d 100644
+--- a/audio/include/system/audio.h
++++ b/audio/include/system/audio.h
+@@ -631,7 +631,9 @@ struct audio_port_config_device_ext {
+     audio_module_handle_t hw_module;                /* module the device is attached to */
+     audio_devices_t       type;                     /* device type (e.g AUDIO_DEVICE_OUT_SPEAKER) */
+     char                  address[AUDIO_DEVICE_MAX_ADDRESS_LEN]; /* device address. "" if N/A */
++#ifndef SKIP_SPEAKER_LAYOUT_CHANNEL_MASK_FIELD
+     audio_channel_mask_t  speaker_layout_channel_mask; /* represents physical speaker layout. */
++#endif
+ };
+ 
+ /* extension for audio port configuration structure when the audio port is a
+@@ -957,8 +959,10 @@ static inline bool audio_port_configs_are_equal(
+     case AUDIO_PORT_TYPE_DEVICE:
+         if (lhs->ext.device.hw_module != rhs->ext.device.hw_module ||
+                 lhs->ext.device.type != rhs->ext.device.type ||
++#ifndef SKIP_SPEAKER_LAYOUT_CHANNEL_MASK_FIELD
+                 lhs->ext.device.speaker_layout_channel_mask !=
+                         rhs->ext.device.speaker_layout_channel_mask ||
++#endif
+                 strncmp(lhs->ext.device.address, rhs->ext.device.address,
+                         AUDIO_DEVICE_MAX_ADDRESS_LEN) != 0) {
+             return false;
+-- 
+2.47.3
+

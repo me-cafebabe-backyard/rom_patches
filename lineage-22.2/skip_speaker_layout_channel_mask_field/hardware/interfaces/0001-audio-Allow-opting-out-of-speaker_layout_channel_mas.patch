@@ -1,0 +1,44 @@
+From 0d0572516f7583304aa6a7e887236782b9ca78a7 Mon Sep 17 00:00:00 2001
+From: LuK1337 <priv.luk@gmail.com>
+Date: Sun, 16 Nov 2025 10:56:18 +0100
+Subject: [PATCH] audio: Allow opting out of speaker_layout_channel_mask field
+
+Required for ABI compatibility with audio HAL compiled before 15 QPR2.
+
+Change-Id: I76f881da057d78cf78d5c4d5ff612ddccc9e674e
+---
+ audio/common/all-versions/default/Android.bp                 | 5 +++++
+ .../common/all-versions/SkipSpeakerLayoutChannelMaskField.h  | 5 +++++
+ 2 files changed, 10 insertions(+)
+ create mode 100644 audio/common/all-versions/util/include/common/all-versions/SkipSpeakerLayoutChannelMaskField.h
+
+diff --git a/audio/common/all-versions/default/Android.bp b/audio/common/all-versions/default/Android.bp
+index 2fcc3c4d77..3cd9d91a82 100644
+--- a/audio/common/all-versions/default/Android.bp
++++ b/audio/common/all-versions/default/Android.bp
+@@ -80,6 +80,11 @@ cc_defaults {
+         "libaudio_system_headers",
+         "libhardware_headers",
+     ],
++
++    cflags: select(soong_config_variable("android_hardware_audio", "skip_speaker_layout_channel_mask_field"), {
++        "true": ["-include common/all-versions/SkipSpeakerLayoutChannelMaskField.h"],
++        default: [],
++    }),
+ }
+ 
+ cc_library_shared {
+diff --git a/audio/common/all-versions/util/include/common/all-versions/SkipSpeakerLayoutChannelMaskField.h b/audio/common/all-versions/util/include/common/all-versions/SkipSpeakerLayoutChannelMaskField.h
+new file mode 100644
+index 0000000000..27bf6b63dd
+--- /dev/null
++++ b/audio/common/all-versions/util/include/common/all-versions/SkipSpeakerLayoutChannelMaskField.h
+@@ -0,0 +1,5 @@
++#pragma once
++
++#if defined(__ANDROID_VENDOR__) && !defined(SKIP_SPEAKER_LAYOUT_CHANNEL_MASK_FIELD)
++#define SKIP_SPEAKER_LAYOUT_CHANNEL_MASK_FIELD
++#endif
+-- 
+2.47.3
+
