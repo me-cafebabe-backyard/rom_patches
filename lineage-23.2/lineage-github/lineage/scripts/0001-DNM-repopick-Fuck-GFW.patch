@@ -1,0 +1,39 @@
+From 8da0f62c73c00d9333f4cf88d63b67980eab1bfc Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Fri, 21 Jun 2024 05:10:02 +0800
+Subject: [PATCH] [DNM] repopick: Fuck GFW
+
+Change-Id: If5803cee0a1acd59f2c47d253e5950d08712de88
+---
+ repopick/repopick.py | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/repopick/repopick.py b/repopick/repopick.py
+index fd0ea67..70fca5a 100755
+--- a/repopick/repopick.py
++++ b/repopick/repopick.py
+@@ -523,6 +523,7 @@ def main():
+ 
+         item = {
+             "subject": review["subject"],
++            "project": review["project"],
+             "project_path": project_path,
+             "branch": review["branch"],
+             "change_id": review["change_id"],
+@@ -650,9 +651,10 @@ def do_git_fetch_pull(args, item):
+         if args.verbose:
+             print("Trying to fetch the change from GitHub")
+ 
+-        cmd[-2] = "github"
+-        if not args.quiet:
+-            print(cmd)
++        cmd[-2] = "ssh://git@github.com/" + item["project"]
++        if args.pull:
++            cmd.append("--no-ff")
++        print(cmd)
+         result = subprocess.call(cmd, cwd=project_path)
+         # Check if it worked
+         if result == 0 or commit_exists(project_path, item["revision"]):
+-- 
+2.47.3
+

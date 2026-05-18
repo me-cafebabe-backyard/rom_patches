@@ -1,0 +1,27 @@
+From adb4ebd57952cd758bcf3054980cc007ea2fc83c Mon Sep 17 00:00:00 2001
+From: Android Build Server 2 <build@AndroidBuild-2>
+Date: Fri, 21 Jun 2024 05:16:34 +0000
+Subject: [PATCH] [DNM] roomservice: Disable by default
+
+Change-Id: I7f1988eeb1cb220ea96f4c2d7a7a80d5d50f825a
+---
+ build/tools/roomservice.py | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/build/tools/roomservice.py b/build/tools/roomservice.py
+index 2132707d..58624073 100755
+--- a/build/tools/roomservice.py
++++ b/build/tools/roomservice.py
+@@ -27,6 +27,9 @@ import urllib.parse
+ import urllib.request
+ from xml.etree import ElementTree
+ 
++if not os.getenv('ENABLE_ROOMSERVICE') == "true":
++    sys.exit(0)
++
+ dryrun = os.getenv('ROOMSERVICE_DRYRUN') == 'true'
+ if dryrun:
+     print('Dry run roomservice, no change will be made.')
+-- 
+2.47.3
+
