@@ -1,0 +1,51 @@
+From 27d45aaa4cfdab26c801b75ea682246e006c2d3c Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Thu, 20 Jun 2024 16:34:24 +0800
+Subject: [PATCH] sepolicy: qcom: Allow vibrator HAL to read
+ `vendor.qcom.vibrator.` props
+
+Change-Id: Ic1bf798d9512740d755d13a38c2aff38c5dc5916
+---
+ qcom/vendor/hal_vibrator.te   | 1 +
+ qcom/vendor/property.te       | 2 ++
+ qcom/vendor/property_contexts | 2 ++
+ qcom/vendor/vendor_init.te    | 1 +
+ 4 files changed, 6 insertions(+)
+ create mode 100644 qcom/vendor/hal_vibrator.te
+ create mode 100644 qcom/vendor/property.te
+ create mode 100644 qcom/vendor/property_contexts
+ create mode 100644 qcom/vendor/vendor_init.te
+
+diff --git a/qcom/vendor/hal_vibrator.te b/qcom/vendor/hal_vibrator.te
+new file mode 100644
+index 0000000..7cebe76
+--- /dev/null
++++ b/qcom/vendor/hal_vibrator.te
+@@ -0,0 +1 @@
++get_prop(hal_vibrator, vendor_qcom_vibrator_prop)
+diff --git a/qcom/vendor/property.te b/qcom/vendor/property.te
+new file mode 100644
+index 0000000..a68861e
+--- /dev/null
++++ b/qcom/vendor/property.te
+@@ -0,0 +1,2 @@
++# Vibrator
++vendor_internal_prop(vendor_qcom_vibrator_prop);
+diff --git a/qcom/vendor/property_contexts b/qcom/vendor/property_contexts
+new file mode 100644
+index 0000000..df39d3c
+--- /dev/null
++++ b/qcom/vendor/property_contexts
+@@ -0,0 +1,2 @@
++# Vibrator
++vendor.qcom.vibrator.    u:object_r:vendor_qcom_vibrator_prop:s0
+diff --git a/qcom/vendor/vendor_init.te b/qcom/vendor/vendor_init.te
+new file mode 100644
+index 0000000..f5d5641
+--- /dev/null
++++ b/qcom/vendor/vendor_init.te
+@@ -0,0 +1 @@
++set_prop(vendor_init, vendor_qcom_vibrator_prop)
+-- 
+2.39.2
+

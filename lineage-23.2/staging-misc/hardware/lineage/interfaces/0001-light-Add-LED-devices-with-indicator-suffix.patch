@@ -1,0 +1,114 @@
+From 54962b446f9c4bbcbf74358e8689507b31a35a71 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Sun, 9 Nov 2025 22:36:11 +0800
+Subject: [PATCH] light: Add LED devices with ":indicator" suffix
+
+Change-Id: Icacbeca1c10ae1bdba5a1b2226aeeaa4e70a0382
+---
+ light/Devices.cpp                             |  6 +--
+ .../android.hardware.light-service.lineage.rc | 44 +++++++++++++++++++
+ 2 files changed, 46 insertions(+), 4 deletions(-)
+
+diff --git a/light/Devices.cpp b/light/Devices.cpp
+index 16ac220..33be07c 100644
+--- a/light/Devices.cpp
++++ b/light/Devices.cpp
+@@ -128,6 +128,7 @@ static std::vector<LedDevice> getKeyboardLedDevices() {
+ 
+ static const std::string kRgbLedDevices[][4] = {
+         {"red", "green", "blue", "/sys/class/leds/rgb/rgb_blink"},
++        {"red:indicator", "green:indicator", "blue:indicator", ""},
+         {"red:status", "green:status", "blue:status", ""},
+ };
+ 
+@@ -151,10 +152,7 @@ static std::vector<RgbLedDevice> getNotificationRgbLedDevices() {
+ }
+ 
+ static const std::string kNotificationLedDevices[] = {
+-        "charging",
+-        "left",
+-        "white",
+-        "white:status",
++        "charging", "left", "white", "white:indicator", "white:status",
+ };
+ 
+ static std::vector<LedDevice> getNotificationLedDevices() {
+diff --git a/light/android.hardware.light-service.lineage.rc b/light/android.hardware.light-service.lineage.rc
+index bc0814b..ea06db4 100644
+--- a/light/android.hardware.light-service.lineage.rc
++++ b/light/android.hardware.light-service.lineage.rc
+@@ -24,6 +24,17 @@ on early-boot
+     chown system system /sys/class/leds/blue/start_idx
+     chown system system /sys/class/leds/blue/trigger
+ 
++    chown system system /sys/class/leds/blue:indicator/blink
++    chown system system /sys/class/leds/blue:indicator/breath
++    chown system system /sys/class/leds/blue:indicator/brightness
++    chown system system /sys/class/leds/blue:indicator/duty_pcts
++    chown system system /sys/class/leds/blue:indicator/max_brightness
++    chown system system /sys/class/leds/blue:indicator/pause_hi
++    chown system system /sys/class/leds/blue:indicator/pause_lo
++    chown system system /sys/class/leds/blue:indicator/ramp_step_ms
++    chown system system /sys/class/leds/blue:indicator/start_idx
++    chown system system /sys/class/leds/blue:indicator/trigger
++
+     chown system system /sys/class/leds/blue:status/blink
+     chown system system /sys/class/leds/blue:status/breath
+     chown system system /sys/class/leds/blue:status/brightness
+@@ -89,6 +100,17 @@ on early-boot
+     chown system system /sys/class/leds/green/start_idx
+     chown system system /sys/class/leds/green/trigger
+ 
++    chown system system /sys/class/leds/green:indicator/blink
++    chown system system /sys/class/leds/green:indicator/breath
++    chown system system /sys/class/leds/green:indicator/brightness
++    chown system system /sys/class/leds/green:indicator/duty_pcts
++    chown system system /sys/class/leds/green:indicator/max_brightness
++    chown system system /sys/class/leds/green:indicator/pause_hi
++    chown system system /sys/class/leds/green:indicator/pause_lo
++    chown system system /sys/class/leds/green:indicator/ramp_step_ms
++    chown system system /sys/class/leds/green:indicator/start_idx
++    chown system system /sys/class/leds/green:indicator/trigger
++
+     chown system system /sys/class/leds/green:status/blink
+     chown system system /sys/class/leds/green:status/breath
+     chown system system /sys/class/leds/green:status/brightness
+@@ -177,6 +199,17 @@ on early-boot
+     chown system system /sys/class/leds/red/start_idx
+     chown system system /sys/class/leds/red/trigger
+ 
++    chown system system /sys/class/leds/red:indicator/blink
++    chown system system /sys/class/leds/red:indicator/breath
++    chown system system /sys/class/leds/red:indicator/brightness
++    chown system system /sys/class/leds/red:indicator/duty_pcts
++    chown system system /sys/class/leds/red:indicator/max_brightness
++    chown system system /sys/class/leds/red:indicator/pause_hi
++    chown system system /sys/class/leds/red:indicator/pause_lo
++    chown system system /sys/class/leds/red:indicator/ramp_step_ms
++    chown system system /sys/class/leds/red:indicator/start_idx
++    chown system system /sys/class/leds/red:indicator/trigger
++
+     chown system system /sys/class/leds/red:status/blink
+     chown system system /sys/class/leds/red:status/breath
+     chown system system /sys/class/leds/red:status/brightness
+@@ -201,6 +234,17 @@ on early-boot
+     chown system system /sys/class/leds/white/start_idx
+     chown system system /sys/class/leds/white/trigger
+ 
++    chown system system /sys/class/leds/white:indicator/blink
++    chown system system /sys/class/leds/white:indicator/breath
++    chown system system /sys/class/leds/white:indicator/brightness
++    chown system system /sys/class/leds/white:indicator/duty_pcts
++    chown system system /sys/class/leds/white:indicator/max_brightness
++    chown system system /sys/class/leds/white:indicator/pause_hi
++    chown system system /sys/class/leds/white:indicator/pause_lo
++    chown system system /sys/class/leds/white:indicator/ramp_step_ms
++    chown system system /sys/class/leds/white:indicator/start_idx
++    chown system system /sys/class/leds/white:indicator/trigger
++
+     chown system system /sys/class/leds/white:status/blink
+     chown system system /sys/class/leds/white:status/breath
+     chown system system /sys/class/leds/white:status/brightness
+-- 
+2.47.3
+

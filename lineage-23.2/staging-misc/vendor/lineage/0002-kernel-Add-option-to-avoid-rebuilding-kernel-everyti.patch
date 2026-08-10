@@ -1,0 +1,42 @@
+From b29b3dc9277b62542de0f19628939a6040fafbe3 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Sun, 21 Jun 2026 22:23:46 +0800
+Subject: [PATCH 2/2] kernel: Add option to avoid rebuilding kernel everytimes
+
+Sometimes when we repeat making full builds for debugging non-kernel
+stuff, the kernel may won't really change, however the build system
+always have to rebuild the kernel thus adds a long delay for
+rebuilding the kernel, which is annoying.
+
+In that case, enable this option by setting the environment variable.
+
+The build system wants to rebuild the kernel because it depends on
+file_list.txt which usually or always gets modified beforehand.
+
+This relies on change I231945a1755c51b9b81db3add930ba9c40b7d2d5
+otherwise it's effectively useless.
+
+Change-Id: I8f6546e6b2f8f6c2b3bafd71659719b29d92fdfe
+---
+ build/tasks/kernel.mk | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/build/tasks/kernel.mk b/build/tasks/kernel.mk
+index 99fc07c6..044c5312 100644
+--- a/build/tasks/kernel.mk
++++ b/build/tasks/kernel.mk
+@@ -523,7 +523,10 @@ $(KERNEL_CONFIG): $(ALL_KERNEL_DEFCONFIG_SRCS)
+ 	@echo "Building Kernel Config"
+ 	$(call make-kernel-config,$(KERNEL_OUT),$(ALL_KERNEL_DEFCONFIG_SRCS))
+ 
+-$(TARGET_PREBUILT_INT_KERNEL): $(KERNEL_CONFIG) $(DEPMOD) $(DTC) $(KERNEL_MODULES_PARTITION_FILE_LIST) $(SYSTEM_KERNEL_MODULES_PARTITION_FILE_LIST) $(BOOT_KERNEL_MODULES_FINDER) $(RECOVERY_KERNEL_MODULES_FINDER)
++ifneq ($(DO_NOT_REBUILD_KERNEL),true)
++$(TARGET_PREBUILT_INT_KERNEL): $(KERNEL_MODULES_PARTITION_FILE_LIST) $(SYSTEM_KERNEL_MODULES_PARTITION_FILE_LIST)
++endif
++$(TARGET_PREBUILT_INT_KERNEL): $(KERNEL_CONFIG) $(DEPMOD) $(DTC) $(BOOT_KERNEL_MODULES_FINDER) $(RECOVERY_KERNEL_MODULES_FINDER)
+ 	@echo "Building Kernel Image ($(BOARD_KERNEL_IMAGE_NAME))"
+ 	$(call make-kernel-target,$(BOARD_KERNEL_IMAGE_NAME))
+ 	$(hide) if [ -d "$(KERNEL_SRC)/arch/$(KERNEL_ARCH)/boot/dts/" ]; then \
+-- 
+2.47.3
+

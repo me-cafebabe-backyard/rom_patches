@@ -1,0 +1,339 @@
+From 27d95f7937ba20576c69c11aa4a8de57e1934c52 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Wed, 19 Jun 2024 23:40:59 +0800
+Subject: [PATCH] vibrator: Add support for amplitude control and haptic
+ effects for LED vibrator device
+
+Change-Id: I0ece275c7935e5510c40d24cfb1f39638c148b3c
+---
+ aidl/VibratorOL/Android.bp           |   1 +
+ aidl/VibratorOL/Vibrator.cpp         |  58 ++++++++-
+ aidl/VibratorOL/Vibrator.h           |  14 +++
+ aidl/VibratorOL/VibratorLedExtra.cpp | 177 +++++++++++++++++++++++++++
+ 4 files changed, 244 insertions(+), 6 deletions(-)
+ create mode 100644 aidl/VibratorOL/VibratorLedExtra.cpp
+
+diff --git a/aidl/VibratorOL/Android.bp b/aidl/VibratorOL/Android.bp
+index 219609f..ac98a74 100644
+--- a/aidl/VibratorOL/Android.bp
++++ b/aidl/VibratorOL/Android.bp
+@@ -7,6 +7,7 @@ cc_library_shared {
+     }),
+     srcs: [
+         "Vibrator.cpp",
++        "VibratorLedExtra.cpp",
+         "VibratorOffload.cpp",
+     ],
+     shared_libs: [
+diff --git a/aidl/VibratorOL/Vibrator.cpp b/aidl/VibratorOL/Vibrator.cpp
+index 31bfe5c..4ec4f2d 100644
+--- a/aidl/VibratorOL/Vibrator.cpp
++++ b/aidl/VibratorOL/Vibrator.cpp
+@@ -399,9 +399,56 @@ LedVibratorDevice::LedVibratorDevice() {
+     if (fd < 0) {
+         ALOGE("open %s failed, errno = %d", devicename, errno);
+         return;
++    } else {
++        close(fd);
++        mDetected = true;
++    }
++
++    snprintf(devicename, sizeof(devicename), "%s/%s", LED_DEVICE, "vmax_mv");
++    fd = open(devicename, O_RDWR);
++    if (fd < 0) {
++        ALOGE("open %s failed, errno = %d", devicename, errno);
++    } else {
++        close(fd);
++        /*
++         * The min/max settable mv is usually defined in the vibrator driver
++         * For example, `drivers/leds/leds-qpnp-vibrator-ldo.c` has these defined:
++         * `#define QPNP_VIB_LDO_VMIN_UV 1504000`
++         * `#define QPNP_VIB_LDO_VMAX_UV 3544000`
++         * Apparently, It's in UV unit. Convert it to MV by dividing by 1000.
++         *
++         * However, It's just the voltage limit of the vibrator driver chip,
++         * It neither reflect the allowed voltage range of the vibrator motor,
++         * nor whatever that should be passed to here.
++         * You'll have to figure it out by looking up and/or trying.
++         */
++        mMvMin = property_get_int32("vendor.qcom.vibrator.led.mv_min", 0);
++        if (mMvMin < 0) {
++            ALOGE("Failed to get min mv for LED vibrator device");
++            mMvMin = 0;
++        }
++        mMvMax = property_get_int32("vendor.qcom.vibrator.led.mv_max", 0);
++        if (mMvMax < 0) {
++            ALOGE("Failed to get max mv for LED vibrator device");
++            mMvMax = 0;
++        }
++        if (mMvMin && mMvMax && mMvMax > mMvMin) {
++            ALOGI("Enable amplitude control");
++            mSupportAmplitude = true;
++        }
++    }
++
++    mSupportEffects = !!property_get_bool("vendor.qcom.vibrator.led.enable_effects", 0);
++    if (mSupportEffects) {
++        ALOGI("Enable effects");
++
++        mEffectMsMultiplier = property_get_int32("vendor.qcom.vibrator.led.effect_ms_multiplier", 0);
++        if (mEffectMsMultiplier > 0) {
++            ALOGI("Effect ms multiplier is %d", mEffectMsMultiplier);
++        }
+     }
+ 
+-    mDetected = true;
++    return;
+ }
+ 
+ int LedVibratorDevice::write_value(const char *file, const char *value) {
+@@ -557,8 +604,7 @@ ndk::ScopedAStatus VibratorOL::getCapabilities(int32_t* _aidl_return) {
+     *_aidl_return = IVibrator::CAP_ON_CALLBACK;
+ 
+     if (ledVib.mDetected) {
+-        ALOGD("QTI Vibrator reporting capabilities: %d", *_aidl_return);
+-        return ndk::ScopedAStatus::ok();
++        return ledVib.getCapabilities(_aidl_return);
+     }
+ 
+     if (ff.mSupportGain)
+@@ -633,7 +679,7 @@ ndk::ScopedAStatus VibratorOL::perform(Effect effect, EffectStrength es, const s
+     int ret;
+ 
+     if (ledVib.mDetected)
+-        return ndk::ScopedAStatus(AStatus_fromExceptionCode(EX_UNSUPPORTED_OPERATION));
++        return ledVib.perform(effect, es, callback, _aidl_return);
+ 
+     ALOGD("Vibrator perform effect %d", effect);
+ 
+@@ -672,7 +718,7 @@ ndk::ScopedAStatus VibratorOL::perform(Effect effect, EffectStrength es, const s
+ 
+ ndk::ScopedAStatus VibratorOL::getSupportedEffects(std::vector<Effect>* _aidl_return) {
+     if (ledVib.mDetected)
+-        return ndk::ScopedAStatus::ok();
++        return ledVib.getSupportedEffects(_aidl_return);
+ 
+         if (Offload.mEnabled == 1) {
+             *_aidl_return = {Effect::CLICK, Effect::DOUBLE_CLICK, Effect::TICK, Effect::THUD,
+@@ -703,7 +749,7 @@ ndk::ScopedAStatus VibratorOL::setAmplitude(float amplitude) {
+     int ret;
+ 
+     if (ledVib.mDetected)
+-        return ndk::ScopedAStatus(AStatus_fromExceptionCode(EX_UNSUPPORTED_OPERATION));
++        return ledVib.setAmplitude(amplitude);
+ 
+     if (!ff.mSupportGain)
+         return ndk::ScopedAStatus(AStatus_fromExceptionCode(EX_UNSUPPORTED_OPERATION));
+diff --git a/aidl/VibratorOL/Vibrator.h b/aidl/VibratorOL/Vibrator.h
+index 0d45ff9..56fa150 100644
+--- a/aidl/VibratorOL/Vibrator.h
++++ b/aidl/VibratorOL/Vibrator.h
+@@ -94,8 +94,22 @@ public:
+     int on(int32_t timeoutMs);
+     int off();
+     bool mDetected;
++
++    ndk::ScopedAStatus getCapabilities(int32_t* _aidl_return);
++    ndk::ScopedAStatus perform(Effect effect, EffectStrength es,
++                               const std::shared_ptr<IVibratorCallback>& callback,
++                               int32_t* _aidl_return);
++    ndk::ScopedAStatus getSupportedEffects(std::vector<Effect>* _aidl_return);
++    ndk::ScopedAStatus setAmplitude(float amplitude);
+ private:
++    bool mSupportAmplitude;
++    bool mSupportEffects;
++    int32_t mEffectMsMultiplier;
++    int32_t mMvMin;
++    int32_t mMvMax;
+     int write_value(const char *file, const char *value);
++    int32_t effectToMs(Effect effect);
++    float strengthToAmplitude(EffectStrength strength);
+ };
+ 
+ class VibratorOL : public BnVibrator {
+diff --git a/aidl/VibratorOL/VibratorLedExtra.cpp b/aidl/VibratorOL/VibratorLedExtra.cpp
+new file mode 100644
+index 0000000..389422a
+--- /dev/null
++++ b/aidl/VibratorOL/VibratorLedExtra.cpp
+@@ -0,0 +1,177 @@
++/*
++ * Copyright (c) 2018-2021, The Linux Foundation. All rights reserved.
++ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
++ * Copyright (c) 2024, The LineageOS Project
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are
++ * met:
++ *     * Redistributions of source code must retain the above copyright
++ *       notice, this list of conditions and the following disclaimer.
++ *     * Redistributions in binary form must reproduce the above
++ *       copyright notice, this list of conditions and the following
++ *       disclaimer in the documentation and/or other materials provided
++ *       with the distribution.
++ *     * Neither the name of The Linux Foundation nor the names of its
++ *       contributors may be used to endorse or promote products derived
++ *       from this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED
++ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
++ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
++ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
++ * BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
++ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
++ * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
++ * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ *
++ * Changes from Qualcomm Innovation Center are provided under the following license:
++ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
++ * SPDX-License-Identifier: BSD-3-Clause-Clear
++ */
++
++#define LOG_TAG "vendor.qti.vibrator.led.extra"
++#include <log/log.h>
++
++#include <stdint.h>
++#include <stdio.h>
++
++#include "Vibrator.h"
++
++namespace aidl {
++namespace android {
++namespace hardware {
++namespace vibrator {
++
++int32_t LedVibratorDevice::effectToMs(Effect effect) {
++    int32_t val;
++    // Values taken from hardware/interfaces/vibrator/1.3/example/Vibrator.cpp
++    switch (effect) {
++        case Effect::CLICK:
++            val = 10;
++            break;
++        case Effect::DOUBLE_CLICK:
++            val = 15;
++            break;
++        case Effect::TICK:
++        case Effect::TEXTURE_TICK:
++            val = 5;
++            break;
++        case Effect::THUD:
++            val = 5;
++            break;
++        case Effect::POP:
++            val = 5;
++            break;
++        case Effect::HEAVY_CLICK:
++            val = 10;
++            break;
++        default:
++            // Unsupported
++            return 0;
++    }
++    if (mEffectMsMultiplier > 0)
++        val *= mEffectMsMultiplier;
++    return val;
++}
++
++ndk::ScopedAStatus LedVibratorDevice::getSupportedEffects(std::vector<Effect>* _aidl_return) {
++    *_aidl_return = {Effect::CLICK, Effect::DOUBLE_CLICK, Effect::TICK,        Effect::THUD,
++                     Effect::POP,   Effect::HEAVY_CLICK,  Effect::TEXTURE_TICK};
++    return ndk::ScopedAStatus::ok();
++}
++
++float LedVibratorDevice::strengthToAmplitude(EffectStrength strength) {
++    switch (strength) {
++        case EffectStrength::LIGHT:
++            return 0.3f;
++        case EffectStrength::MEDIUM:
++            return 0.6f;
++        case EffectStrength::STRONG:
++            return 0.9f;
++        default:
++            return 0.5f;
++    }
++}
++
++ndk::ScopedAStatus LedVibratorDevice::getCapabilities(int32_t* _aidl_return) {
++    *_aidl_return = IVibrator::CAP_ON_CALLBACK;
++
++    if (mSupportAmplitude) *_aidl_return |= IVibrator::CAP_AMPLITUDE_CONTROL;
++    if (mSupportEffects) *_aidl_return |= IVibrator::CAP_PERFORM_CALLBACK;
++
++    ALOGD("QTI Vibrator reporting capabilities: %d", *_aidl_return);
++    return ndk::ScopedAStatus::ok();
++}
++
++ndk::ScopedAStatus LedVibratorDevice::perform(Effect effect, EffectStrength es,
++                                              const std::shared_ptr<IVibratorCallback>& callback,
++                                              int32_t* _aidl_return) {
++    if (!mSupportEffects)
++        return ndk::ScopedAStatus(AStatus_fromExceptionCode(EX_UNSUPPORTED_OPERATION));
++
++    ALOGD("Vibrator perform effect %d", effect);
++
++    int32_t playLengthMs = effectToMs(effect);
++    if (!playLengthMs) {
++        ALOGE("No corresponding play duration");
++        return ndk::ScopedAStatus(AStatus_fromExceptionCode(EX_UNSUPPORTED_OPERATION));
++    }
++
++    if (mSupportAmplitude) {
++        if (es != EffectStrength::LIGHT && es != EffectStrength::MEDIUM &&
++            es != EffectStrength::STRONG) {
++            ALOGE("Invalid EffectStrength");
++            return ndk::ScopedAStatus(AStatus_fromExceptionCode(EX_UNSUPPORTED_OPERATION));
++        }
++
++        if (!setAmplitude(strengthToAmplitude(es)).isOk()) ALOGE("Failed to set amplitude");
++    }
++
++    if (on(playLengthMs) != 0) {
++        ALOGE("Failed to turn on vibrator");
++        return ndk::ScopedAStatus(AStatus_fromExceptionCode(EX_SERVICE_SPECIFIC));
++    }
++
++    if (callback != nullptr) {
++        std::thread([=] {
++            ALOGD("Starting perform on another thread");
++            usleep(playLengthMs * 1000);
++            ALOGD("Notifying perform complete");
++            callback->onComplete();
++        }).detach();
++    }
++
++    *_aidl_return = playLengthMs;
++    return ndk::ScopedAStatus::ok();
++}
++
++ndk::ScopedAStatus LedVibratorDevice::setAmplitude(float amplitude) {
++    if (!mSupportAmplitude)
++        return ndk::ScopedAStatus(AStatus_fromExceptionCode(EX_UNSUPPORTED_OPERATION));
++
++    ALOGD("Vibrator set amplitude: %f", amplitude);
++
++    if (amplitude <= 0.0f || amplitude > 1.0f) {
++        ALOGE("Invalid amplitude");
++        return ndk::ScopedAStatus(AStatus_fromExceptionCode(EX_ILLEGAL_ARGUMENT));
++    }
++
++    uint32_t mv = mMvMin + ((mMvMax - mMvMin) * amplitude);
++    ALOGD("Vibrator set mv: %u", mv);
++
++    if (write_value("/sys/class/leds/vibrator/vmax_mv", std::to_string(mv).c_str()) < 0) {
++        ALOGE("Failed to write to vmax_mv");
++        return ndk::ScopedAStatus(AStatus_fromExceptionCode(EX_SERVICE_SPECIFIC));
++    }
++
++    return ndk::ScopedAStatus::ok();
++}
++
++}  // namespace vibrator
++}  // namespace hardware
++}  // namespace android
++}  // namespace aidl
+-- 
+2.47.3
+

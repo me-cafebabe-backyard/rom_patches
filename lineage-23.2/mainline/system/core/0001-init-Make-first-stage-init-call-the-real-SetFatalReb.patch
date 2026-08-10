@@ -1,0 +1,43 @@
+From 31d8f49233f2f1bb452e28bdea788e345a46216e Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Wed, 23 Jul 2025 04:31:54 +0800
+Subject: [PATCH 1/6] init: Make first stage init call the real
+ SetFatalRebootTarget()
+
+Change-Id: Ie62f6ce7783f4c1b19464a44b8cd58e09fcb2e7b
+---
+ init/Android.bp        | 1 +
+ init/host_init_stubs.h | 4 ++++
+ 2 files changed, 5 insertions(+)
+
+diff --git a/init/Android.bp b/init/Android.bp
+index 3e2fb076b..dabd02182 100644
+--- a/init/Android.bp
++++ b/init/Android.bp
+@@ -446,6 +446,7 @@ init_first_stage_cc_defaults {
+         "-DSHUTDOWN_ZERO_TIMEOUT=0",
+         "-DLOG_UEVENTS=0",
+         "-DSEPOLICY_VERSION=30", // TODO(jiyong): externalize the version number
++        "-DUSE_REAL_SET_FATAL_REBOOT_TARGET_FUNC",
+     ] + GLOBAL_HWASAN_OPTIONS,
+ 
+     product_variables: {
+diff --git a/init/host_init_stubs.h b/init/host_init_stubs.h
+index 2fef9d349..f0f379fd6 100644
+--- a/init/host_init_stubs.h
++++ b/init/host_init_stubs.h
+@@ -46,7 +46,11 @@ inline bool CanReadProperty(const std::string&, const std::string&) {
+ }
+ 
+ // reboot_utils.h
++#if defined(USE_REAL_SET_FATAL_REBOOT_TARGET_FUNC)
++void SetFatalRebootTarget(const std::optional<std::string>& reboot_target = std::nullopt);
++#else
+ inline void SetFatalRebootTarget(const std::optional<std::string>& = std::nullopt) {}
++#endif
+ inline void __attribute__((noreturn)) InitFatalReboot(int signal_number) {
+     abort();
+ }
+-- 
+2.47.3
+

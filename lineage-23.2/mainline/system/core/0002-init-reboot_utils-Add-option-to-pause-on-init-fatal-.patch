@@ -1,0 +1,55 @@
+From 793042654560230b2aafeeb21020c37c11a173e9 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Wed, 23 Jul 2025 03:09:49 +0800
+Subject: [PATCH 2/6] init: reboot_utils: Add option to pause on init fatal
+ error
+
+Change-Id: Ie86329f1a03169d08c2dbb9269705e56c5f9ff1f
+---
+ init/reboot_utils.cpp | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/init/reboot_utils.cpp b/init/reboot_utils.cpp
+index 85a707bfd..ba7ad913f 100644
+--- a/init/reboot_utils.cpp
++++ b/init/reboot_utils.cpp
+@@ -39,6 +39,7 @@ namespace init {
+ 
+ [[clang::no_destroy]] static std::string init_fatal_reboot_target = "bootloader";
+ static bool init_fatal_panic = false;
++static bool init_fatal_pause = false;
+ 
+ // this needs to read the /proc/* files directly because it is called before
+ // ro.boot.* properties are initialized
+@@ -57,6 +58,16 @@ void SetFatalRebootTarget(const std::optional<std::string>& reboot_target) {
+         init_fatal_panic = cmdline.find(kInitFatalPanicString) != std::string::npos;
+     }
+ 
++    const std::string kInitFatalPauseParamString = "androidboot.init_fatal_pause";
++    if (cmdline.find(kInitFatalPauseParamString) == std::string::npos) {
++        std::string value;
++        init_fatal_pause = (android::fs_mgr::GetBootconfig(kInitFatalPauseParamString, &value) &&
++                            value == "true");
++    } else {
++        const std::string kInitFatalPauseString = kInitFatalPauseParamString + "=true";
++        init_fatal_pause = cmdline.find(kInitFatalPauseString) != std::string::npos;
++    }
++
+     if (reboot_target) {
+         init_fatal_reboot_target = *reboot_target;
+         return;
+@@ -185,6 +196,11 @@ void InstallRebootSignalHandlers() {
+             _exit(signal);
+         }
+ 
++        if (init_fatal_pause) {
++            LOG(ERROR) << "Call pause()";
++            pause();
++        }
++
+         // Calling DoReboot() or LOG(FATAL) is not a good option as this is a signal handler.
+         // RebootSystem uses syscall() which isn't actually async-signal-safe, but our only option
+         // and probably good enough given this is already an error case and only enabled for
+-- 
+2.47.3
+

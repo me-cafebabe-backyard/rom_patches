@@ -1,0 +1,47 @@
+From 0bd0ebdbd4bab198122b88306b52f3932fa54865 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Wed, 1 Jul 2026 00:32:18 +0800
+Subject: [PATCH 1/2] roomservice: Just run `fetch_dependencies()` with the
+ third param if exist
+
+Change-Id: I495c940bcdfb83437baa0fe2ece6c2c69d196c85
+---
+ build/tools/roomservice.py | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/build/tools/roomservice.py b/build/tools/roomservice.py
+index 15b727a8..835c3e22 100755
+--- a/build/tools/roomservice.py
++++ b/build/tools/roomservice.py
+@@ -38,10 +38,17 @@ if len(sys.argv) > 2:
+ else:
+     depsonly = None
+ 
++if len(sys.argv) > 3:
++    fetch_dependencies_in = sys.argv[3]
++else:
++    fetch_dependencies_in = None
++
+ try:
+     device = product[product.index('_') + 1 :]
+ except IndexError:
+     device = product
++except ValueError:
++    device = product
+ 
+ if not depsonly:
+     print(
+@@ -358,6 +365,10 @@ def get_default_or_fallback_revision(repo_name):
+ 
+ 
+ if depsonly:
++    if fetch_dependencies_in:
++        fetch_dependencies(fetch_dependencies_in)
++        sys.exit()
++
+     repo_path = get_from_manifest(device)
+     if repo_path:
+         fetch_dependencies(repo_path)
+-- 
+2.47.3
+

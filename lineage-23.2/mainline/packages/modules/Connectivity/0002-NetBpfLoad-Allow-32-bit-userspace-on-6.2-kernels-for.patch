@@ -1,0 +1,26 @@
+From 1330cc1ca703813d1b1819d19ade7a0f898f3f24 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Sun, 17 Aug 2025 19:50:51 +0800
+Subject: [PATCH 2/3] NetBpfLoad: Allow 32-bit userspace on 6.2+ kernels for
+ ARM
+
+Change-Id: Idddb8075165f5724365a1737c7e7262f6307deea
+---
+ bpf/loader/NetBpfLoad.cpp | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/bpf/loader/NetBpfLoad.cpp b/bpf/loader/NetBpfLoad.cpp
+index 238864798b..39a46a9811 100644
+--- a/bpf/loader/NetBpfLoad.cpp
++++ b/bpf/loader/NetBpfLoad.cpp
+@@ -1726,7 +1726,6 @@ static int doLoad(char** argv, char * const envp[]) {
+             ALOGW("[Arm KernelUpRev] 32-bit userspace unsupported on 6.2+ kernels.");
+         } else if (isArm()) {
+             ALOGE("[Arm] 64-bit userspace required on 6.2+ kernels (%d).", first_api_level);
+-            return 12;
+         } else { // x86 since RiscV cannot be 32-bit
+             ALOGE("[x86] 64-bit userspace required on 6.2+ kernels.");
+             return 13;
+-- 
+2.47.3
+
