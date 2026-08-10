@@ -1,0 +1,25 @@
+From 2266bb368e2e8db0ed67bba2026f2124857d67a8 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Mon, 27 Jul 2026 03:01:31 +0800
+Subject: [PATCH 3/3] NetBpfLoad: Allow 6.7.0+ kernel for 32-bit ARM
+
+Change-Id: I6036f6ff65b6fe142808e3e8c231becd17626009
+---
+ bpf/loader/NetBpfLoad.cpp | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/bpf/loader/NetBpfLoad.cpp b/bpf/loader/NetBpfLoad.cpp
+index 39a46a9811..788440bb09 100644
+--- a/bpf/loader/NetBpfLoad.cpp
++++ b/bpf/loader/NetBpfLoad.cpp
+@@ -1652,7 +1652,6 @@ static int doLoad(char** argv, char * const envp[]) {
+     // 6.6 is highest version supported by Android V, so this is effectively W+ (sdk=36+)
+     if (isKernel32Bit() && isAtLeastKernelVersion(6, 7)) {
+         ALOGE("Android platform with 32 bit kernel version >= 6.7.0 is unsupported");
+-        return 10;
+     }
+ 
+     // Various known ABI layout issues, particularly wrt. bpf and ipsec/xfrm.
+-- 
+2.47.3
+

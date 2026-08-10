@@ -1,0 +1,40 @@
+From 7a4adf0c710f881073dbf15c8b6486be25af7754 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Fri, 14 Mar 2025 00:15:36 +0800
+Subject: [PATCH] make: Use UTC timezone on date
+
+Change-Id: I08ef64be136edbec3704fe082141654c817a0194
+---
+ core/main.mk         | 2 +-
+ core/version_util.mk | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/core/main.mk b/core/main.mk
+index aed3fa2fd9..abc7a469f5 100644
+--- a/core/main.mk
++++ b/core/main.mk
+@@ -48,7 +48,7 @@ $(KATI_obsolete_var FILE_NAME_TAG,https://android.googlesource.com/platform/buil
+ .KATI_RESTAT: $(BUILD_NUMBER_FILE)
+ .KATI_RESTAT: $(BUILD_HOSTNAME_FILE)
+ 
+-DATE_FROM_FILE := date -d @$(BUILD_DATETIME_FROM_FILE)
++DATE_FROM_FILE := TZ=UTC date -d @$(BUILD_DATETIME_FROM_FILE)
+ .KATI_READONLY := DATE_FROM_FILE
+ 
+ 
+diff --git a/core/version_util.mk b/core/version_util.mk
+index cc94063bbe..d2139925d2 100644
+--- a/core/version_util.mk
++++ b/core/version_util.mk
+@@ -234,7 +234,7 @@ ifndef BUILD_DATETIME
+   BUILD_DATETIME := $(shell date +%s)
+ endif
+ 
+-DATE := date -d @$(BUILD_DATETIME)
++DATE := TZ=UTC date -d @$(BUILD_DATETIME)
+ .KATI_READONLY := DATE
+ 
+ # Everything should be using BUILD_DATETIME_FROM_FILE instead.
+-- 
+2.47.3
+

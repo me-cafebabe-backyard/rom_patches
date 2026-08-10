@@ -1,0 +1,83 @@
+From f9461248a227e24fdaee531ea45737ed41c63edf Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Tue, 11 Aug 2026 03:54:44 +0800
+Subject: [PATCH] Add option to use tmpfs as userdata
+
+* Helps testing ROM on devices containing important userdata
+* Set GSI running prop to offset gatekeeper UID, to avoid
+  breaking userdata encryption after going back to primary ROM
+
+Change-Id: I82d12a46c962b4d54d0ca27097ae9e5becdc1184
+---
+ libfstab/fstab.cpp | 41 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 41 insertions(+)
+
+diff --git a/libfstab/fstab.cpp b/libfstab/fstab.cpp
+index 85a57787..433c06c1 100644
+--- a/libfstab/fstab.cpp
++++ b/libfstab/fstab.cpp
+@@ -26,6 +26,7 @@
+ 
+ #include <algorithm>
+ #include <array>
++#include <unordered_map>
+ #include <utility>
+ #include <vector>
+ 
+@@ -490,6 +491,44 @@ std::string GetFstabPath() {
+     return "";
+ }
+ 
++namespace {
++
++void TransformFstabForTmpfsUserdata(Fstab* fstab) {
++    std::string tmp;
++    if (!fs_mgr_get_boot_config("use_tmpfs_userdata", &tmp)) return;
++
++    std::unordered_map<std::string, bool> mountpoints = {
++            {"/cache", false},
++            {"/data", true},
++            {"/metadata", true},
++    };
++
++    std::erase_if(*fstab, [&mountpoints](const FstabEntry& e) {
++        auto it = mountpoints.find(e.mount_point);
++        if (it != mountpoints.end()) {
++            it->second = true;
++            return true;
++        }
++        return false;
++    });
++
++    for (const auto& m : mountpoints) {
++        if (!m.second) continue;
++        LINFO << __FUNCTION__ << "(): Transform fstab entry " << m.first << " for tmpfs";
++
++        FstabEntry entry;
++        entry.blk_device = m.first.substr(1);
++        entry.fs_mgr_flags.first_stage_mount = true;
++        entry.fs_mgr_flags.late_mount = true;
++        entry.fs_type = "tmpfs";
++        entry.mount_point = m.first;
++
++        fstab->push_back(entry);
++    }
++}
++
++}  // namespace
++
+ bool ParseFstabFromString(const std::string& fstab_str, bool proc_mounts, Fstab* fstab_out) {
+     const int expected_fields = proc_mounts ? 4 : 5;
+ 
+@@ -535,6 +574,8 @@ bool ParseFstabFromString(const std::string& fstab_str, bool proc_mounts, Fstab*
+         return false;
+     }
+ 
++    TransformFstabForTmpfsUserdata(&fstab);
++
+     /* If an A/B partition, modify block device to be the real block device */
+     if (!fs_mgr_update_for_slotselect(&fstab)) {
+         LERROR << "Error updating for slotselect";
+-- 
+2.47.3
+

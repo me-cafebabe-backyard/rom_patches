@@ -1,0 +1,42 @@
+From e5715194466f36fc9a7a080d1d5d5197c0269c3f Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Sat, 2 Aug 2025 18:29:21 +0000
+Subject: [PATCH 5/5] property_service: Load /system/etc/override.prop
+
+Change-Id: I355b23b433c50b38d8e14b66adddedd3561f8628
+---
+ init/property_service.cpp | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/init/property_service.cpp b/init/property_service.cpp
+index 3c7a0f7e5..75334d044 100644
+--- a/init/property_service.cpp
++++ b/init/property_service.cpp
+@@ -76,6 +76,8 @@
+ #include "util.h"
+ #include "vendor_init.h"
+ 
++static constexpr char kOverrideProp[] = "/system/etc/override.prop";
++
+ [[maybe_unused]] static constexpr char APPCOMPAT_OVERRIDE_PROP_FOLDERNAME[] =
+         "/dev/__properties__/appcompat_override";
+ [[maybe_unused]] static constexpr char APPCOMPAT_OVERRIDE_PROP_TREE_FILE[] =
+@@ -1232,6 +1234,15 @@ void PropertyLoadBootDefaults() {
+     }
+ 
+     initialize_microdroid_properties(&properties);
++
++    if (access(kOverrideProp, R_OK) == 0) {
++        LOG(INFO) << "Loading " << kOverrideProp;
++        if (auto res = load_properties_from_file(kOverrideProp, nullptr, &properties);
++            !res.ok()) {
++            LOG(WARNING) << res.error();
++        }
++    }
++
+     for (const auto& [name, value] : properties) {
+         std::string error;
+         if (PropertySetNoSocket(name, value, &error) != PROP_SUCCESS) {
+-- 
+2.47.3
+

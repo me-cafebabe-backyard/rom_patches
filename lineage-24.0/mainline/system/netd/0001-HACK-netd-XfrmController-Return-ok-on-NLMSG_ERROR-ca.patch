@@ -1,0 +1,29 @@
+From cb6258052192df19a4ad2aad1cfbff09dc5950ea Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Sun, 17 Aug 2025 20:12:09 +0800
+Subject: [PATCH] HACK: netd: XfrmController: Return ok on NLMSG_ERROR case
+
+Change-Id: I148e96a00a3c04d748501bae1d9e1de51796f8a7
+---
+ server/XfrmController.cpp | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/server/XfrmController.cpp b/server/XfrmController.cpp
+index 2999a640..b78a299c 100644
+--- a/server/XfrmController.cpp
++++ b/server/XfrmController.cpp
+@@ -262,9 +262,8 @@ public:
+                     ALOGD("Netlink message received malformed error response");
+                     return netdutils::statusFromErrno(EBADMSG, "Malformed error response");
+                 }
+-                return netdutils::statusFromErrno(
+-                    -response.err.err.error,
+-                    "Error netlink message"); // Netlink errors are negative errno.
++                ALOGE("Error netlink message");
++                return netdutils::status::ok;
+             case XFRM_MSG_NEWSA:
+                 break;
+         }
+-- 
+2.47.3
+
