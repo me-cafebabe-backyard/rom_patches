@@ -1,4 +1,4 @@
-From e5715194466f36fc9a7a080d1d5d5197c0269c3f Mon Sep 17 00:00:00 2001
+From 1a075be468131352b7d71e3a357b9e6694ce5b13 Mon Sep 17 00:00:00 2001
 From: Yumi Yukimura <me.cafebabe@gmail.com>
 Date: Sat, 2 Aug 2025 18:29:21 +0000
 Subject: [PATCH 5/5] property_service: Load /system/etc/override.prop

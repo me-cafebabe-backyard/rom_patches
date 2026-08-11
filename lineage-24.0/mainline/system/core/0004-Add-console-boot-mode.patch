@@ -1,23 +1,44 @@
-From b0e3c8e16a5330f7a16b81ae06d47751dece7d67 Mon Sep 17 00:00:00 2001
+From 2df587c7778b4c39cc4ac160be9082b984c52954 Mon Sep 17 00:00:00 2001
 From: Yumi Yukimura <me.cafebabe@gmail.com>
 Date: Wed, 23 Jul 2025 03:32:11 +0800
 Subject: [PATCH 4/5] Add console boot mode
 
 Change-Id: Id51f200ca2c5123cf16212c363d770f503744581
 ---
- init/init.cpp   | 2 ++
+ init/init.cpp   | 7 +++++++
  rootdir/init.rc | 7 +++++++
- 2 files changed, 9 insertions(+)
+ 2 files changed, 14 insertions(+)
 
 diff --git a/init/init.cpp b/init/init.cpp
-index dae26f583..aac5cbe73 100644
+index dae26f583..b12ff622e 100644
 --- a/init/init.cpp
 +++ b/init/init.cpp
-@@ -1279,6 +1279,8 @@ int SecondStageMain(int argc, char** argv) {
+@@ -122,6 +122,8 @@ using android::snapshot::SnapshotManager;
+ namespace android {
+ namespace init {
+ 
++static bool bootmode_console = false;
++
+ static int property_triggers_enabled = 0;
+ 
+ static int sigterm_fd = -1;
+@@ -693,8 +695,11 @@ static Result<void> queue_property_triggers_action(const BuiltinArguments& args)
+ // Needs to be called after PropertyInit() is called
+ static BootMode GetBootMode() {
+     auto bootmode = GetProperty("ro.bootmode", GetProperty("ro.boot.mode", ""));
++
+     if (bootmode == "charger") {
+         return BootMode::CHARGER_MODE;
++    } else if (bootmode == "console") {
++        bootmode_console = true;
+     } else if (IsRecoveryMode() && GetIntProperty("ro.boot.force_normal_boot", 0) == 0) {
+         return BootMode::RECOVERY_MODE;
+     }
+@@ -1279,6 +1284,8 @@ int SecondStageMain(int argc, char** argv) {
      // Don't mount filesystems or start core system services in charger mode.
      if (bootmode == BootMode::CHARGER_MODE) {
          am.QueueEventTrigger("charger");
-+    } else if (bootmode == "console") {
++    } else if (bootmode_console) {
 +        am.QueueEventTrigger("console");
      } else {
          am.QueueEventTrigger("late-init");
