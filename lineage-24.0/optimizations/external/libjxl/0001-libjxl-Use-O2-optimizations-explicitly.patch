@@ -1,0 +1,27 @@
+From c67d887dad7db9a8fcd479f286d6d197e4c5faf9 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Tue, 11 Aug 2026 13:22:22 +0800
+Subject: [PATCH] libjxl: Use `-O2` optimizations explicitly
+
+Breaks with `-O3`.
+
+Change-Id: Ibe27b0ebd94cec9caf5fe646a67f6946c5aba296
+---
+ Android.bp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/Android.bp b/Android.bp
+index a8b3f829..795a8bde 100644
+--- a/Android.bp
++++ b/Android.bp
+@@ -20,6 +20,7 @@ cc_library {
+     vendor_available: true,
+     cflags: [
+         "-DJPEGXL_ENABLE_SKCMS=1",
++        "-O2",
+     ],
+     sanitize: {
+         all_undefined: true,
+-- 
+2.47.3
+

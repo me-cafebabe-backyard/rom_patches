@@ -1,0 +1,26 @@
+From b8990bfd6c52b7187489ca04ee40d51c91fe6b62 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Tue, 11 Aug 2026 13:23:53 +0800
+Subject: [PATCH] AdServices: Allow `external/vanadium` to use
+ `android.ext.adservices`
+
+Change-Id: I5a50a547995dc63dfd16c9dd8c3fb223f3bc3399
+---
+ adservices/framework/Android.bp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/adservices/framework/Android.bp b/adservices/framework/Android.bp
+index 5421a430ef..4239b26f78 100644
+--- a/adservices/framework/Android.bp
++++ b/adservices/framework/Android.bp
+@@ -100,6 +100,7 @@ java_library {
+     visibility: [
+         "//device/google:__subpackages__",
+         "//external/chromium-webview:__subpackages__",
++        "//external/vanadium:__subpackages__",
+         "//packages/modules/AdServices:__subpackages__",
+         "//packages/modules/ExtServices:__subpackages__",
+         "//vendor:__subpackages__",
+-- 
+2.47.3
+
