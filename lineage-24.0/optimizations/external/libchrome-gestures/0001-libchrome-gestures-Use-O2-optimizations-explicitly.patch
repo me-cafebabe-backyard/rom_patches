@@ -1,0 +1,27 @@
+From 99a050966ff3be6bded5569fad9c7f6c036510a2 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Tue, 11 Aug 2026 16:04:44 +0800
+Subject: [PATCH] libchrome-gestures: Use `-O2` optimizations explicitly
+
+Breaks with `-O3`.
+
+Change-Id: I12a7bf9db0b6d4d66816e231da5a43658fffb1ad
+---
+ Android.bp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/Android.bp b/Android.bp
+index d0d1251..acb6f4d 100644
+--- a/Android.bp
++++ b/Android.bp
+@@ -38,6 +38,7 @@ cc_defaults {
+         "-D__STDC_FORMAT_MACROS=1",
+         "-D_FILE_OFFSET_BITS=64",
+         "-DGESTURES_INTERNAL=1",
++        "-O2",
+     ],
+     cpp_std: "c++20",
+     sanitize: {
+-- 
+2.47.3
+
