@@ -1,0 +1,26 @@
+From 4ed45d863c62e3d6ab623291c94be075e0d044f2 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Wed, 12 Aug 2026 10:06:09 +0000
+Subject: [PATCH] zstd: Android.bp: Add `//vendor:__subpackages__` to
+ visibility
+
+Change-Id: I12cbe2c8b47a0ceccf248b088202fefc74525b3a
+---
+ Android.bp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/Android.bp b/Android.bp
+index 51f5d112..901f8c93 100644
+--- a/Android.bp
++++ b/Android.bp
+@@ -92,6 +92,7 @@ cc_library {
+         "//system/fs/fs_mgr/libsnapshot:__subpackages__",
+         "//system/unwinding/libunwindstack:__subpackages__",
+         "//test/pts:__subpackages__",
++        "//vendor:__subpackages__",
+     ],
+     product_available: true,
+     recovery_available: true,
+-- 
+2.47.3
+
