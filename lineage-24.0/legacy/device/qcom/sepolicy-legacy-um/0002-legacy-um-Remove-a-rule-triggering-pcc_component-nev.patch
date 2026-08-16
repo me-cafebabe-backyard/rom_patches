@@ -1,8 +1,8 @@
-From 914054af891c516b75b683f4ffe05383146d5759 Mon Sep 17 00:00:00 2001
+From 83123f96941bd14dd174356bd12123a6a686bbf2 Mon Sep 17 00:00:00 2001
 From: Yumi Yukimura <me.cafebabe@gmail.com>
 Date: Sun, 16 Aug 2026 19:55:08 +0800
-Subject: [PATCH 2/2] sepolicy-legacy-um: Remove a rule triggering
- `pcc_component` neverallow
+Subject: [PATCH 2/3] legacy-um: Remove a rule triggering `pcc_component`
+ neverallow
 
 Change-Id: I928721c30a85686be7c52d4e8e9609c40ef7dd01
 ---

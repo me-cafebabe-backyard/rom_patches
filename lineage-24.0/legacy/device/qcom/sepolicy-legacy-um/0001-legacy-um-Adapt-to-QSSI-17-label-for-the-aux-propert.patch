@@ -1,8 +1,7 @@
-From 17178f7576c7c58c79e0927d82dacd0fe1d6c67a Mon Sep 17 00:00:00 2001
+From c0807bde7b4614e7dcfc536029addeda4c9b173e Mon Sep 17 00:00:00 2001
 From: Yumi Yukimura <me.cafebabe@gmail.com>
 Date: Sun, 16 Aug 2026 19:36:23 +0800
-Subject: [PATCH 1/2] sepolicy-legacy-um: `vendor_persist_camera_prop` ->
- `camera2_extensions_prop`
+Subject: [PATCH 1/3] legacy-um: Adapt to QSSI 17 label for the aux properties
 
 Change-Id: Iad10a50fb26e1f5ff7140afa0aeb249a254da3dd
 ---
@@ -10,10 +9,10 @@ Change-Id: Iad10a50fb26e1f5ff7140afa0aeb249a254da3dd
  legacy/vendor/common/qtelephony.te    | 2 +-
  legacy/vendor/common/untrusted_app.te | 2 +-
  qva/private/cameraserver.te           | 2 +-
- qva/private/platform_app.te           | 2 +-
+ qva/private/platform_app.te           | 3 +--
  qva/private/priv_app.te               | 2 +-
  qva/private/property_contexts         | 1 -
- 7 files changed, 6 insertions(+), 7 deletions(-)
+ 7 files changed, 6 insertions(+), 8 deletions(-)
 
 diff --git a/legacy/vendor/common/gmscore_app.te b/legacy/vendor/common/gmscore_app.te
 index 9481b67a..cba64631 100644
@@ -61,13 +60,14 @@ index 0a288d85..3e9f6a2d 100644
  #access to cameraservice apis by faceauth
  hal_client_domain(cameraserver, hal_face)
 diff --git a/qva/private/platform_app.te b/qva/private/platform_app.te
-index 7857487a..68a0940c 100755
+index 7857487a..ebea5b35 100755
 --- a/qva/private/platform_app.te
 +++ b/qva/private/platform_app.te
-@@ -26,7 +26,7 @@
+@@ -25,8 +25,7 @@
+ # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  # IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  
- #allow platform_app to read vendor_camera_prop
+-#allow platform_app to read vendor_camera_prop
 -get_prop(platform_app, vendor_persist_camera_prop)
 +get_prop(platform_app, camera2_extensions_prop)
  # Allow cneservice to be found
