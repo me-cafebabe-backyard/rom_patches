@@ -1,0 +1,54 @@
+From cce25f165326f3b48689c44b38b908fe3a2517f3 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Sun, 16 Aug 2026 14:18:40 +0800
+Subject: [PATCH] Revert "Revert^4 "No displayservice.""
+
+This reverts commit 8c26bc2ca2220c638f21d5560fac2684386a4e9e.
+---
+ build/hidl_interface.go     | 1 +
+ test/vendor/1.1/Android.bp  | 1 +
+ test/vendor/1.1/IVendor.hal | 4 ++++
+ 3 files changed, 6 insertions(+)
+
+diff --git a/build/hidl_interface.go b/build/hidl_interface.go
+index b517e843..47c44323 100644
+--- a/build/hidl_interface.go
++++ b/build/hidl_interface.go
+@@ -898,6 +898,7 @@ var allAospHidlInterfaces = map[string]bool{
+ 	"android.frameworks.cameraservice.service@2.0": true,
+ 	"android.frameworks.cameraservice.service@2.1": true,
+ 	"android.frameworks.cameraservice.service@2.2": true,
++	"android.frameworks.displayservice@1.0":        true,
+ 	"android.frameworks.sensorservice@1.0":         true,
+ 	"android.frameworks.stats@1.0":                 true,
+ 	"android.frameworks.vr.composer@1.0":           true,
+diff --git a/test/vendor/1.1/Android.bp b/test/vendor/1.1/Android.bp
+index 2a764645..54f0379e 100644
+--- a/test/vendor/1.1/Android.bp
++++ b/test/vendor/1.1/Android.bp
+@@ -19,6 +19,7 @@ hidl_interface {
+         "types.hal",
+     ],
+     interfaces: [
++        "android.frameworks.displayservice@1.0",
+         "android.hardware.tests.baz@1.0",
+         "android.hidl.base@1.0",
+         "hidl.tests.vendor@1.0",
+diff --git a/test/vendor/1.1/IVendor.hal b/test/vendor/1.1/IVendor.hal
+index 3d0f83b6..b574e332 100644
+--- a/test/vendor/1.1/IVendor.hal
++++ b/test/vendor/1.1/IVendor.hal
+@@ -18,6 +18,10 @@ package hidl.tests.vendor@1.1;
+ 
+ import hidl.tests.vendor@1.0::IVendor;
+ 
++// this import is unused, but it should still show up in the
++// associated Android.bp
++import android.frameworks.displayservice@1.0;
++
+ interface IVendor extends @1.0::IVendor {
+     safe_union Test {
+         int64_t foo;
+-- 
+2.47.3
+

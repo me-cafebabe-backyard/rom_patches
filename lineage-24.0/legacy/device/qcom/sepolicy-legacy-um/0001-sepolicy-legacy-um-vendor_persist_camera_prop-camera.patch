@@ -1,0 +1,103 @@
+From 17178f7576c7c58c79e0927d82dacd0fe1d6c67a Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Sun, 16 Aug 2026 19:36:23 +0800
+Subject: [PATCH 1/2] sepolicy-legacy-um: `vendor_persist_camera_prop` ->
+ `camera2_extensions_prop`
+
+Change-Id: Iad10a50fb26e1f5ff7140afa0aeb249a254da3dd
+---
+ legacy/vendor/common/gmscore_app.te   | 2 +-
+ legacy/vendor/common/qtelephony.te    | 2 +-
+ legacy/vendor/common/untrusted_app.te | 2 +-
+ qva/private/cameraserver.te           | 2 +-
+ qva/private/platform_app.te           | 2 +-
+ qva/private/priv_app.te               | 2 +-
+ qva/private/property_contexts         | 1 -
+ 7 files changed, 6 insertions(+), 7 deletions(-)
+
+diff --git a/legacy/vendor/common/gmscore_app.te b/legacy/vendor/common/gmscore_app.te
+index 9481b67a..cba64631 100644
+--- a/legacy/vendor/common/gmscore_app.te
++++ b/legacy/vendor/common/gmscore_app.te
+@@ -31,4 +31,4 @@ allow gmscore_app vendor_dpmd:unix_stream_socket connectto;
+ 
+ binder_call(gmscore_app, hal_perf_default)
+ 
+-get_prop(gmscore_app, vendor_persist_camera_prop)
++get_prop(gmscore_app, camera2_extensions_prop)
+diff --git a/legacy/vendor/common/qtelephony.te b/legacy/vendor/common/qtelephony.te
+index 60d82e3c..7263c40f 100644
+--- a/legacy/vendor/common/qtelephony.te
++++ b/legacy/vendor/common/qtelephony.te
+@@ -27,7 +27,7 @@
+ 
+ get_prop(vendor_qtelephony, vendor_radio_prop)
+ get_prop(vendor_qtelephony, vendor_qcom_ims_prop)
+-get_prop(vendor_qtelephony, vendor_persist_camera_prop)
++get_prop(vendor_qtelephony, camera2_extensions_prop)
+ get_prop(vendor_qtelephony, vendor_audio_prop)
+ get_prop(vendor_qtelephony, vendor_video_prop)
+ 
+diff --git a/legacy/vendor/common/untrusted_app.te b/legacy/vendor/common/untrusted_app.te
+index b1bac850..d818845b 100644
+--- a/legacy/vendor/common/untrusted_app.te
++++ b/legacy/vendor/common/untrusted_app.te
+@@ -39,4 +39,4 @@ allow untrusted_app gba_auth_service:service_manager find;
+ #      some addtional change.
+ # allow untrusted apps to access hal_perf
+ # hal_client_domain(untrusted_app, hal_perf);
+-get_prop(untrusted_app_29, vendor_persist_camera_prop)
++get_prop(untrusted_app_29, camera2_extensions_prop)
+diff --git a/qva/private/cameraserver.te b/qva/private/cameraserver.te
+index 0a288d85..3e9f6a2d 100644
+--- a/qva/private/cameraserver.te
++++ b/qva/private/cameraserver.te
+@@ -25,6 +25,6 @@
+ # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+ # IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
+-get_prop(cameraserver, vendor_persist_camera_prop)
++get_prop(cameraserver, camera2_extensions_prop)
+ #access to cameraservice apis by faceauth
+ hal_client_domain(cameraserver, hal_face)
+diff --git a/qva/private/platform_app.te b/qva/private/platform_app.te
+index 7857487a..68a0940c 100755
+--- a/qva/private/platform_app.te
++++ b/qva/private/platform_app.te
+@@ -26,7 +26,7 @@
+ # IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
+ #allow platform_app to read vendor_camera_prop
+-get_prop(platform_app, vendor_persist_camera_prop)
++get_prop(platform_app, camera2_extensions_prop)
+ # Allow cneservice to be found
+ allow platform_app vendor_cne_service:service_manager find;
+ 
+diff --git a/qva/private/priv_app.te b/qva/private/priv_app.te
+index 2fef4c3f..284617ac 100644
+--- a/qva/private/priv_app.te
++++ b/qva/private/priv_app.te
+@@ -25,7 +25,7 @@
+ # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+ # IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
+-get_prop(priv_app, vendor_persist_camera_prop)
++get_prop(priv_app, camera2_extensions_prop)
+ allow priv_app vendor_dpmtcm_socket:sock_file w_file_perms;
+ allow priv_app vendor_dpmd:unix_stream_socket connectto;
+ # QVA app need to find soundtrigger_middleware_service
+diff --git a/qva/private/property_contexts b/qva/private/property_contexts
+index 48e87800..8ad3d45a 100644
+--- a/qva/private/property_contexts
++++ b/qva/private/property_contexts
+@@ -35,7 +35,6 @@ ro.vendor.btstack.                         u:object_r:bluetooth_prop:s0
+ vendor.pts.                                u:object_r:bluetooth_prop:s0
+ vendor.bt.pts.                             u:object_r:bluetooth_prop:s0
+ vendor.bluetooth.                          u:object_r:bluetooth_prop:s0
+-persist.vendor.camera.privapp.list         u:object_r:vendor_persist_camera_prop:s0
+ 
+ #mm-parser
+ vendor.mm.enable.qcom_parser       u:object_r:vendor_mm_parser_prop:s0
+-- 
+2.47.3
+
