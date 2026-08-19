@@ -1,19 +1,23 @@
-From 03b1d5eefce3750e65950016c328e86721b9a262 Mon Sep 17 00:00:00 2001
+From 3b2b8581f3b97ecc5008525e8efdf5cf5948d36f Mon Sep 17 00:00:00 2001
 From: Yumi Yukimura <me.cafebabe@gmail.com>
 Date: Sun, 16 Aug 2026 13:37:19 +0800
 Subject: [PATCH] Revert "Revert^4 "Remove displayservice.""
 
+Rename to "lineage" while at it.
+
 This reverts commit 3e3feee25c4bec566b709dc7071f7ff7678e3f4e.
+
+Change-Id: Ifbeae5c49b9d22a854ffeac261c815623381229a
 ---
  services/displayservice/Android.bp            |  60 ++++++
- .../displayservice/DisplayEventReceiver.cpp   | 182 ++++++++++++++++++
- services/displayservice/DisplayService.cpp    |  34 ++++
+ .../displayservice/DisplayEventReceiver.cpp   | 184 ++++++++++++++++++
+ services/displayservice/DisplayService.cpp    |  36 ++++
  services/displayservice/OWNERS                |   1 +
- .../displayservice/DisplayEventReceiver.h     |  72 +++++++
- .../include/displayservice/DisplayService.h   |  42 ++++
- services/surfaceflinger/Android.bp            |   2 +
+ .../displayservice/DisplayEventReceiver.h     |  74 +++++++
+ .../include/displayservice/DisplayService.h   |  43 ++++
+ services/surfaceflinger/Android.bp            |   5 +
  .../surfaceflinger/main_surfaceflinger.cpp    |  17 ++
- 8 files changed, 410 insertions(+)
+ 8 files changed, 420 insertions(+)
  create mode 100644 services/displayservice/Android.bp
  create mode 100644 services/displayservice/DisplayEventReceiver.cpp
  create mode 100644 services/displayservice/DisplayService.cpp
@@ -23,7 +27,7 @@ This reverts commit 3e3feee25c4bec566b709dc7071f7ff7678e3f4e.
 
 diff --git a/services/displayservice/Android.bp b/services/displayservice/Android.bp
 new file mode 100644
-index 0000000000..c88f2fca83
+index 0000000000..d61382f801
 --- /dev/null
 +++ b/services/displayservice/Android.bp
 @@ -0,0 +1,60 @@
@@ -69,7 +73,7 @@ index 0000000000..c88f2fca83
 +    ],
 +
 +    static_libs: [
-+        "android.frameworks.displayservice@1.0",
++        "lineage.frameworks.displayservice@1.0",
 +    ],
 +
 +    export_include_dirs: ["include"],
@@ -79,7 +83,7 @@ index 0000000000..c88f2fca83
 +    ],
 +
 +    export_static_lib_headers: [
-+        "android.frameworks.displayservice@1.0",
++        "lineage.frameworks.displayservice@1.0",
 +    ],
 +
 +    cflags: [
@@ -89,10 +93,10 @@ index 0000000000..c88f2fca83
 +}
 diff --git a/services/displayservice/DisplayEventReceiver.cpp b/services/displayservice/DisplayEventReceiver.cpp
 new file mode 100644
-index 0000000000..9927fb66d3
+index 0000000000..04f0bf8f01
 --- /dev/null
 +++ b/services/displayservice/DisplayEventReceiver.cpp
-@@ -0,0 +1,182 @@
+@@ -0,0 +1,184 @@
 +/*
 + * Copyright (C) 2017 The Android Open Source Project
 + *
@@ -114,16 +118,18 @@ index 0000000000..9927fb66d3
 +#include <displayservice/DisplayEventReceiver.h>
 +
 +#include <android-base/logging.h>
-+#include <android/frameworks/displayservice/1.0/BpHwEventCallback.h>
++#include <lineage/frameworks/displayservice/1.0/BpHwEventCallback.h>
 +
 +#include <thread>
 +#include <ftl/enum.h>
 +
-+namespace android {
++namespace lineage {
 +namespace frameworks {
 +namespace displayservice {
 +namespace V1_0 {
 +namespace implementation {
++
++using namespace ::android;
 +
 +sp<Looper> getLooper() {
 +    static sp<Looper> looper = []() {
@@ -274,13 +280,13 @@ index 0000000000..9927fb66d3
 +}  // namespace V1_0
 +}  // namespace displayservice
 +}  // namespace frameworks
-+}  // namespace android
++}  // namespace lineage
 diff --git a/services/displayservice/DisplayService.cpp b/services/displayservice/DisplayService.cpp
 new file mode 100644
-index 0000000000..18418fdd4f
+index 0000000000..4e225673b5
 --- /dev/null
 +++ b/services/displayservice/DisplayService.cpp
-@@ -0,0 +1,34 @@
+@@ -0,0 +1,36 @@
 +/*
 + * Copyright (C) 2017 The Android Open Source Project
 + *
@@ -300,11 +306,13 @@ index 0000000000..18418fdd4f
 +#include <displayservice/DisplayService.h>
 +#include <displayservice/DisplayEventReceiver.h>
 +
-+namespace android {
++namespace lineage {
 +namespace frameworks {
 +namespace displayservice {
 +namespace V1_0 {
 +namespace implementation {
++
++using namespace ::android;
 +
 +Return<sp<IDisplayEventReceiver>> DisplayService::getEventReceiver() {
 +    return new DisplayEventReceiver();
@@ -314,7 +322,7 @@ index 0000000000..18418fdd4f
 +}  // namespace V1_0
 +}  // namespace displayservice
 +}  // namespace frameworks
-+}  // namespace android
++}  // namespace lineage
 diff --git a/services/displayservice/OWNERS b/services/displayservice/OWNERS
 new file mode 100644
 index 0000000000..40164aae0c
@@ -324,10 +332,10 @@ index 0000000000..40164aae0c
 +smoreland@google.com
 diff --git a/services/displayservice/include/displayservice/DisplayEventReceiver.h b/services/displayservice/include/displayservice/DisplayEventReceiver.h
 new file mode 100644
-index 0000000000..042a0549f5
+index 0000000000..c583de559f
 --- /dev/null
 +++ b/services/displayservice/include/displayservice/DisplayEventReceiver.h
-@@ -0,0 +1,72 @@
+@@ -0,0 +1,74 @@
 +/*
 + * Copyright (C) 2017 The Android Open Source Project
 + *
@@ -344,10 +352,10 @@ index 0000000000..042a0549f5
 + * limitations under the License.
 + */
 +
-+#ifndef ANDROID_FRAMEWORKS_DISPLAYSERVICE_V1_0_DISPLAYEVENTRECEIVER_H
-+#define ANDROID_FRAMEWORKS_DISPLAYSERVICE_V1_0_DISPLAYEVENTRECEIVER_H
++#ifndef LINEAGE_FRAMEWORKS_DISPLAYSERVICE_V1_0_DISPLAYEVENTRECEIVER_H
++#define LINEAGE_FRAMEWORKS_DISPLAYSERVICE_V1_0_DISPLAYEVENTRECEIVER_H
 +
-+#include <android/frameworks/displayservice/1.0/IDisplayEventReceiver.h>
++#include <lineage/frameworks/displayservice/1.0/IDisplayEventReceiver.h>
 +#include <gui/DisplayEventReceiver.h>
 +#include <hidl/Status.h>
 +#include <gui/DisplayEventReceiver.h>
@@ -355,7 +363,7 @@ index 0000000000..042a0549f5
 +
 +#include <mutex>
 +
-+namespace android {
++namespace lineage {
 +namespace frameworks {
 +namespace displayservice {
 +namespace V1_0 {
@@ -363,6 +371,8 @@ index 0000000000..042a0549f5
 +
 +using ::android::hardware::Return;
 +using ::android::hardware::Void;
++using ::android::LooperCallback;
++using ::android::sp;
 +
 +class DisplayEventReceiver : public IDisplayEventReceiver {
 +public:
@@ -397,15 +407,15 @@ index 0000000000..042a0549f5
 +}  // namespace V1_0
 +}  // namespace displayservice
 +}  // namespace frameworks
-+}  // namespace android
++}  // namespace lineage
 +
-+#endif  // ANDROID_FRAMEWORKS_DISPLAYSERVICE_V1_0_DISPLAYEVENTRECEIVER_H
++#endif  // LINEAGE_FRAMEWORKS_DISPLAYSERVICE_V1_0_DISPLAYEVENTRECEIVER_H
 diff --git a/services/displayservice/include/displayservice/DisplayService.h b/services/displayservice/include/displayservice/DisplayService.h
 new file mode 100644
-index 0000000000..9722e7120d
+index 0000000000..d40941e4f1
 --- /dev/null
 +++ b/services/displayservice/include/displayservice/DisplayService.h
-@@ -0,0 +1,42 @@
+@@ -0,0 +1,43 @@
 +/*
 + * Copyright (C) 2017 The Android Open Source Project
 + *
@@ -422,13 +432,13 @@ index 0000000000..9722e7120d
 + * limitations under the License.
 + */
 +
-+#ifndef ANDROID_FRAMEWORKS_DISPLAYSERVICE_V1_0_DISPLAYSERVICE_H
-+#define ANDROID_FRAMEWORKS_DISPLAYSERVICE_V1_0_DISPLAYSERVICE_H
++#ifndef LINEAGE_FRAMEWORKS_DISPLAYSERVICE_V1_0_DISPLAYSERVICE_H
++#define LINEAGE_FRAMEWORKS_DISPLAYSERVICE_V1_0_DISPLAYSERVICE_H
 +
-+#include <android/frameworks/displayservice/1.0/IDisplayService.h>
++#include <lineage/frameworks/displayservice/1.0/IDisplayService.h>
 +#include <hidl/Status.h>
 +
-+namespace android {
++namespace lineage {
 +namespace frameworks {
 +namespace displayservice {
 +namespace V1_0 {
@@ -436,6 +446,7 @@ index 0000000000..9722e7120d
 +
 +using ::android::hardware::Return;
 +using ::android::hardware::Void;
++using ::android::sp;
 +
 +struct DisplayService : public IDisplayService {
 +    Return<sp<IDisplayEventReceiver>> getEventReceiver() override;
@@ -445,48 +456,49 @@ index 0000000000..9722e7120d
 +}  // namespace V1_0
 +}  // namespace displayservice
 +}  // namespace frameworks
-+}  // namespace android
++}  // namespace lineage
 +
-+#endif  // ANDROID_FRAMEWORKS_DISPLAYSERVICE_V1_0_DISPLAYSERVICE_H
++#endif  // LINEAGE_FRAMEWORKS_DISPLAYSERVICE_V1_0_DISPLAYSERVICE_H
 diff --git a/services/surfaceflinger/Android.bp b/services/surfaceflinger/Android.bp
-index 2b92092a44..d89c062bbd 100644
+index 2b92092a44..c6b3e2c2a9 100644
 --- a/services/surfaceflinger/Android.bp
 +++ b/services/surfaceflinger/Android.bp
-@@ -355,6 +355,8 @@ cc_defaults {
+@@ -355,8 +355,13 @@ cc_defaults {
          "libutils",
      ],
      static_libs: [
-+        "android.frameworks.displayservice@1.0",
++        "lineage.frameworks.displayservice@1.0",
 +        "libdisplayservicehidl",
          "libserviceutils",
      ],
++    required: [
++        "lineage.frameworks.displayservice@1.0.xml",
++    ],
  }
+ 
+ filegroup {
 diff --git a/services/surfaceflinger/main_surfaceflinger.cpp b/services/surfaceflinger/main_surfaceflinger.cpp
-index 4dde12ee5d..c8194e9b60 100644
+index 4dde12ee5d..d1c26993d6 100644
 --- a/services/surfaceflinger/main_surfaceflinger.cpp
 +++ b/services/surfaceflinger/main_surfaceflinger.cpp
-@@ -22,12 +22,14 @@
- 
- #include <sched.h>
- 
-+#include <android/frameworks/displayservice/1.0/IDisplayService.h>
- #include <android/hardware/graphics/allocator/2.0/IAllocator.h>
- #include <android/hardware/graphics/allocator/3.0/IAllocator.h>
- #include <binder/IPCThreadState.h>
+@@ -28,8 +28,10 @@
  #include <binder/IServiceManager.h>
  #include <binder/ProcessState.h>
  #include <common/FlagManager.h>
 +#include <displayservice/DisplayService.h>
  #include <errno.h>
  #include <hidl/LegacySupport.h>
++#include <lineage/frameworks/displayservice/1.0/IDisplayService.h>
  #include <processgroup/sched_policy.h>
+ #include "SurfaceFlinger.h"
+ #include "SurfaceFlingerFactory.h"
 @@ -58,6 +60,19 @@ static status_t startGraphicsAllocatorService() {
      return OK;
  }
  
 +static void startDisplayService() {
-+    using android::frameworks::displayservice::V1_0::implementation::DisplayService;
-+    using android::frameworks::displayservice::V1_0::IDisplayService;
++    using lineage::frameworks::displayservice::V1_0::implementation::DisplayService;
++    using lineage::frameworks::displayservice::V1_0::IDisplayService;
 +
 +    sp<IDisplayService> displayservice = sp<DisplayService>::make();
 +    status_t err = displayservice->registerAsService();

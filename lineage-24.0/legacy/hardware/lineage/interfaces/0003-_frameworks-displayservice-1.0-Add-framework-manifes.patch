@@ -1,0 +1,48 @@
+From adade191471effcc15bf1318c1d159a53b84ee56 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Thu, 20 Aug 2026 00:45:05 +0800
+Subject: [PATCH 3/3] _frameworks: displayservice@1.0: Add framework manifest
+
+Change-Id: I00f2cc777e8b73bbc6f21ba1db0b1634adb782d0
+---
+ _frameworks/displayservice/1.0/Android.bp             |  8 ++++++++
+ .../1.0/lineage.frameworks.displayservice@1.0.xml     | 11 +++++++++++
+ 2 files changed, 19 insertions(+)
+ create mode 100644 _frameworks/displayservice/1.0/lineage.frameworks.displayservice@1.0.xml
+
+diff --git a/_frameworks/displayservice/1.0/Android.bp b/_frameworks/displayservice/1.0/Android.bp
+index 76e86a0..8833fb2 100644
+--- a/_frameworks/displayservice/1.0/Android.bp
++++ b/_frameworks/displayservice/1.0/Android.bp
+@@ -18,3 +18,11 @@ hidl_interface {
+     ],
+     gen_java: true,
+ }
++
++prebuilt_etc_xml {
++    name: "lineage.frameworks.displayservice@1.0.xml",
++    owner: "lineage",
++    src: "lineage.frameworks.displayservice@1.0.xml",
++    filename_from_src: true,
++    sub_dir: "vintf/manifest",
++}
+diff --git a/_frameworks/displayservice/1.0/lineage.frameworks.displayservice@1.0.xml b/_frameworks/displayservice/1.0/lineage.frameworks.displayservice@1.0.xml
+new file mode 100644
+index 0000000..c9cd628
+--- /dev/null
++++ b/_frameworks/displayservice/1.0/lineage.frameworks.displayservice@1.0.xml
+@@ -0,0 +1,11 @@
++<manifest version="1.0" type="framework">
++    <hal format="hidl" max-level="6">
++        <name>lineage.frameworks.displayservice</name>
++        <transport>hwbinder</transport>
++        <version>1.0</version>
++        <interface>
++            <name>IDisplayService</name>
++            <instance>default</instance>
++        </interface>
++    </hal>
++</manifest>
+-- 
+2.47.3
+
