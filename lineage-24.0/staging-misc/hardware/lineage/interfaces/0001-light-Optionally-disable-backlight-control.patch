@@ -1,0 +1,96 @@
+From fa3224374384c4fdbcd18bbf263daf40c65c0425 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Wed, 2 Sep 2026 08:49:09 +0000
+Subject: [PATCH] light: Optionally disable backlight control
+
+Latest HWComposer interface has backlight control method.
+
+Change-Id: I657ff3ec1a40ecf5c139b1f026edd0142bd34e15
+---
+ light/Android.bp    | 10 ++++++++++
+ light/Devices.cpp   | 13 +++++++++++++
+ light/light.sysprop | 15 +++++++++++++++
+ 3 files changed, 38 insertions(+)
+ create mode 100644 light/light.sysprop
+
+diff --git a/light/Android.bp b/light/Android.bp
+index 82efed2..e87b791 100644
+--- a/light/Android.bp
++++ b/light/Android.bp
+@@ -34,4 +34,14 @@ cc_binary {
+         "libbinder_ndk",
+         "android.hardware.light-V2-ndk",
+     ],
++    static_libs: [
++        "libvendor.lineage.light.Props",
++    ],
++}
++
++sysprop_library {
++    name: "vendor.lineage.light.Props",
++    srcs: ["light.sysprop"],
++    property_owner: "Vendor",
++    vendor: true,
+ }
+diff --git a/light/Devices.cpp b/light/Devices.cpp
+index 33be07c..dd71bf7 100644
+--- a/light/Devices.cpp
++++ b/light/Devices.cpp
+@@ -9,6 +9,9 @@
+ 
+ #include <android-base/logging.h>
+ #include <filesystem>
++#include <light.sysprop.h>
++
++using namespace ::vendor::lineage::light;
+ 
+ namespace aidl {
+ namespace android {
+@@ -44,6 +47,11 @@ static const std::string kBacklightDevices[] = {
+ static std::vector<BacklightDevice> getBacklightDevices() {
+     std::vector<BacklightDevice> devices;
+ 
++    if (LightProperties::BacklightDisable()) {
++        LOG(INFO) << "Backlight control is disabled per sysprop.";
++        return devices;
++    }
++
+     for (const auto& device : kBacklightDevices) {
+         BacklightDevice backlight(device);
+         if (backlight.isOk()) {
+@@ -77,6 +85,11 @@ static const std::string kLedBacklightDevices[] = {
+ static std::vector<LedDevice> getBacklightLedDevices() {
+     std::vector<LedDevice> devices;
+ 
++    if (LightProperties::BacklightDisable()) {
++        LOG(INFO) << "Backlight control is disabled per sysprop.";
++        return devices;
++    }
++
+     for (const auto& device : kLedBacklightDevices) {
+         LedDevice backlight(device);
+         if (backlight.isOk()) {
+diff --git a/light/light.sysprop b/light/light.sysprop
+new file mode 100644
+index 0000000..ad95382
+--- /dev/null
++++ b/light/light.sysprop
+@@ -0,0 +1,15 @@
++#
++# SPDX-FileCopyrightText: The LineageOS Project
++# SPDX-License-Identifier: Apache-2.0
++#
++
++module: "vendor.lineage.light.LightProperties"
++owner: Vendor
++
++prop {
++    api_name: "BacklightDisable"
++    type: Boolean
++    scope: Public
++    access: Readonly
++    prop_name: "vendor.light.backlight.disable"
++}
+-- 
+2.47.3
+

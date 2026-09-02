@@ -1,0 +1,101 @@
+From 0d88c6640bb72b2ad96a8e8b7013c0851f32acb2 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Wed, 2 Sep 2026 15:32:17 +0000
+Subject: [PATCH] SetupWizard: Fix "Skip" button not showing on tablets and TV
+
+The skip button was added inside the bottom button bar of the
+sw600dp and television welcome layouts. That container is
+hardcoded to android:visibility="gone" since the layout rework in
+8b77e3eea4ca ("SuW: Use the same Welcome activity layout for ATV
+and tablets"); it is only kept around so that the findViewById()
+lookups for emerg_dialer and launch_accessibility in
+WelcomeActivity do not return null.
+
+A child of a GONE parent is never measured or drawn, so calling
+setVisibility(View.VISIBLE) on the skip button had no effect on
+those form factors, while phones were unaffected because their
+skip button lives in a real, visible SudGlifButtonBar.
+
+Move the button out of the dead container and into the visible
+content column, right below the start button, so it follows the
+same centered placement and secondary button styling.
+
+Assisted-by: OpenCode/claude-opus-5
+Fixes: bf0afd2ffc2b ("SetupWizard: Add option to skip setup wizard on eng builds")
+Change-Id: I1c90992bfbeaafe7408e885527564556c43136f3
+---
+ res/layout-sw600dp/welcome_activity.xml    | 17 +++++++++--------
+ res/layout-television/welcome_activity.xml | 17 +++++++++--------
+ 2 files changed, 18 insertions(+), 16 deletions(-)
+
+diff --git a/res/layout-sw600dp/welcome_activity.xml b/res/layout-sw600dp/welcome_activity.xml
+index 7b150a7..4a7370d 100644
+--- a/res/layout-sw600dp/welcome_activity.xml
++++ b/res/layout-sw600dp/welcome_activity.xml
+@@ -55,6 +55,15 @@
+                 android:layout_gravity="center"
+                 android:text="@string/start"
+                 style="@style/SudGlifButton.Primary" />
++
++            <Button
++                android:id="@+id/skip"
++                android:layout_width="wrap_content"
++                android:layout_height="wrap_content"
++                android:layout_gravity="center"
++                android:text="@string/skip"
++                android:visibility="gone"
++                style="@style/SudGlifButton.Secondary" />
+         </LinearLayout>
+ 
+     </LinearLayout>
+@@ -81,13 +90,5 @@
+             android:drawableTop="@drawable/ic_eye"
+             android:text="@string/accessibility_settings"
+             style="@style/SudGlifButton.Secondary" />
+-
+-        <Button
+-            android:id="@+id/skip"
+-            style="@style/SudGlifButton.Secondary"
+-            android:layout_width="wrap_content"
+-            android:layout_height="wrap_content"
+-            android:text="@string/skip"
+-            android:visibility="gone" />
+     </LinearLayout>
+ </LinearLayout>
+diff --git a/res/layout-television/welcome_activity.xml b/res/layout-television/welcome_activity.xml
+index 7b150a7..4a7370d 100644
+--- a/res/layout-television/welcome_activity.xml
++++ b/res/layout-television/welcome_activity.xml
+@@ -55,6 +55,15 @@
+                 android:layout_gravity="center"
+                 android:text="@string/start"
+                 style="@style/SudGlifButton.Primary" />
++
++            <Button
++                android:id="@+id/skip"
++                android:layout_width="wrap_content"
++                android:layout_height="wrap_content"
++                android:layout_gravity="center"
++                android:text="@string/skip"
++                android:visibility="gone"
++                style="@style/SudGlifButton.Secondary" />
+         </LinearLayout>
+ 
+     </LinearLayout>
+@@ -81,13 +90,5 @@
+             android:drawableTop="@drawable/ic_eye"
+             android:text="@string/accessibility_settings"
+             style="@style/SudGlifButton.Secondary" />
+-
+-        <Button
+-            android:id="@+id/skip"
+-            style="@style/SudGlifButton.Secondary"
+-            android:layout_width="wrap_content"
+-            android:layout_height="wrap_content"
+-            android:text="@string/skip"
+-            android:visibility="gone" />
+     </LinearLayout>
+ </LinearLayout>
+-- 
+2.47.3
+

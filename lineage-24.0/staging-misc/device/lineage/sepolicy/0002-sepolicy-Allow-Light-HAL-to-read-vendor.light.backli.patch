@@ -1,0 +1,51 @@
+From 631fff1d15efd11228d16d9f9f2a0c8095e8c3af Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Wed, 2 Sep 2026 16:25:40 +0000
+Subject: [PATCH 2/2] sepolicy: Allow Light HAL to read
+ `vendor.light.backlight.disable` prop
+
+Change-Id: I5bc1f4d4a7acd0f25f6ab0ed4bbcba5e9823318b
+---
+ common/vendor/hal_light_default.te | 1 +
+ common/vendor/property.te          | 3 +++
+ common/vendor/property_contexts    | 3 +++
+ 3 files changed, 7 insertions(+)
+ create mode 100644 common/vendor/hal_light_default.te
+
+diff --git a/common/vendor/hal_light_default.te b/common/vendor/hal_light_default.te
+new file mode 100644
+index 0000000..4c39227
+--- /dev/null
++++ b/common/vendor/hal_light_default.te
+@@ -0,0 +1 @@
++get_prop(hal_light_default, vendor_light_prop)
+diff --git a/common/vendor/property.te b/common/vendor/property.te
+index a1e0511..6a27cb0 100644
+--- a/common/vendor/property.te
++++ b/common/vendor/property.te
+@@ -7,5 +7,8 @@ vendor_internal_prop(vendor_camera_skip_failed_ids_prop)
+ # IR
+ vendor_internal_prop(vendor_ir_prop)
+ 
++# Light
++vendor_internal_prop(vendor_light_prop)
++
+ # FM Radio app
+ vendor_public_prop(vendor_fm_radio_app_prop)
+diff --git a/common/vendor/property_contexts b/common/vendor/property_contexts
+index 5ab1fa5..a6e431f 100644
+--- a/common/vendor/property_contexts
++++ b/common/vendor/property_contexts
+@@ -7,6 +7,9 @@ vendor.camera.skip_failed_ids          u:object_r:vendor_camera_skip_failed_ids_
+ # IR
+ vendor.ir.carrier_freqs                u:object_r:vendor_ir_prop:s0
+ 
++# Light
++vendor.light.backlight.disable         u:object_r:vendor_light_prop:s0
++
+ # FM Radio app
+ ro.vendor.builtin_fm_antenna_support   u:object_r:vendor_fm_radio_app_prop:s0 exact bool
+ ro.vendor.fm.use_audio_session         u:object_r:vendor_fm_radio_app_prop:s0 exact bool
+-- 
+2.47.3
+
