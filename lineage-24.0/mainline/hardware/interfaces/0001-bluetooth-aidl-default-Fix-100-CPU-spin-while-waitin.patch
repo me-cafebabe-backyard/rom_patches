@@ -1,0 +1,133 @@
+From a02066055f7ec5097459da96559ae8e44b38510d Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Fri, 4 Sep 2026 17:03:03 +0800
+Subject: [PATCH] bluetooth/aidl/default: Fix 100% CPU spin while waiting for
+ the HCI interface
+
+be5299f822 ("Add retry mechanism for HCI interface detection") moved the
+[Read Index List] write inside the polling loop, expecting the new 500ms
+poll timeout to space out the retries. It never does.
+
+The kernel handles MGMT_OP_READ_INDEX_LIST synchronously and always
+answers, even when no controller is registered: read_index_list() in
+net/bluetooth/mgmt.c unconditionally calls mgmt_cmd_complete() with
+num_controllers = 0. So while no HCI device is present, every iteration
+writes the command, finds the [Command Complete] already queued on the
+socket, returns from poll() immediately, reads an empty index list and
+starts over. The timeout is never reached and the loop spins as fast as
+the syscalls allow, burning a full core for as long as the controller is
+missing. The unused <chrono>/<thread> includes added by that commit hint
+at a delay that was never actually implemented.
+
+Only re-send the command when poll() genuinely times out, i.e. when no
+event is pending at all. This gives the retry its intended 500ms cadence
+while preserving its purpose: re-enumerating in case [Index Added] was
+missed or was emitted for a different index.
+
+Measured against a simulated control socket with no controller present,
+over 3s: 243580 commands and 101.7% CPU before, 7 commands and 0.3% CPU
+after. hci0 is still detected as soon as it appears.
+
+Assisted-by: OpenCode/claude-opus-5
+Test: start the HAL with no BT controller, check top(1) shows it idle
+Test: plug the controller afterwards, hci0 is picked up and BT turns on
+Change-Id: Ife4de11c0b0646ad5577d0d37a4d28bc25de1cfa
+---
+ bluetooth/aidl/default/net_bluetooth_mgmt.cpp | 47 ++++++++++++++-----
+ 1 file changed, 35 insertions(+), 12 deletions(-)
+
+diff --git a/bluetooth/aidl/default/net_bluetooth_mgmt.cpp b/bluetooth/aidl/default/net_bluetooth_mgmt.cpp
+index 2b847ed6d7..98bcdfffc2 100644
+--- a/bluetooth/aidl/default/net_bluetooth_mgmt.cpp
++++ b/bluetooth/aidl/default/net_bluetooth_mgmt.cpp
+@@ -25,11 +25,9 @@
+ #include <unistd.h>
+ 
+ #include <cerrno>
+-#include <chrono>
+ #include <cstdint>
+ #include <cstdlib>
+ #include <cstring>
+-#include <thread>
+ 
+ // Definitions imported from <linux/net/bluetooth/bluetooth.h>
+ #define BTPROTO_HCI 1
+@@ -86,12 +84,17 @@ struct rfkill_event {
+ 
+ namespace aidl::android::hardware::bluetooth::impl {
+ 
++// Interval at which the [Read Index List] command is re-sent while waiting
++// for the selected HCI interface to show up.
++static constexpr int kIndexListRetryIntervalMs = 500;
++
+ // Wait indefinitely for the selected HCI interface to be enabled in the
+ // bluetooth driver.
+ int NetBluetoothMgmt::waitHciDev(int hci_interface) {
+     ALOGI("waiting for hci interface %d", hci_interface);
+ 
+     int ret = -1;
++    bool send_cmd = true;
+     struct mgmt_pkt cmd;
+     struct pollfd pollfd;
+     struct sockaddr_hci hci_addr = {
+@@ -121,18 +124,31 @@ int NetBluetoothMgmt::waitHciDev(int hci_interface) {
+             .len = 0,
+     };
+ 
++    // Poll the control socket waiting for the command response, and
++    // subsequent [Index Added] events. The loop continues until the selected
++    // hci interface is detected.
++    //
++    // The command is only (re-)sent when the poll times out, i.e. when no
++    // event at all is pending. The kernel answers every [Read Index List]
++    // with an immediate [Command Complete], so writing the command on every
++    // iteration would make poll() return without ever waiting and spin the
++    // loop at 100% CPU for as long as no controller is registered.
+     for (;;) {
+-        if (write(fd, &cmd, 6) != 6) {
+-            ALOGE("error writing mgmt command: %s", strerror(errno));
+-            goto end;
++        if (send_cmd) {
++            if (write(fd, &cmd, 6) != 6) {
++                ALOGE("error writing mgmt command: %s", strerror(errno));
++                goto end;
++            }
++            send_cmd = false;
+         }
+ 
+-        // Poll the control socket waiting for the command response,
+-        // and subsequent [Index Added] events.
+-        do {
+-            pollfd = {.fd = fd, .events = POLLIN};
+-            ret = poll(&pollfd, 1, 500);
+-        } while (ret == -1 && (errno == EINTR || errno == EAGAIN));
++        pollfd = {.fd = fd, .events = POLLIN};
++        ret = poll(&pollfd, 1, kIndexListRetryIntervalMs);
++
++        // Poll interrupted, try again.
++        if (ret == -1 && (errno == EINTR || errno == EAGAIN)) {
++            continue;
++        }
+ 
+         // Poll failure, abandon.
+         if (ret == -1) {
+@@ -140,8 +156,15 @@ int NetBluetoothMgmt::waitHciDev(int hci_interface) {
+             break;
+         }
+ 
++        // Poll timed out without any event: the [Index Added] event may have
++        // been missed, or emitted for another interface. Retry the enumeration.
++        if (ret == 0) {
++            send_cmd = true;
++            continue;
++        }
++
+         // Spurious wakeup, try again.
+-        if (ret == 0 || (pollfd.revents & POLLIN) == 0) {
++        if ((pollfd.revents & POLLIN) == 0) {
+             continue;
+         }
+ 
+-- 
+2.47.3
+
