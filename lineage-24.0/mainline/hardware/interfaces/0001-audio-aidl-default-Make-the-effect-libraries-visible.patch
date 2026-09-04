@@ -1,0 +1,186 @@
+From b54aab11b83a30b446d4ba8cb8fd1c7b93971010 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Fri, 4 Sep 2026 18:29:51 +0800
+Subject: [PATCH] audio/aidl/default: Make the effect libraries visible to the
+ mainline audio HAL
+
+The AIDL effect plugin libraries (libaecsw, libagc1sw, libagc2sw,
+libbassboostsw, libenvreverbsw, libequalizersw, liberaser,
+libextensioneffect, libnssw, libpresetreverbsw, libspatializersw,
+libvirtualizersw, libvolumesw) restrict their visibility to
+//hardware/interfaces/audio/aidl/default and its subpackages, since the
+only consumer so far was the example APEX com.android.hardware.audio.
+
+The generic alsa-lib based audio HAL for mainline kernels lives in
+hardware/mainline/common/interfaces/audio/mainline and ships its own
+vendor APEX. It reuses the unmodified example effect service and needs
+to bundle these plugin libraries into that APEX, which Soong rejects as
+long as the package is not listed in the visibility of every library.
+
+Add the mainline HAL package to the visibility list of each library. No
+other change; the libraries themselves are untouched.
+
+Assisted-by: OpenCode/anthropic/claude-fable-5-1
+Change-Id: I1c8a90cdc0730a164f87c69d97f509f95bbbeade
+---
+ audio/aidl/default/acousticEchoCanceler/Android.bp   | 1 +
+ audio/aidl/default/automaticGainControlV1/Android.bp | 1 +
+ audio/aidl/default/automaticGainControlV2/Android.bp | 1 +
+ audio/aidl/default/bassboost/Android.bp              | 1 +
+ audio/aidl/default/envReverb/Android.bp              | 1 +
+ audio/aidl/default/equalizer/Android.bp              | 1 +
+ audio/aidl/default/eraser/Android.bp                 | 1 +
+ audio/aidl/default/extension/Android.bp              | 1 +
+ audio/aidl/default/noiseSuppression/Android.bp       | 1 +
+ audio/aidl/default/presetReverb/Android.bp           | 1 +
+ audio/aidl/default/spatializer/Android.bp            | 1 +
+ audio/aidl/default/virtualizer/Android.bp            | 1 +
+ audio/aidl/default/volume/Android.bp                 | 1 +
+ 13 files changed, 13 insertions(+)
+
+diff --git a/audio/aidl/default/acousticEchoCanceler/Android.bp b/audio/aidl/default/acousticEchoCanceler/Android.bp
+index 161a1f55c8..5bd97b3a01 100644
+--- a/audio/aidl/default/acousticEchoCanceler/Android.bp
++++ b/audio/aidl/default/acousticEchoCanceler/Android.bp
+@@ -35,5 +35,6 @@ cc_library_shared {
+     relative_install_path: "soundfx",
+     visibility: [
+         "//hardware/interfaces/audio/aidl/default:__subpackages__",
++        "//hardware/mainline/common/interfaces/audio/mainline",
+     ],
+ }
+diff --git a/audio/aidl/default/automaticGainControlV1/Android.bp b/audio/aidl/default/automaticGainControlV1/Android.bp
+index 9ae191cb6e..d350ec3411 100644
+--- a/audio/aidl/default/automaticGainControlV1/Android.bp
++++ b/audio/aidl/default/automaticGainControlV1/Android.bp
+@@ -35,5 +35,6 @@ cc_library_shared {
+     relative_install_path: "soundfx",
+     visibility: [
+         "//hardware/interfaces/audio/aidl/default:__subpackages__",
++        "//hardware/mainline/common/interfaces/audio/mainline",
+     ],
+ }
+diff --git a/audio/aidl/default/automaticGainControlV2/Android.bp b/audio/aidl/default/automaticGainControlV2/Android.bp
+index d8119dde09..975d7583bc 100644
+--- a/audio/aidl/default/automaticGainControlV2/Android.bp
++++ b/audio/aidl/default/automaticGainControlV2/Android.bp
+@@ -35,5 +35,6 @@ cc_library_shared {
+     relative_install_path: "soundfx",
+     visibility: [
+         "//hardware/interfaces/audio/aidl/default:__subpackages__",
++        "//hardware/mainline/common/interfaces/audio/mainline",
+     ],
+ }
+diff --git a/audio/aidl/default/bassboost/Android.bp b/audio/aidl/default/bassboost/Android.bp
+index 7733f44558..ec28dda216 100644
+--- a/audio/aidl/default/bassboost/Android.bp
++++ b/audio/aidl/default/bassboost/Android.bp
+@@ -35,5 +35,6 @@ cc_library_shared {
+     relative_install_path: "soundfx",
+     visibility: [
+         "//hardware/interfaces/audio/aidl/default:__subpackages__",
++        "//hardware/mainline/common/interfaces/audio/mainline",
+     ],
+ }
+diff --git a/audio/aidl/default/envReverb/Android.bp b/audio/aidl/default/envReverb/Android.bp
+index 10f0497048..d9f4b41248 100644
+--- a/audio/aidl/default/envReverb/Android.bp
++++ b/audio/aidl/default/envReverb/Android.bp
+@@ -35,5 +35,6 @@ cc_library_shared {
+     relative_install_path: "soundfx",
+     visibility: [
+         "//hardware/interfaces/audio/aidl/default:__subpackages__",
++        "//hardware/mainline/common/interfaces/audio/mainline",
+     ],
+ }
+diff --git a/audio/aidl/default/equalizer/Android.bp b/audio/aidl/default/equalizer/Android.bp
+index 8f6fb01e7d..bab8580ab8 100644
+--- a/audio/aidl/default/equalizer/Android.bp
++++ b/audio/aidl/default/equalizer/Android.bp
+@@ -35,5 +35,6 @@ cc_library_shared {
+     relative_install_path: "soundfx",
+     visibility: [
+         "//hardware/interfaces/audio/aidl/default:__subpackages__",
++        "//hardware/mainline/common/interfaces/audio/mainline",
+     ],
+ }
+diff --git a/audio/aidl/default/eraser/Android.bp b/audio/aidl/default/eraser/Android.bp
+index 89cf5a4fa3..6b95dcb422 100644
+--- a/audio/aidl/default/eraser/Android.bp
++++ b/audio/aidl/default/eraser/Android.bp
+@@ -35,5 +35,6 @@ cc_library_shared {
+     relative_install_path: "soundfx",
+     visibility: [
+         "//hardware/interfaces/audio/aidl/default:__subpackages__",
++        "//hardware/mainline/common/interfaces/audio/mainline",
+     ],
+ }
+diff --git a/audio/aidl/default/extension/Android.bp b/audio/aidl/default/extension/Android.bp
+index 14bb7c665c..240fadc7bb 100644
+--- a/audio/aidl/default/extension/Android.bp
++++ b/audio/aidl/default/extension/Android.bp
+@@ -35,5 +35,6 @@ cc_library_shared {
+     relative_install_path: "soundfx",
+     visibility: [
+         "//hardware/interfaces/audio/aidl/default:__subpackages__",
++        "//hardware/mainline/common/interfaces/audio/mainline",
+     ],
+ }
+diff --git a/audio/aidl/default/noiseSuppression/Android.bp b/audio/aidl/default/noiseSuppression/Android.bp
+index 7b55451428..65e643d1f9 100644
+--- a/audio/aidl/default/noiseSuppression/Android.bp
++++ b/audio/aidl/default/noiseSuppression/Android.bp
+@@ -35,5 +35,6 @@ cc_library_shared {
+     relative_install_path: "soundfx",
+     visibility: [
+         "//hardware/interfaces/audio/aidl/default:__subpackages__",
++        "//hardware/mainline/common/interfaces/audio/mainline",
+     ],
+ }
+diff --git a/audio/aidl/default/presetReverb/Android.bp b/audio/aidl/default/presetReverb/Android.bp
+index 9c4881cf95..ba408b78e2 100644
+--- a/audio/aidl/default/presetReverb/Android.bp
++++ b/audio/aidl/default/presetReverb/Android.bp
+@@ -35,5 +35,6 @@ cc_library_shared {
+     relative_install_path: "soundfx",
+     visibility: [
+         "//hardware/interfaces/audio/aidl/default:__subpackages__",
++        "//hardware/mainline/common/interfaces/audio/mainline",
+     ],
+ }
+diff --git a/audio/aidl/default/spatializer/Android.bp b/audio/aidl/default/spatializer/Android.bp
+index 1e5a018ebc..2c3d9eeb8b 100644
+--- a/audio/aidl/default/spatializer/Android.bp
++++ b/audio/aidl/default/spatializer/Android.bp
+@@ -35,5 +35,6 @@ cc_library_shared {
+     relative_install_path: "soundfx",
+     visibility: [
+         "//hardware/interfaces/audio/aidl/default:__subpackages__",
++        "//hardware/mainline/common/interfaces/audio/mainline",
+     ],
+ }
+diff --git a/audio/aidl/default/virtualizer/Android.bp b/audio/aidl/default/virtualizer/Android.bp
+index c004ddd202..3635d92f5c 100644
+--- a/audio/aidl/default/virtualizer/Android.bp
++++ b/audio/aidl/default/virtualizer/Android.bp
+@@ -35,5 +35,6 @@ cc_library_shared {
+     relative_install_path: "soundfx",
+     visibility: [
+         "//hardware/interfaces/audio/aidl/default:__subpackages__",
++        "//hardware/mainline/common/interfaces/audio/mainline",
+     ],
+ }
+diff --git a/audio/aidl/default/volume/Android.bp b/audio/aidl/default/volume/Android.bp
+index f14d1a8ce5..fcd5125632 100644
+--- a/audio/aidl/default/volume/Android.bp
++++ b/audio/aidl/default/volume/Android.bp
+@@ -35,5 +35,6 @@ cc_library_shared {
+     relative_install_path: "soundfx",
+     visibility: [
+         "//hardware/interfaces/audio/aidl/default:__subpackages__",
++        "//hardware/mainline/common/interfaces/audio/mainline",
+     ],
+ }
+-- 
+2.47.3
+

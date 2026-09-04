@@ -1,0 +1,136 @@
+From 7cb769da0bb9880cc521a6f1fa258aba30b893c9 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Fri, 4 Sep 2026 18:29:56 +0800
+Subject: [PATCH] libeffects: Make the AIDL effect libraries visible to the
+ mainline audio HAL
+
+The AIDL effect plugin libraries built here (libbundleaidl, libreverbaidl,
+libdownmixaidl, libdynamicsprocessingaidl, liberaser and its model files,
+libhapticgeneratoraidl, libloudnessenhanceraidl, libpreprocessingaidl,
+libvisualizeraidl) restrict their visibility to
+//hardware/interfaces/audio/aidl/default and its subpackages, since the
+only consumer so far was the example APEX com.android.hardware.audio.
+
+The generic alsa-lib based audio HAL for mainline kernels lives in
+hardware/mainline/common/interfaces/audio/mainline and ships its own
+vendor APEX. It reuses the unmodified example effect service and needs
+to bundle these plugin libraries into that APEX, which Soong rejects as
+long as the package is not listed in the visibility of every library.
+
+Add the mainline HAL package to the visibility list of each library. No
+other change; the libraries themselves are untouched.
+
+Assisted-by: OpenCode/anthropic/claude-fable-5-1
+Change-Id: Idaf17c8bc6454064bbc1f0f15f0caa6772bdb2f3
+---
+ media/libeffects/downmix/Android.bp         | 1 +
+ media/libeffects/dynamicsproc/Android.bp    | 1 +
+ media/libeffects/eraser/Android.bp          | 1 +
+ media/libeffects/hapticgenerator/Android.bp | 1 +
+ media/libeffects/loudness/Android.bp        | 1 +
+ media/libeffects/lvm/wrapper/Android.bp     | 2 ++
+ media/libeffects/preprocessing/Android.bp   | 1 +
+ media/libeffects/visualizer/Android.bp      | 1 +
+ 8 files changed, 9 insertions(+)
+
+diff --git a/media/libeffects/downmix/Android.bp b/media/libeffects/downmix/Android.bp
+index 29c2774315..ec25c5b67c 100644
+--- a/media/libeffects/downmix/Android.bp
++++ b/media/libeffects/downmix/Android.bp
+@@ -70,5 +70,6 @@ cc_library_shared {
+     relative_install_path: "soundfx",
+     visibility: [
+         "//hardware/interfaces/audio/aidl/default:__subpackages__",
++        "//hardware/mainline/common/interfaces/audio/mainline",
+     ],
+ }
+diff --git a/media/libeffects/dynamicsproc/Android.bp b/media/libeffects/dynamicsproc/Android.bp
+index 3166111e7f..98cd2ec090 100644
+--- a/media/libeffects/dynamicsproc/Android.bp
++++ b/media/libeffects/dynamicsproc/Android.bp
+@@ -95,5 +95,6 @@ cc_library_shared {
+ 
+     visibility: [
+         "//hardware/interfaces/audio/aidl/default:__subpackages__",
++        "//hardware/mainline/common/interfaces/audio/mainline",
+     ],
+ }
+diff --git a/media/libeffects/eraser/Android.bp b/media/libeffects/eraser/Android.bp
+index ca1374cb45..0fa1aabba7 100644
+--- a/media/libeffects/eraser/Android.bp
++++ b/media/libeffects/eraser/Android.bp
+@@ -80,6 +80,7 @@ cc_library_shared {
+     ],
+     visibility: [
+         "//hardware/interfaces/audio/aidl/default:__subpackages__",
++        "//hardware/mainline/common/interfaces/audio/mainline",
+     ],
+     relative_install_path: "soundfx",
+ }
+diff --git a/media/libeffects/hapticgenerator/Android.bp b/media/libeffects/hapticgenerator/Android.bp
+index 794719408d..8c4a58e2a7 100644
+--- a/media/libeffects/hapticgenerator/Android.bp
++++ b/media/libeffects/hapticgenerator/Android.bp
+@@ -90,5 +90,6 @@ cc_library_shared {
+ 
+     visibility: [
+         "//hardware/interfaces/audio/aidl/default:__subpackages__",
++        "//hardware/mainline/common/interfaces/audio/mainline",
+     ],
+ }
+diff --git a/media/libeffects/loudness/Android.bp b/media/libeffects/loudness/Android.bp
+index 2aad421c52..803542940a 100644
+--- a/media/libeffects/loudness/Android.bp
++++ b/media/libeffects/loudness/Android.bp
+@@ -71,5 +71,6 @@ cc_library_shared {
+     relative_install_path: "soundfx",
+     visibility: [
+         "//hardware/interfaces/audio/aidl/default:__subpackages__",
++        "//hardware/mainline/common/interfaces/audio/mainline",
+     ],
+ }
+diff --git a/media/libeffects/lvm/wrapper/Android.bp b/media/libeffects/lvm/wrapper/Android.bp
+index d0553685ee..42614e70ea 100644
+--- a/media/libeffects/lvm/wrapper/Android.bp
++++ b/media/libeffects/lvm/wrapper/Android.bp
+@@ -130,6 +130,7 @@ cc_library_shared {
+     relative_install_path: "soundfx",
+     visibility: [
+         "//hardware/interfaces/audio/aidl/default:__subpackages__",
++        "//hardware/mainline/common/interfaces/audio/mainline",
+     ],
+ }
+ 
+@@ -160,5 +161,6 @@ cc_library_shared {
+     relative_install_path: "soundfx",
+     visibility: [
+         "//hardware/interfaces/audio/aidl/default:__subpackages__",
++        "//hardware/mainline/common/interfaces/audio/mainline",
+     ],
+ }
+diff --git a/media/libeffects/preprocessing/Android.bp b/media/libeffects/preprocessing/Android.bp
+index 01fa47b1d8..ea1050e7cd 100644
+--- a/media/libeffects/preprocessing/Android.bp
++++ b/media/libeffects/preprocessing/Android.bp
+@@ -92,5 +92,6 @@ cc_library_shared {
+     relative_install_path: "soundfx",
+     visibility: [
+         "//hardware/interfaces/audio/aidl/default:__subpackages__",
++        "//hardware/mainline/common/interfaces/audio/mainline",
+     ],
+ }
+diff --git a/media/libeffects/visualizer/Android.bp b/media/libeffects/visualizer/Android.bp
+index 5cbcab3c36..d12aea50d4 100644
+--- a/media/libeffects/visualizer/Android.bp
++++ b/media/libeffects/visualizer/Android.bp
+@@ -71,6 +71,7 @@ cc_library_shared {
+     relative_install_path: "soundfx",
+     visibility: [
+         "//hardware/interfaces/audio/aidl/default:__subpackages__",
++        "//hardware/mainline/common/interfaces/audio/mainline",
+     ],
+ }
+ 
+-- 
+2.47.3
+
