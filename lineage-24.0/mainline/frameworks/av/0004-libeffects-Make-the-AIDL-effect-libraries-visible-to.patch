@@ -1,7 +1,7 @@
-From 7cb769da0bb9880cc521a6f1fa258aba30b893c9 Mon Sep 17 00:00:00 2001
+From b3e1a87ee2f963b9bac5b150251f907a851e94d7 Mon Sep 17 00:00:00 2001
 From: Yumi Yukimura <me.cafebabe@gmail.com>
 Date: Fri, 4 Sep 2026 18:29:56 +0800
-Subject: [PATCH] libeffects: Make the AIDL effect libraries visible to the
+Subject: [PATCH 4/4] libeffects: Make the AIDL effect libraries visible to the
  mainline audio HAL
 
 The AIDL effect plugin libraries built here (libbundleaidl, libreverbaidl,

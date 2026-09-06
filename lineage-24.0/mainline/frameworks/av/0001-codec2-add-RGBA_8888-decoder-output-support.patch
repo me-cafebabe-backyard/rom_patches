@@ -1,0 +1,428 @@
+From 4016156fe7ab963ad8c95ee3000809f938eaa738 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Sun, 6 Sep 2026 01:05:48 +0800
+Subject: [PATCH 1/4] codec2: add RGBA_8888 decoder output support
+
+Advertise and map RGBA_8888 graphic buffers, support raw RGBA
+wrapping, and convert gav1 output from planar YUV using libyuv.
+
+Add tests for RGBA allocation, layout, and raw output buffers.
+
+Assisted-by: OpenCode/gpt-5.6-sol
+Change-Id: I849d69587f6c58e14e754afb5dca955d3ed942ba
+---
+ .../components/base/SimpleC2Component.cpp     | 42 ++++++++++++++
+ .../base/include/SimpleC2Component.h          |  6 ++
+ .../codec2/components/gav1/C2SoftGav1Dec.cpp  | 42 +++++++++++---
+ media/codec2/sfplugin/Codec2Buffer.cpp        |  5 ++
+ media/codec2/sfplugin/Codec2InfoBuilder.cpp   |  1 +
+ .../sfplugin/tests/CCodecBuffers_test.cpp     | 57 +++++++++++++++++++
+ .../sfplugin/utils/Codec2BufferUtils.cpp      | 16 +++++-
+ media/codec2/tests/vndk/C2BufferTest.cpp      | 29 +++++++++-
+ media/codec2/vndk/C2AllocatorGralloc.cpp      | 25 ++++++--
+ 9 files changed, 206 insertions(+), 17 deletions(-)
+
+diff --git a/media/codec2/components/base/SimpleC2Component.cpp b/media/codec2/components/base/SimpleC2Component.cpp
+index e58f9016a7..a640faf934 100644
+--- a/media/codec2/components/base/SimpleC2Component.cpp
++++ b/media/codec2/components/base/SimpleC2Component.cpp
+@@ -25,6 +25,7 @@
+ 
+ #include <inttypes.h>
+ #include <libyuv.h>
++#include <vector>
+ 
+ #include <C2Config.h>
+ #include <C2Debug.h>
+@@ -243,6 +244,20 @@ static const struct Coeffs GetCoeffsForAspects(const C2ColorAspectsStruct &aspec
+     }
+ }
+ 
++static const libyuv::YuvConstants* GetYvuConstantsForAspects(
++        const C2ColorAspectsStruct& aspects) {
++    const bool fullRange = aspects.range == C2Color::RANGE_FULL;
++    switch (aspects.matrix) {
++        case C2Color::MATRIX_BT709:
++            return fullRange ? &libyuv::kYvuF709Constants : &libyuv::kYvuH709Constants;
++        case C2Color::MATRIX_BT2020:
++            return fullRange ? &libyuv::kYvuV2020Constants : &libyuv::kYvu2020Constants;
++        case C2Color::MATRIX_BT601:
++        default:
++            return fullRange ? &libyuv::kYvuJPEGConstants : &libyuv::kYvuI601Constants;
++    }
++}
++
+ }
+ 
+ #define CLIP3(min, v, max) (((v) < (min)) ? (min) : (((max) > (v)) ? (v) : (max)))
+@@ -805,6 +820,33 @@ void convertPlanar8ToYV12(uint8_t* dstY, uint8_t* dstU, uint8_t* dstV, const uin
+     }
+ }
+ 
++void convertPlanar8ToRGBA8888(
++        uint8_t* dstRGBA, size_t dstRGBAStride, const uint8_t* srcY,
++        const uint8_t* srcU, const uint8_t* srcV, size_t srcYStride,
++        size_t srcUStride, size_t srcVStride, uint32_t width, uint32_t height,
++        bool isMonochrome, CONV_FORMAT_T format,
++        std::shared_ptr<const C2ColorAspectsStruct> aspects) {
++    std::vector<uint8_t> neutralChroma;
++    if (isMonochrome) {
++        neutralChroma.assign(width, kNeutralUVBitDepth8);
++        srcU = srcV = neutralChroma.data();
++        srcUStride = srcVStride = 0;
++    }
++
++    const C2ColorAspectsStruct filledAspects = FillMissingColorAspects(aspects, width, height);
++    const libyuv::YuvConstants* constants = GetYvuConstantsForAspects(filledAspects);
++    if (format == CONV_FORMAT_I444) {
++        libyuv::I444ToARGBMatrix(srcY, srcYStride, srcV, srcVStride, srcU, srcUStride,
++                                 dstRGBA, dstRGBAStride, constants, width, height);
++    } else if (format == CONV_FORMAT_I422) {
++        libyuv::I422ToARGBMatrix(srcY, srcYStride, srcV, srcVStride, srcU, srcUStride,
++                                 dstRGBA, dstRGBAStride, constants, width, height);
++    } else {
++        libyuv::I420ToARGBMatrix(srcY, srcYStride, srcV, srcVStride, srcU, srcUStride,
++                                 dstRGBA, dstRGBAStride, constants, width, height);
++    }
++}
++
+ void convertSemiPlanar8ToP210(uint16_t *dstY, uint16_t *dstUV,
+                               const uint8_t *srcY, const uint8_t *srcUV,
+                               size_t srcYStride, size_t srcUVStride,
+diff --git a/media/codec2/components/base/include/SimpleC2Component.h b/media/codec2/components/base/include/SimpleC2Component.h
+index 960bd0808a..759a4551cd 100644
+--- a/media/codec2/components/base/include/SimpleC2Component.h
++++ b/media/codec2/components/base/include/SimpleC2Component.h
+@@ -116,6 +116,12 @@ void convertPlanar8ToYV12(uint8_t* dstY, uint8_t* dstU, uint8_t* dstV, const uin
+                           size_t srcUStride, size_t srcVStride, size_t dstYStride,
+                           size_t dstUStride, size_t dstVStride, uint32_t width, uint32_t height,
+                           bool isMonochrome, CONV_FORMAT_T format);
++void convertPlanar8ToRGBA8888(
++        uint8_t* dstRGBA, size_t dstRGBAStride, const uint8_t* srcY,
++        const uint8_t* srcU, const uint8_t* srcV, size_t srcYStride,
++        size_t srcUStride, size_t srcVStride, uint32_t width, uint32_t height,
++        bool isMonochrome, CONV_FORMAT_T format,
++        std::shared_ptr<const C2ColorAspectsStruct> aspects = nullptr);
+ void convertSemiPlanar8ToP210(uint16_t *dstY, uint16_t *dstUV,
+                               const uint8_t *srcY, const uint8_t *srcUV,
+                               size_t srcYStride, size_t srcUVStride,
+diff --git a/media/codec2/components/gav1/C2SoftGav1Dec.cpp b/media/codec2/components/gav1/C2SoftGav1Dec.cpp
+index 31811a2b6b..b9a0897c74 100644
+--- a/media/codec2/components/gav1/C2SoftGav1Dec.cpp
++++ b/media/codec2/components/gav1/C2SoftGav1Dec.cpp
+@@ -227,7 +227,10 @@ class C2SoftGav1Dec::IntfImpl : public SimpleInterface<void>::BaseParams {
+               .withSetter(ColorAspectsSetter, mDefaultColorAspects, mCodedColorAspects)
+               .build());
+ 
+-    std::vector<uint32_t> pixelFormats = {HAL_PIXEL_FORMAT_YCBCR_420_888};
++    std::vector<uint32_t> pixelFormats = {
++        HAL_PIXEL_FORMAT_YCBCR_420_888,
++        HAL_PIXEL_FORMAT_RGBA_8888,
++    };
+     if (isHalPixelFormatSupported((AHardwareBuffer_Format)HAL_PIXEL_FORMAT_YCBCR_P010)) {
+         pixelFormats.push_back(HAL_PIXEL_FORMAT_YCBCR_P010);
+     }
+@@ -854,7 +857,12 @@ bool C2SoftGav1Dec::outputBuffer(const std::shared_ptr<C2BlockPool> &pool,
+   std::shared_ptr<C2GraphicBlock> block;
+   uint32_t format = HAL_PIXEL_FORMAT_YV12;
+   std::shared_ptr<C2StreamColorAspectsInfo::output> codedColorAspects;
+-  if (buffer->bitdepth >= 10 && mPixelFormatInfo->value != HAL_PIXEL_FORMAT_YCBCR_420_888) {
++  if (buffer->bitdepth == 8 && mPixelFormatInfo->value == HAL_PIXEL_FORMAT_RGBA_8888) {
++    format = HAL_PIXEL_FORMAT_RGBA_8888;
++    IntfImpl::Lock lock = mIntf->lock();
++    codedColorAspects = mIntf->getColorAspects_l();
++  } else if (buffer->bitdepth >= 10
++          && mPixelFormatInfo->value != HAL_PIXEL_FORMAT_YCBCR_420_888) {
+     IntfImpl::Lock lock = mIntf->lock();
+     codedColorAspects = mIntf->getColorAspects_l();
+     bool allowRGBA1010102 = false;
+@@ -932,14 +940,19 @@ bool C2SoftGav1Dec::outputBuffer(const std::shared_ptr<C2BlockPool> &pool,
+   ALOGV("provided (%dx%d) required (%dx%d), out frameindex %d", block->width(),
+         block->height(), mWidth, mHeight, (int)buffer->user_private_data);
+ 
+-  uint8_t *dstY = const_cast<uint8_t *>(wView.data()[C2PlanarLayout::PLANE_Y]);
+-  uint8_t *dstU = const_cast<uint8_t *>(wView.data()[C2PlanarLayout::PLANE_U]);
+-  uint8_t *dstV = const_cast<uint8_t *>(wView.data()[C2PlanarLayout::PLANE_V]);
+-
+   C2PlanarLayout layout = wView.layout();
++  uint8_t *dstY = const_cast<uint8_t *>(wView.data()[C2PlanarLayout::PLANE_Y]);
+   size_t dstYStride = layout.planes[C2PlanarLayout::PLANE_Y].rowInc;
+-  size_t dstUStride = layout.planes[C2PlanarLayout::PLANE_U].rowInc;
+-  size_t dstVStride = layout.planes[C2PlanarLayout::PLANE_V].rowInc;
++  uint8_t *dstU = nullptr;
++  uint8_t *dstV = nullptr;
++  size_t dstUStride = 0;
++  size_t dstVStride = 0;
++  if (format != HAL_PIXEL_FORMAT_RGBA_8888) {
++      dstU = const_cast<uint8_t *>(wView.data()[C2PlanarLayout::PLANE_U]);
++      dstV = const_cast<uint8_t *>(wView.data()[C2PlanarLayout::PLANE_V]);
++      dstUStride = layout.planes[C2PlanarLayout::PLANE_U].rowInc;
++      dstVStride = layout.planes[C2PlanarLayout::PLANE_V].rowInc;
++  }
+ 
+   if (buffer->bitdepth == 12) {
+ #if LIBYUV_VERSION >= 1871
+@@ -1098,7 +1111,18 @@ bool C2SoftGav1Dec::outputBuffer(const std::shared_ptr<C2BlockPool> &pool,
+     size_t srcUStride = buffer->stride[1];
+     size_t srcVStride = buffer->stride[2];
+ 
+-    if (buffer->image_format == libgav1::kImageFormatYuv444) {
++    if (format == HAL_PIXEL_FORMAT_RGBA_8888) {
++        CONV_FORMAT_T sourceFormat = CONV_FORMAT_I420;
++        if (buffer->image_format == libgav1::kImageFormatYuv444) {
++            sourceFormat = CONV_FORMAT_I444;
++        } else if (buffer->image_format == libgav1::kImageFormatYuv422) {
++            sourceFormat = CONV_FORMAT_I422;
++        }
++        convertPlanar8ToRGBA8888(
++                dstY, dstYStride, srcY, srcU, srcV, srcYStride, srcUStride,
++                srcVStride, mWidth, mHeight, isMonochrome, sourceFormat,
++                std::static_pointer_cast<const C2ColorAspectsStruct>(codedColorAspects));
++    } else if (buffer->image_format == libgav1::kImageFormatYuv444) {
+         libyuv::I444ToI420(srcY, srcYStride, srcU, srcUStride, srcV, srcVStride,
+                            dstY, dstYStride, dstU, dstUStride, dstV, dstVStride,
+                            mWidth, mHeight);
+diff --git a/media/codec2/sfplugin/Codec2Buffer.cpp b/media/codec2/sfplugin/Codec2Buffer.cpp
+index c2fe172c8e..636e1b4f4b 100644
+--- a/media/codec2/sfplugin/Codec2Buffer.cpp
++++ b/media/codec2/sfplugin/Codec2Buffer.cpp
+@@ -407,6 +407,11 @@ sp<ConstGraphicBlockBuffer> ConstGraphicBlockBuffer::AllocateEmpty(
+     if (format->findInt32(KEY_COLOR_FORMAT, &colorFormat)) {
+         if (colorFormat == COLOR_FormatYUVP010) {
+             bpp = 24;  // 16(Y) + 4(U) + 4(V)
++        } else if (colorFormat == COLOR_Format32bitABGR8888
++                || colorFormat == COLOR_Format32bitARGB8888
++                || colorFormat == COLOR_Format32bitBGRA8888
++                || colorFormat == COLOR_FormatRGBAFlexible) {
++            bpp = 32;
+         }
+     }
+     sp<ABuffer> aBuffer(alloc(align(width, 16) * align(height, 16) * bpp / 8));
+diff --git a/media/codec2/sfplugin/Codec2InfoBuilder.cpp b/media/codec2/sfplugin/Codec2InfoBuilder.cpp
+index 038272185b..871924d6b8 100644
+--- a/media/codec2/sfplugin/Codec2InfoBuilder.cpp
++++ b/media/codec2/sfplugin/Codec2InfoBuilder.cpp
+@@ -753,6 +753,7 @@ status_t Codec2InfoBuilder::buildMediaCodecList(MediaCodecListWriter* writer) {
+                     it = nameToPixelFormatMap.try_emplace(client->getServiceName()).first;
+                     PixelFormatMap &pixelFormatMap = it->second;
+                     pixelFormatMap[HAL_PIXEL_FORMAT_YCBCR_420_888] = COLOR_FormatYUV420Flexible;
++                    pixelFormatMap[HAL_PIXEL_FORMAT_RGBA_8888]     = COLOR_Format32bitABGR8888;
+                     pixelFormatMap[HAL_PIXEL_FORMAT_YCBCR_P010]    = COLOR_FormatYUVP010;
+                     pixelFormatMap[HAL_PIXEL_FORMAT_RGBA_1010102]  = COLOR_Format32bitABGR2101010;
+                     pixelFormatMap[HAL_PIXEL_FORMAT_RGBA_FP16]     = COLOR_Format64bitABGRFloat;
+diff --git a/media/codec2/sfplugin/tests/CCodecBuffers_test.cpp b/media/codec2/sfplugin/tests/CCodecBuffers_test.cpp
+index a4712910f9..35ad10e955 100644
+--- a/media/codec2/sfplugin/tests/CCodecBuffers_test.cpp
++++ b/media/codec2/sfplugin/tests/CCodecBuffers_test.cpp
+@@ -289,6 +289,63 @@ TEST(RawGraphicOutputBuffersTest, FlexYuvColorFormat) {
+     }
+ }
+ 
++TEST(RawGraphicOutputBuffersTest, Rgba8888ColorFormat) {
++    constexpr int32_t kWidth = 320;
++    constexpr int32_t kHeight = 240;
++    std::shared_ptr<RawGraphicOutputBuffers> buffers =
++            std::make_shared<RawGraphicOutputBuffers>("test RGBA_8888");
++
++    sp<AMessage> format{new AMessage};
++    format->setInt32(KEY_WIDTH, kWidth);
++    format->setInt32(KEY_HEIGHT, kHeight);
++    format->setInt32(KEY_COLOR_FORMAT, COLOR_Format32bitABGR8888);
++    format->setInt32("android._color-format", COLOR_Format32bitABGR8888);
++    buffers->setFormat(format);
++
++    std::shared_ptr<C2BlockPool> pool;
++    ASSERT_EQ(OK, GetCodec2BlockPool(C2BlockPool::BASIC_GRAPHIC, nullptr, &pool));
++    std::shared_ptr<C2GraphicBlock> block;
++    ASSERT_EQ(OK, pool->fetchGraphicBlock(
++            kWidth, kHeight, HAL_PIXEL_FORMAT_RGBA_8888,
++            C2MemoryUsage{C2MemoryUsage::CPU_READ, C2MemoryUsage::CPU_WRITE}, &block));
++
++    {
++        C2GraphicView view = block->map().get();
++        ASSERT_EQ(C2_OK, view.error());
++        ASSERT_EQ(C2PlanarLayout::TYPE_RGBA, view.layout().type);
++        ASSERT_EQ(4u, view.layout().numPlanes);
++        for (uint32_t plane = 0; plane < 4; ++plane) {
++            uint8_t *row = view.data()[plane];
++            const C2PlaneInfo &info = view.layout().planes[plane];
++            for (int32_t y = 0; y < kHeight; ++y) {
++                for (int32_t x = 0; x < kWidth; ++x) {
++                    row[x * info.colInc] = (x + y + plane) & 0xff;
++                }
++                row += info.rowInc;
++            }
++        }
++    }
++
++    std::shared_ptr<C2Buffer> c2Buffer = C2Buffer::CreateGraphicBuffer(
++            block->share(block->crop(), C2Fence{}));
++    size_t index;
++    sp<MediaCodecBuffer> clientBuffer;
++    ASSERT_EQ(OK, buffers->registerBuffer(c2Buffer, &index, &clientBuffer));
++    ASSERT_NE(nullptr, clientBuffer);
++    sp<ABuffer> imageData;
++    ASSERT_TRUE(clientBuffer->format()->findBuffer("image-data", &imageData));
++    MediaImage2 *img = reinterpret_cast<MediaImage2 *>(imageData->data());
++    ASSERT_EQ(MediaImage2::MEDIA_IMAGE_TYPE_RGBA, img->mType);
++    ASSERT_EQ(4u, img->mNumPlanes);
++    ASSERT_GE(clientBuffer->capacity(), static_cast<size_t>(kWidth * kHeight * 4));
++    for (uint32_t plane = 0; plane < 4; ++plane) {
++        EXPECT_EQ(plane, img->mPlane[plane].mOffset);
++        EXPECT_EQ(4, img->mPlane[plane].mColInc);
++        EXPECT_GE(img->mPlane[plane].mRowInc, kWidth * 4);
++        EXPECT_EQ(plane, clientBuffer->data()[img->mPlane[plane].mOffset]);
++    }
++}
++
+ TEST(RawGraphicOutputBuffersTest, P010ColorFormat) {
+     constexpr int32_t kWidth = 320;
+     constexpr int32_t kHeight = 240;
+diff --git a/media/codec2/sfplugin/utils/Codec2BufferUtils.cpp b/media/codec2/sfplugin/utils/Codec2BufferUtils.cpp
+index 27b1b78186..80efa5bf99 100644
+--- a/media/codec2/sfplugin/utils/Codec2BufferUtils.cpp
++++ b/media/codec2/sfplugin/utils/Codec2BufferUtils.cpp
+@@ -1134,7 +1134,6 @@ GraphicView2MediaImageConverter::GraphicView2MediaImageConverter(
+             return;
+         case C2PlanarLayout::TYPE_RGB:
+             mediaImage->mType = MediaImage2::MEDIA_IMAGE_TYPE_RGB;
+-            // TODO: support MediaImage layout
+             switch (mClientColorFormat) {
+                 case COLOR_FormatSurface:
+                 case COLOR_FormatRGBFlexible:
+@@ -1156,10 +1155,16 @@ GraphicView2MediaImageConverter::GraphicView2MediaImageConverter(
+                 mInitCheck = BAD_VALUE;
+                 return;
+             }
++            for (uint32_t i = 0; i < layout.numPlanes; ++i) {
++                mediaImage->mPlane[i].mOffset = i;
++                mediaImage->mPlane[i].mColInc = layout.numPlanes + 1;
++                mediaImage->mPlane[i].mRowInc = stride * (layout.numPlanes + 1);
++                mediaImage->mPlane[i].mHorizSubsampling = 1;
++                mediaImage->mPlane[i].mVertSubsampling = 1;
++            }
+             break;
+         case C2PlanarLayout::TYPE_RGBA:
+             mediaImage->mType = MediaImage2::MEDIA_IMAGE_TYPE_RGBA;
+-            // TODO: support MediaImage layout
+             switch (mClientColorFormat) {
+                 case COLOR_FormatSurface:
+                 case COLOR_FormatRGBAFlexible:
+@@ -1182,6 +1187,13 @@ GraphicView2MediaImageConverter::GraphicView2MediaImageConverter(
+                 mInitCheck = BAD_VALUE;
+                 return;
+             }
++            for (uint32_t i = 0; i < layout.numPlanes; ++i) {
++                mediaImage->mPlane[i].mOffset = i;
++                mediaImage->mPlane[i].mColInc = 4;
++                mediaImage->mPlane[i].mRowInc = stride * 4;
++                mediaImage->mPlane[i].mHorizSubsampling = 1;
++                mediaImage->mPlane[i].mVertSubsampling = 1;
++            }
+             break;
+         default:
+             mediaImage->mType = MediaImage2::MEDIA_IMAGE_TYPE_UNKNOWN;
+diff --git a/media/codec2/tests/vndk/C2BufferTest.cpp b/media/codec2/tests/vndk/C2BufferTest.cpp
+index 0cfb465b39..0b21fb6d77 100644
+--- a/media/codec2/tests/vndk/C2BufferTest.cpp
++++ b/media/codec2/tests/vndk/C2BufferTest.cpp
+@@ -286,11 +286,13 @@ public:
+         return std::make_shared<C2PooledBlockPool>(mLinearAllocator, mBlockPoolId++);
+     }
+ 
+-    void allocateGraphic(uint32_t width, uint32_t height) {
++    void allocateGraphic(
++            uint32_t width, uint32_t height,
++            uint32_t format = HAL_PIXEL_FORMAT_YCBCR_420_888) {
+         c2_status_t err = mGraphicAllocator->newGraphicAllocation(
+                 width,
+                 height,
+-                HAL_PIXEL_FORMAT_YCBCR_420_888,
++                format,
+                 { C2MemoryUsage::CPU_READ, C2MemoryUsage::CPU_WRITE },
+                 &mGraphicAllocation);
+         if (err != C2_OK) {
+@@ -508,6 +510,29 @@ TEST_F(C2BufferTest, GraphicAllocationTest) {
+     ASSERT_TRUE(verifyPlane({ kWidth / 4, kHeight }, vInfo, v, 0));
+ }
+ 
++TEST_F(C2BufferTest, RgbaGraphicAllocationTest) {
++    constexpr uint32_t kWidth = 320;
++    constexpr uint32_t kHeight = 240;
++
++    allocateGraphic(kWidth, kHeight, HAL_PIXEL_FORMAT_RGBA_8888);
++
++    uint8_t *addr[C2PlanarLayout::MAX_NUM_PLANES];
++    C2PlanarLayout layout;
++    mapGraphic(C2Rect(kWidth, kHeight), &layout, addr);
++
++    ASSERT_EQ(C2PlanarLayout::TYPE_RGBA, layout.type);
++    ASSERT_EQ(4u, layout.numPlanes);
++    for (uint32_t plane = 0; plane < layout.numPlanes; ++plane) {
++        ASSERT_NE(nullptr, addr[plane]);
++        EXPECT_EQ(4, layout.planes[plane].colInc);
++        EXPECT_EQ(1u, layout.planes[plane].colSampling);
++        EXPECT_EQ(1u, layout.planes[plane].rowSampling);
++        EXPECT_EQ(8u, layout.planes[plane].allocatedDepth);
++        EXPECT_EQ(8u, layout.planes[plane].bitDepth);
++        EXPECT_EQ(plane, static_cast<uint32_t>(addr[plane] - addr[0]));
++    }
++}
++
+ TEST_F(C2BufferTest, GraphicBlockPoolTest) {
+     constexpr uint32_t kWidth = 320;
+     constexpr uint32_t kHeight = 240;
+diff --git a/media/codec2/vndk/C2AllocatorGralloc.cpp b/media/codec2/vndk/C2AllocatorGralloc.cpp
+index 36f3054c7d..cd2fa3ac52 100644
+--- a/media/codec2/vndk/C2AllocatorGralloc.cpp
++++ b/media/codec2/vndk/C2AllocatorGralloc.cpp
+@@ -576,9 +576,8 @@ static c2_status_t PopulatePlaneLayout(
+         }
+ 
+         case static_cast<uint32_t>(PixelFormat4::RGBA_8888):
+-            // TODO: alpha channel
+-            // fall-through
+         case static_cast<uint32_t>(PixelFormat4::RGBX_8888): {
++            const bool hasAlpha = format == static_cast<uint32_t>(PixelFormat4::RGBA_8888);
+             void *pointer = nullptr;
+             // TODO: fence
+             status_t err = GraphicBufferMapper::get().lock(
+@@ -590,8 +589,11 @@ static c2_status_t PopulatePlaneLayout(
+             addr[C2PlanarLayout::PLANE_R] = (uint8_t *)pointer;
+             addr[C2PlanarLayout::PLANE_G] = (uint8_t *)pointer + 1;
+             addr[C2PlanarLayout::PLANE_B] = (uint8_t *)pointer + 2;
+-            layout->type = C2PlanarLayout::TYPE_RGB;
+-            layout->numPlanes = 3;
++            if (hasAlpha) {
++                addr[C2PlanarLayout::PLANE_A] = (uint8_t *)pointer + 3;
++            }
++            layout->type = hasAlpha ? C2PlanarLayout::TYPE_RGBA : C2PlanarLayout::TYPE_RGB;
++            layout->numPlanes = hasAlpha ? 4 : 3;
+             layout->rootPlanes = 1;
+             layout->planes[C2PlanarLayout::PLANE_R] = {
+                 C2PlaneInfo::CHANNEL_R,         // channel
+@@ -632,6 +634,21 @@ static c2_status_t PopulatePlaneLayout(
+                 C2PlanarLayout::PLANE_R,        // rootIx
+                 2,                              // offset
+             };
++            if (hasAlpha) {
++                layout->planes[C2PlanarLayout::PLANE_A] = {
++                    C2PlaneInfo::CHANNEL_A,         // channel
++                    4,                              // colInc
++                    static_cast<int32_t>(4 * stride), // rowInc
++                    1,                              // mColSampling
++                    1,                              // mRowSampling
++                    8,                              // allocatedDepth
++                    8,                              // bitDepth
++                    0,                              // rightShift
++                    C2PlaneInfo::NATIVE,            // endianness
++                    C2PlanarLayout::PLANE_R,        // rootIx
++                    3,                              // offset
++                };
++            }
+             break;
+         }
+ 
+-- 
+2.47.3
+

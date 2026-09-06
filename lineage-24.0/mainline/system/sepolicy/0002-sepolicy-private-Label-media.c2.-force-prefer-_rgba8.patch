@@ -1,0 +1,27 @@
+From 71c4b739282ed5621ddb81853204ca978fa32acc Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Mon, 7 Sep 2026 00:32:56 +0800
+Subject: [PATCH 2/2] sepolicy: private: Label
+ `media.c2.{force,prefer}_rgba8888`
+
+Change-Id: I39cadbb34a5105c3cf1ae526148600d5fe4eb917
+---
+ private/property_contexts | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/private/property_contexts b/private/property_contexts
+index 60c3e3c4c..408eceb12 100644
+--- a/private/property_contexts
++++ b/private/property_contexts
+@@ -639,6 +639,8 @@ keyguard.no_require_sim u:object_r:keyguard_config_prop:s0 exact bool
+ media.c2.dmabuf.padding                      u:object_r:codec2_config_prop:s0 exact int
+ media.c2.hal.selection                       u:object_r:codec2_config_prop:s0 exact enum aidl hidl
+ media.c2.remove_rendering_depth              u:object_r:codec2_config_prop:s0 exact bool
++media.c2.force_rgba8888                      u:object_r:codec2_config_prop:s0 exact bool
++media.c2.prefer_rgba8888                     u:object_r:codec2_config_prop:s0 exact bool
+ 
+ media.recorder.show_manufacturer_and_model   u:object_r:media_config_prop:s0 exact bool
+ media.resolution.limit.32bit                 u:object_r:media_config_prop:s0 exact int
+-- 
+2.47.3
+

@@ -1,0 +1,1386 @@
+From 8099cc0283b840d7894f5362875c775d70d5d433 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Sun, 6 Sep 2026 03:52:32 +0800
+Subject: [PATCH 3/4] codec2: add RGBA8888 output to software decoders
+
+Advertise and produce RGBA_8888 output from all software video
+decoders, including AVC, HEVC, MPEG, VPX, AV1, and APV.
+
+Add shared libyuv conversion helpers for planar 8/10/12-bit and
+P210 sources while preserving existing YUV output behavior.
+
+Assisted-by: OpenCode/gpt-5.6-sol
+Change-Id: I9b83ee199010ff6b9ccf78c4ef2aa33094d5e126
+---
+ media/codec2/components/aom/C2SoftAomDec.cpp  | 71 +++++++++++---
+ media/codec2/components/apv/C2SoftApvDec.cpp  | 79 +++++++++++++--
+ media/codec2/components/avc/C2SoftAvcDec.cpp  | 95 +++++++++++++++++--
+ media/codec2/components/avc/C2SoftAvcDec.h    |  4 +
+ .../components/base/SimpleC2Component.cpp     | 93 +++++++++++++++++-
+ .../base/include/SimpleC2Component.h          | 11 +++
+ .../components/dav1d/C2SoftDav1dDec.cpp       | 52 ++++++++--
+ .../codec2/components/gav1/C2SoftGav1Dec.cpp  | 17 +++-
+ .../codec2/components/hevc/C2SoftHevcDec.cpp  | 89 +++++++++++++++--
+ media/codec2/components/hevc/C2SoftHevcDec.h  |  4 +
+ .../components/mpeg2/C2SoftMpeg2Dec.cpp       | 87 ++++++++++++++---
+ .../codec2/components/mpeg2/C2SoftMpeg2Dec.h  |  4 +
+ .../components/mpeg4_h263/C2SoftMpeg4Dec.cpp  | 52 ++++++----
+ .../components/mpeg4_h263/C2SoftMpeg4Dec.h    |  1 +
+ media/codec2/components/vpx/C2SoftVpxDec.cpp  | 68 ++++++++++---
+ 15 files changed, 633 insertions(+), 94 deletions(-)
+
+diff --git a/media/codec2/components/aom/C2SoftAomDec.cpp b/media/codec2/components/aom/C2SoftAomDec.cpp
+index f407cddd54..cc8024e6de 100644
+--- a/media/codec2/components/aom/C2SoftAomDec.cpp
++++ b/media/codec2/components/aom/C2SoftAomDec.cpp
+@@ -155,10 +155,15 @@ class C2SoftAomDec::IntfImpl : public SimpleInterface<void>::BaseParams {
+                 .withSetter(DefaultColorAspectsSetter)
+                 .build());
+ 
+-        // TODO: support more formats?
++        std::vector<uint32_t> pixelFormats = {
++            HAL_PIXEL_FORMAT_YCBCR_420_888,
++            HAL_PIXEL_FORMAT_RGBA_8888,
++        };
+         addParameter(DefineParam(mPixelFormat, C2_PARAMKEY_PIXEL_FORMAT)
+-                         .withConstValue(new C2StreamPixelFormatInfo::output(
++                         .withDefault(new C2StreamPixelFormatInfo::output(
+                              0u, HAL_PIXEL_FORMAT_YCBCR_420_888))
++                         .withFields({C2F(mPixelFormat, value).oneOf(pixelFormats)})
++                         .withSetter((Setter<decltype(*mPixelFormat)>::StrictValueWithNoDeps))
+                          .build());
+     }
+ 
+@@ -226,6 +231,10 @@ class C2SoftAomDec::IntfImpl : public SimpleInterface<void>::BaseParams {
+         return mDefaultColorAspects;
+     }
+ 
++    std::shared_ptr<C2StreamPixelFormatInfo::output> getPixelFormat_l() const {
++        return mPixelFormat;
++    }
++
+     static C2R Hdr10PlusInfoInputSetter(bool mayBlock, C2P<C2StreamHdr10PlusInfo::input> &me) {
+         (void)mayBlock;
+         (void)me;  // TODO: validate
+@@ -537,21 +546,37 @@ bool C2SoftAomDec::outputBuffer(
+         }
+     }
+ 
+-    CHECK(img->fmt == AOM_IMG_FMT_I420 || img->fmt == AOM_IMG_FMT_I42016);
+-
+     std::shared_ptr<C2GraphicBlock> block;
+     uint32_t format = HAL_PIXEL_FORMAT_YV12;
+     std::shared_ptr<C2StreamColorAspectsTuning::output> defaultColorAspects;
+-    if (img->fmt == AOM_IMG_FMT_I42016) {
++    bool outputRGBA8888 = false;
++    {
+         IntfImpl::Lock lock = mIntf->lock();
+         defaultColorAspects = mIntf->getDefaultColorAspects_l();
++        outputRGBA8888 =
++                mIntf->getPixelFormat_l()->value == HAL_PIXEL_FORMAT_RGBA_8888;
++    }
+ 
++    if (outputRGBA8888) {
++        format = HAL_PIXEL_FORMAT_RGBA_8888;
++    } else if (img->fmt == AOM_IMG_FMT_I42016) {
+         if (defaultColorAspects->primaries == C2Color::PRIMARIES_BT2020 &&
+             defaultColorAspects->matrix == C2Color::MATRIX_BT2020 &&
+             defaultColorAspects->transfer == C2Color::TRANSFER_ST2084) {
+             format = HAL_PIXEL_FORMAT_RGBA_1010102;
+         }
+     }
++    const bool highBitDepth = img->fmt == AOM_IMG_FMT_I42016
++            || img->fmt == AOM_IMG_FMT_I42216 || img->fmt == AOM_IMG_FMT_I44416;
++    CONV_FORMAT_T sourceFormat = CONV_FORMAT_I420;
++    if (img->fmt == AOM_IMG_FMT_I422 || img->fmt == AOM_IMG_FMT_I42216) {
++        sourceFormat = CONV_FORMAT_I422;
++    } else if (img->fmt == AOM_IMG_FMT_I444 || img->fmt == AOM_IMG_FMT_I44416) {
++        sourceFormat = CONV_FORMAT_I444;
++    } else {
++        CHECK(img->fmt == AOM_IMG_FMT_I420 || img->fmt == AOM_IMG_FMT_I42016);
++    }
++    CHECK(outputRGBA8888 || sourceFormat == CONV_FORMAT_I420);
+     C2MemoryUsage usage = {C2MemoryUsage::CPU_READ, C2MemoryUsage::CPU_WRITE};
+ 
+     c2_status_t err = pool->fetchGraphicBlock(align(mWidth, 16), mHeight,
+@@ -576,22 +601,34 @@ bool C2SoftAomDec::outputBuffer(
+           (int)*(int64_t*)img->user_priv);
+ 
+     uint8_t* dstY = const_cast<uint8_t*>(wView.data()[C2PlanarLayout::PLANE_Y]);
+-    uint8_t* dstU = const_cast<uint8_t*>(wView.data()[C2PlanarLayout::PLANE_U]);
+-    uint8_t* dstV = const_cast<uint8_t*>(wView.data()[C2PlanarLayout::PLANE_V]);
++    uint8_t* dstU = nullptr;
++    uint8_t* dstV = nullptr;
+     size_t srcYStride = img->stride[AOM_PLANE_Y];
+     size_t srcUStride = img->stride[AOM_PLANE_U];
+     size_t srcVStride = img->stride[AOM_PLANE_V];
+     C2PlanarLayout layout = wView.layout();
+     size_t dstYStride = layout.planes[C2PlanarLayout::PLANE_Y].rowInc;
+-    size_t dstUStride = layout.planes[C2PlanarLayout::PLANE_U].rowInc;
+-    size_t dstVStride = layout.planes[C2PlanarLayout::PLANE_V].rowInc;
++    size_t dstUStride = 0;
++    size_t dstVStride = 0;
++    if (format != HAL_PIXEL_FORMAT_RGBA_8888) {
++        dstU = const_cast<uint8_t*>(wView.data()[C2PlanarLayout::PLANE_U]);
++        dstV = const_cast<uint8_t*>(wView.data()[C2PlanarLayout::PLANE_V]);
++        dstUStride = layout.planes[C2PlanarLayout::PLANE_U].rowInc;
++        dstVStride = layout.planes[C2PlanarLayout::PLANE_V].rowInc;
++    }
+ 
+-    if (img->fmt == AOM_IMG_FMT_I42016) {
++    if (highBitDepth) {
+         const uint16_t *srcY = (const uint16_t *)img->planes[AOM_PLANE_Y];
+         const uint16_t *srcU = (const uint16_t *)img->planes[AOM_PLANE_U];
+         const uint16_t *srcV = (const uint16_t *)img->planes[AOM_PLANE_V];
+ 
+-        if (format == HAL_PIXEL_FORMAT_RGBA_1010102) {
++        if (format == HAL_PIXEL_FORMAT_RGBA_8888) {
++            convertPlanar16ToRGBA8888(
++                    dstY, dstYStride, srcY, srcU, srcV, srcYStride / 2,
++                    srcUStride / 2, srcVStride / 2, mWidth, mHeight,
++                    img->bit_depth, false, sourceFormat,
++                    std::static_pointer_cast<const C2ColorAspectsStruct>(defaultColorAspects));
++        } else if (format == HAL_PIXEL_FORMAT_RGBA_1010102) {
+             convertYUV420Planar16ToY410OrRGBA1010102(
+                     (uint32_t *)dstY, srcY, srcU, srcV, srcYStride / 2, srcUStride / 2,
+                     srcVStride / 2, dstYStride / sizeof(uint32_t), mWidth, mHeight,
+@@ -605,8 +642,16 @@ bool C2SoftAomDec::outputBuffer(
+         const uint8_t *srcY = (const uint8_t *)img->planes[AOM_PLANE_Y];
+         const uint8_t *srcU = (const uint8_t *)img->planes[AOM_PLANE_U];
+         const uint8_t *srcV = (const uint8_t *)img->planes[AOM_PLANE_V];
+-        convertYUV420Planar8ToYV12(dstY, dstU, dstV, srcY, srcU, srcV, srcYStride, srcUStride,
+-                                   srcVStride, dstYStride, dstUStride, dstVStride, mWidth, mHeight);
++        if (format == HAL_PIXEL_FORMAT_RGBA_8888) {
++            convertPlanar8ToRGBA8888(
++                    dstY, dstYStride, srcY, srcU, srcV, srcYStride, srcUStride,
++                    srcVStride, mWidth, mHeight, false, sourceFormat,
++                    std::static_pointer_cast<const C2ColorAspectsStruct>(defaultColorAspects));
++        } else {
++            convertYUV420Planar8ToYV12(dstY, dstU, dstV, srcY, srcU, srcV, srcYStride,
++                                       srcUStride, srcVStride, dstYStride, dstUStride,
++                                       dstVStride, mWidth, mHeight);
++        }
+     }
+     finishWork(*(int64_t*)img->user_priv, work, std::move(block));
+     block = nullptr;
+diff --git a/media/codec2/components/apv/C2SoftApvDec.cpp b/media/codec2/components/apv/C2SoftApvDec.cpp
+index e32766ee1c..962ef6b0f5 100644
+--- a/media/codec2/components/apv/C2SoftApvDec.cpp
++++ b/media/codec2/components/apv/C2SoftApvDec.cpp
+@@ -280,7 +280,10 @@ class C2SoftApvDec::IntfImpl : public SimpleInterface<void>::BaseParams {
+                         .build());
+ 
+         // TODO: support more formats?
+-        std::vector<uint32_t> pixelFormats = {HAL_PIXEL_FORMAT_YCBCR_420_888};
++        std::vector<uint32_t> pixelFormats = {
++                HAL_PIXEL_FORMAT_YCBCR_420_888,
++                HAL_PIXEL_FORMAT_RGBA_8888,
++        };
+         if (isHalPixelFormatSupported((AHardwareBuffer_Format)HAL_PIXEL_FORMAT_YCBCR_P010)) {
+             pixelFormats.push_back(HAL_PIXEL_FORMAT_YCBCR_P010);
+         }
+@@ -1279,7 +1282,7 @@ status_t C2SoftApvDec::outputBuffer(const std::shared_ptr<C2BlockPool>& pool,
+         ALOGW("No output frames");
+         return false;
+     }
+-    bool isMonochrome = OAPV_CS_GET_FORMAT(imgbOutput->cs) == OAPV_CS_YCBCR400;
++    bool isMonochrome = OAPV_CS_GET_FORMAT(imgbOutput->cs) == OAPV_CF_YCBCR400;
+ 
+     getVuiParams(work);
+     struct ApvHdrInfo hdrInfo = {};
+@@ -1294,7 +1297,11 @@ status_t C2SoftApvDec::outputBuffer(const std::shared_ptr<C2BlockPool>& pool,
+ 
+     uint32_t format = HAL_PIXEL_FORMAT_YV12;
+     std::shared_ptr<C2StreamColorAspectsInfo::output> codedColorAspects;
+-    if (mPixelFormatInfo->value != HAL_PIXEL_FORMAT_YCBCR_420_888) {
++    if (mPixelFormatInfo->value == HAL_PIXEL_FORMAT_RGBA_8888) {
++        format = HAL_PIXEL_FORMAT_RGBA_8888;
++        IntfImpl::Lock lock = mIntf->lock();
++        codedColorAspects = mIntf->getColorAspects_l();
++    } else if (mPixelFormatInfo->value != HAL_PIXEL_FORMAT_YCBCR_420_888) {
+         if ((mPixelFormatInfo->value != HAL_PIXEL_FORMAT_IMPLEMENTATION_DEFINED) &&
+             isHalPixelFormatSupported((AHardwareBuffer_Format)mPixelFormatInfo->value)) {
+             format = mPixelFormatInfo->value;
+@@ -1353,15 +1360,69 @@ status_t C2SoftApvDec::outputBuffer(const std::shared_ptr<C2BlockPool>& pool,
+     ALOGV("provided (%dx%d) required (%dx%d)", block->width(), block->height(), mWidth, mHeight);
+ 
+     uint8_t* dstY = const_cast<uint8_t*>(wView.data()[C2PlanarLayout::PLANE_Y]);
+-    uint8_t* dstU = const_cast<uint8_t*>(wView.data()[C2PlanarLayout::PLANE_U]);
+-    uint8_t* dstV = const_cast<uint8_t*>(wView.data()[C2PlanarLayout::PLANE_V]);
++    uint8_t* dstU = nullptr;
++    uint8_t* dstV = nullptr;
+ 
+     C2PlanarLayout layout = wView.layout();
+     size_t dstYStride = layout.planes[C2PlanarLayout::PLANE_Y].rowInc;
+-    size_t dstUStride = layout.planes[C2PlanarLayout::PLANE_U].rowInc;
+-    size_t dstVStride = layout.planes[C2PlanarLayout::PLANE_V].rowInc;
+-
+-    if(format == HAL_PIXEL_FORMAT_RGBA_1010102) {
++    size_t dstUStride = 0;
++    size_t dstVStride = 0;
++    if (format != HAL_PIXEL_FORMAT_RGBA_8888) {
++        dstU = const_cast<uint8_t*>(wView.data()[C2PlanarLayout::PLANE_U]);
++        dstV = const_cast<uint8_t*>(wView.data()[C2PlanarLayout::PLANE_V]);
++        dstUStride = layout.planes[C2PlanarLayout::PLANE_U].rowInc;
++        dstVStride = layout.planes[C2PlanarLayout::PLANE_V].rowInc;
++    }
++
++    if (format == HAL_PIXEL_FORMAT_RGBA_8888) {
++        const int bitDepth = OAPV_CS_GET_BIT_DEPTH(imgbOutput->cs);
++        const int sourceFormat = OAPV_CS_GET_FORMAT(imgbOutput->cs);
++        if (bitDepth == 10 && sourceFormat == OAPV_CF_PLANAR2) {
++            convertP210ToRGBA8888(
++                    dstY, dstYStride, (const uint16_t*)imgbOutput->a[0],
++                    (const uint16_t*)imgbOutput->a[1], imgbOutput->s[0] / 2,
++                    imgbOutput->s[1] / 2, mWidth, mHeight, codedColorAspects);
++        } else if (bitDepth > 8 && bitDepth <= 16) {
++            if (sourceFormat != OAPV_CF_YCBCR400 && sourceFormat != OAPV_CF_YCBCR420
++                    && sourceFormat != OAPV_CF_YCBCR422
++                    && sourceFormat != OAPV_CF_YCBCR444) {
++                ALOGE("Unsupported APV source format %d for RGBA_8888", sourceFormat);
++                work->result = C2_CORRUPTED;
++                return UNKNOWN_ERROR;
++            }
++            CONV_FORMAT_T convFormat = sourceFormat == OAPV_CF_YCBCR444
++                    ? CONV_FORMAT_I444
++                    : (sourceFormat == OAPV_CF_YCBCR422 ? CONV_FORMAT_I422
++                                                        : CONV_FORMAT_I420);
++            convertPlanar16ToRGBA8888(
++                    dstY, dstYStride, (const uint16_t*)imgbOutput->a[0],
++                    (const uint16_t*)imgbOutput->a[1],
++                    (const uint16_t*)imgbOutput->a[2], imgbOutput->s[0] / 2,
++                    imgbOutput->s[1] / 2, imgbOutput->s[2] / 2, mWidth, mHeight,
++                    bitDepth, isMonochrome, convFormat, codedColorAspects);
++        } else if (bitDepth == 8) {
++            if (sourceFormat != OAPV_CF_YCBCR400 && sourceFormat != OAPV_CF_YCBCR420
++                    && sourceFormat != OAPV_CF_YCBCR422
++                    && sourceFormat != OAPV_CF_YCBCR444) {
++                ALOGE("Unsupported APV source format %d for RGBA_8888", sourceFormat);
++                work->result = C2_CORRUPTED;
++                return UNKNOWN_ERROR;
++            }
++            CONV_FORMAT_T convFormat = sourceFormat == OAPV_CF_YCBCR444
++                    ? CONV_FORMAT_I444
++                    : (sourceFormat == OAPV_CF_YCBCR422 ? CONV_FORMAT_I422
++                                                        : CONV_FORMAT_I420);
++            convertPlanar8ToRGBA8888(
++                    dstY, dstYStride, (const uint8_t*)imgbOutput->a[0],
++                    (const uint8_t*)imgbOutput->a[1], (const uint8_t*)imgbOutput->a[2],
++                    imgbOutput->s[0], imgbOutput->s[1], imgbOutput->s[2], mWidth,
++                    mHeight, isMonochrome, convFormat, codedColorAspects);
++        } else {
++            ALOGE("Unsupported APV source bit depth %d for RGBA_8888", bitDepth);
++            work->result = C2_CORRUPTED;
++            return UNKNOWN_ERROR;
++        }
++    } else if(format == HAL_PIXEL_FORMAT_RGBA_1010102) {
+         if (OAPV_CS_GET_BIT_DEPTH(imgbOutput->cs) == 10) {
+             const uint16_t* srcY = (const uint16_t*)imgbOutput->a[0];
+             const uint16_t* srcU = (const uint16_t*)imgbOutput->a[1];
+diff --git a/media/codec2/components/avc/C2SoftAvcDec.cpp b/media/codec2/components/avc/C2SoftAvcDec.cpp
+index a005b6a820..fd86657df7 100644
+--- a/media/codec2/components/avc/C2SoftAvcDec.cpp
++++ b/media/codec2/components/avc/C2SoftAvcDec.cpp
+@@ -199,11 +199,15 @@ public:
+                 .withSetter(ColorAspectsSetter, mDefaultColorAspects, mCodedColorAspects)
+                 .build());
+ 
+-        // TODO: support more formats?
+         addParameter(
+                 DefineParam(mPixelFormat, C2_PARAMKEY_PIXEL_FORMAT)
+-                .withConstValue(new C2StreamPixelFormatInfo::output(
+-                                     0u, HAL_PIXEL_FORMAT_YCBCR_420_888))
++                .withDefault(new C2StreamPixelFormatInfo::output(
++                        0u, HAL_PIXEL_FORMAT_YCBCR_420_888))
++                .withFields({C2F(mPixelFormat, value).oneOf({
++                        HAL_PIXEL_FORMAT_YCBCR_420_888,
++                        HAL_PIXEL_FORMAT_RGBA_8888,
++                })})
++                .withSetter(Setter<decltype(*mPixelFormat)>::StrictValueWithNoDeps)
+                 .build());
+     }
+     static C2R SizeSetter(bool mayBlock, const C2P<C2StreamPictureSizeInfo::output> &oldMe,
+@@ -299,6 +303,10 @@ public:
+         return mColorAspects;
+     }
+ 
++    std::shared_ptr<C2StreamPixelFormatInfo::output> getPixelFormat_l() const {
++        return mPixelFormat;
++    }
++
+ private:
+     std::shared_ptr<C2StreamProfileLevelInfo::input> mProfileLevel;
+     std::shared_ptr<C2StreamPictureSizeInfo::output> mSize;
+@@ -346,6 +354,9 @@ C2SoftAvcDec::C2SoftAvcDec(
+       mOutputDelay(kDefaultOutputDelay),
+       mWidth(320),
+       mHeight(240),
++      mOutputPixelFormat(HAL_PIXEL_FORMAT_YV12),
++      mConversionBuffer(nullptr),
++      mConversionBufferSize(0),
+       mHeaderDecoded(false),
+       mOutIndex(0u) {
+     GENERATE_FILE_NAMES();
+@@ -383,6 +394,11 @@ void C2SoftAvcDec::onRelease() {
+         ivd_aligned_free(nullptr, mOutBufferFlush);
+         mOutBufferFlush = nullptr;
+     }
++    if (mConversionBuffer) {
++        ivd_aligned_free(nullptr, mConversionBuffer);
++        mConversionBuffer = nullptr;
++        mConversionBufferSize = 0;
++    }
+     if (mOutBlock) {
+         mOutBlock.reset();
+     }
+@@ -539,7 +555,10 @@ bool C2SoftAvcDec::setDecodeArgs(ivd_video_decode_ip_t *ps_decode_ip,
+                                  size_t inSize,
+                                  uint32_t tsMarker) {
+     uint32_t displayStride = mStride;
+-    if (outBuffer) {
++    const bool outputRGBA = outBuffer && mOutputPixelFormat == HAL_PIXEL_FORMAT_RGBA_8888;
++    if (outputRGBA) {
++        displayStride = ALIGN128(mWidth);
++    } else if (outBuffer) {
+         C2PlanarLayout layout;
+         layout = outBuffer->layout();
+         displayStride = layout.planes[C2PlanarLayout::PLANE_Y].rowInc;
+@@ -573,9 +592,30 @@ bool C2SoftAvcDec::setDecodeArgs(ivd_video_decode_ip_t *ps_decode_ip,
+                   outBuffer->width(), outBuffer->height(), displayStride, displayHeight);
+             return false;
+         }
+-        ps_decode_ip->s_out_buffer.pu1_bufs[0] = outBuffer->data()[C2PlanarLayout::PLANE_Y];
+-        ps_decode_ip->s_out_buffer.pu1_bufs[1] = outBuffer->data()[C2PlanarLayout::PLANE_U];
+-        ps_decode_ip->s_out_buffer.pu1_bufs[2] = outBuffer->data()[C2PlanarLayout::PLANE_V];
++        if (outputRGBA) {
++            const size_t bufferSize = lumaSize + 2 * chromaSize;
++            if (mConversionBufferSize < bufferSize) {
++                ivd_aligned_free(nullptr, mConversionBuffer);
++                mConversionBuffer = static_cast<uint8_t *>(
++                        ivd_aligned_malloc(nullptr, 128, bufferSize));
++                mConversionBufferSize = mConversionBuffer ? bufferSize : 0;
++            }
++            if (!mConversionBuffer) {
++                ALOGE("could not allocate RGBA conversion buffer of size %zu", bufferSize);
++                return false;
++            }
++            ps_decode_ip->s_out_buffer.pu1_bufs[0] = mConversionBuffer;
++            ps_decode_ip->s_out_buffer.pu1_bufs[1] = mConversionBuffer + lumaSize;
++            ps_decode_ip->s_out_buffer.pu1_bufs[2] =
++                    mConversionBuffer + lumaSize + chromaSize;
++        } else {
++            ps_decode_ip->s_out_buffer.pu1_bufs[0] =
++                    outBuffer->data()[C2PlanarLayout::PLANE_Y];
++            ps_decode_ip->s_out_buffer.pu1_bufs[1] =
++                    outBuffer->data()[C2PlanarLayout::PLANE_U];
++            ps_decode_ip->s_out_buffer.pu1_bufs[2] =
++                    outBuffer->data()[C2PlanarLayout::PLANE_V];
++        }
+     } else {
+         ps_decode_ip->s_out_buffer.pu1_bufs[0] = mOutBufferFlush;
+         ps_decode_ip->s_out_buffer.pu1_bufs[1] = mOutBufferFlush + lumaSize;
+@@ -587,6 +627,23 @@ bool C2SoftAvcDec::setDecodeArgs(ivd_video_decode_ip_t *ps_decode_ip,
+     return true;
+ }
+ 
++void C2SoftAvcDec::convertToRGBA(C2GraphicView &view) {
++    const size_t lumaSize = mStride * mHeight;
++    std::shared_ptr<C2StreamColorAspectsInfo::output> aspects;
++    {
++        IntfImpl::Lock lock = mIntf->lock();
++        aspects = mIntf->getColorAspects_l();
++    }
++    convertPlanar8ToRGBA8888(
++            view.data()[C2PlanarLayout::PLANE_Y],
++            view.layout().planes[C2PlanarLayout::PLANE_Y].rowInc,
++            mConversionBuffer, mConversionBuffer + lumaSize,
++            mConversionBuffer + lumaSize + lumaSize / 4,
++            mStride, mStride / 2, mStride / 2, mWidth, mHeight, false,
++            CONV_FORMAT_I420,
++            std::static_pointer_cast<const C2ColorAspectsStruct>(aspects));
++}
++
+ bool C2SoftAvcDec::getVuiParams() {
+     ivdext_ctl_get_vui_params_ip_t s_get_vui_params_ip = {};
+     ivdext_ctl_get_vui_params_op_t s_get_vui_params_op = {};
+@@ -788,12 +845,17 @@ c2_status_t C2SoftAvcDec::ensureDecoderState(const std::shared_ptr<C2BlockPool>
+         ALOGE("not supposed to be here, invalid decoder context");
+         return C2_CORRUPTED;
+     }
+-    if (mOutBlock &&
+-            (mOutBlock->width() != ALIGN128(mWidth) || mOutBlock->height() != mHeight)) {
++    uint32_t format;
++    {
++        IntfImpl::Lock lock = mIntf->lock();
++        format = mIntf->getPixelFormat_l()->value == HAL_PIXEL_FORMAT_RGBA_8888
++                ? HAL_PIXEL_FORMAT_RGBA_8888 : HAL_PIXEL_FORMAT_YV12;
++    }
++    if (mOutBlock && (mOutBlock->width() != ALIGN128(mWidth) ||
++            mOutBlock->height() != mHeight || mOutputPixelFormat != format)) {
+         mOutBlock.reset();
+     }
+     if (!mOutBlock) {
+-        uint32_t format = HAL_PIXEL_FORMAT_YV12;
+         C2MemoryUsage usage = { C2MemoryUsage::CPU_READ, C2MemoryUsage::CPU_WRITE };
+         c2_status_t err =
+             pool->fetchGraphicBlock(ALIGN128(mWidth), mHeight, format, usage, &mOutBlock);
+@@ -801,6 +863,7 @@ c2_status_t C2SoftAvcDec::ensureDecoderState(const std::shared_ptr<C2BlockPool>
+             ALOGE("fetchGraphicBlock for Output failed with status %d", err);
+             return err;
+         }
++        mOutputPixelFormat = format;
+         ALOGV("provided (%dx%d) required (%dx%d)",
+               mOutBlock->width(), mOutBlock->height(), ALIGN128(mWidth), mHeight);
+     }
+@@ -967,6 +1030,15 @@ void C2SoftAvcDec::process(
+         (void)getVuiParams();
+         hasPicture |= (1 == ps_decode_op->u4_frame_decoded_flag);
+         if (ps_decode_op->u4_output_present) {
++            if (mOutputPixelFormat == HAL_PIXEL_FORMAT_RGBA_8888) {
++                C2GraphicView wView = mOutBlock->map().get();
++                if (wView.error()) {
++                    ALOGE("graphic view map failed %d", wView.error());
++                    work->result = wView.error();
++                    return;
++                }
++                convertToRGBA(wView);
++            }
+             finishWork(ps_decode_op->u4_ts, work);
+             configUpdateQueued = c2_cntr64_t(ps_decode_op->u4_ts) == work->input.ordinal.frameIndex;
+         }
+@@ -1031,6 +1103,9 @@ c2_status_t C2SoftAvcDec::drainInternal(
+         }
+         (void) ivdec_api_function(mDecHandle, &s_h264d_decode_ip, &s_h264d_decode_op);
+         if (ps_decode_op->u4_output_present) {
++            if (mOutputPixelFormat == HAL_PIXEL_FORMAT_RGBA_8888) {
++                convertToRGBA(wView);
++            }
+             finishWork(ps_decode_op->u4_ts, work);
+         } else {
+             fillEmptyWork(work);
+diff --git a/media/codec2/components/avc/C2SoftAvcDec.h b/media/codec2/components/avc/C2SoftAvcDec.h
+index 0104bb0f0d..0429e3c199 100644
+--- a/media/codec2/components/avc/C2SoftAvcDec.h
++++ b/media/codec2/components/avc/C2SoftAvcDec.h
+@@ -128,6 +128,7 @@ private:
+                        size_t inSize,
+                        uint32_t tsMarker);
+     bool getVuiParams();
++    void convertToRGBA(C2GraphicView &view);
+     c2_status_t ensureDecoderState(const std::shared_ptr<C2BlockPool> &pool);
+     void finishWork(uint64_t index, const std::unique_ptr<C2Work> &work);
+     status_t setFlushMode();
+@@ -160,6 +161,9 @@ private:
+     uint32_t mWidth;
+     uint32_t mHeight;
+     uint32_t mStride;
++    uint32_t mOutputPixelFormat;
++    uint8_t *mConversionBuffer;
++    size_t mConversionBufferSize;
+     bool mSignalledOutputEos;
+     bool mSignalledError;
+     bool mHeaderDecoded;
+diff --git a/media/codec2/components/base/SimpleC2Component.cpp b/media/codec2/components/base/SimpleC2Component.cpp
+index a640faf934..f62ac67a3b 100644
+--- a/media/codec2/components/base/SimpleC2Component.cpp
++++ b/media/codec2/components/base/SimpleC2Component.cpp
+@@ -23,6 +23,7 @@
+ #include <media/stagefright/foundation/AMessage.h>
+ #include <media/stagefright/foundation/AUtils.h>
+ 
++#include <algorithm>
+ #include <inttypes.h>
+ #include <libyuv.h>
+ #include <vector>
+@@ -38,7 +39,6 @@ namespace android {
+ 
+ // libyuv version required for I410ToAB30Matrix and I210ToAB30Matrix.
+ #if LIBYUV_VERSION >= 1780
+-#include <algorithm>
+ #define HAVE_LIBYUV_I410_I210_TO_AB30 1
+ #else
+ #define HAVE_LIBYUV_I410_I210_TO_AB30 0
+@@ -151,7 +151,7 @@ namespace {
+ static C2ColorAspectsStruct FillMissingColorAspects(
+         std::shared_ptr<const C2ColorAspectsStruct> aspects,
+         int32_t width, int32_t height) {
+-    C2ColorAspectsStruct _aspects;
++    C2ColorAspectsStruct _aspects{};
+     if (aspects) {
+         _aspects = *aspects;
+     }
+@@ -847,6 +847,95 @@ void convertPlanar8ToRGBA8888(
+     }
+ }
+ 
++void convertPlanar16ToRGBA8888(
++        uint8_t* dstRGBA, size_t dstRGBAStride, const uint16_t* srcY,
++        const uint16_t* srcU, const uint16_t* srcV, size_t srcYStride,
++        size_t srcUStride, size_t srcVStride, uint32_t width, uint32_t height,
++        uint32_t bitDepth, bool isMonochrome, CONV_FORMAT_T format,
++        std::shared_ptr<const C2ColorAspectsStruct> aspects) {
++    std::vector<uint16_t> neutralChroma;
++    if (isMonochrome) {
++        neutralChroma.assign(width, 1u << (bitDepth - 1));
++        srcU = srcV = neutralChroma.data();
++        srcUStride = srcVStride = 0;
++    }
++
++    const C2ColorAspectsStruct filledAspects = FillMissingColorAspects(aspects, width, height);
++    const libyuv::YuvConstants* constants = GetYvuConstantsForAspects(filledAspects);
++    if (bitDepth == 10) {
++        if (format == CONV_FORMAT_I444) {
++            libyuv::I410ToARGBMatrix(srcY, srcYStride, srcV, srcVStride, srcU, srcUStride,
++                                     dstRGBA, dstRGBAStride, constants, width, height);
++        } else if (format == CONV_FORMAT_I422) {
++            libyuv::I210ToARGBMatrix(srcY, srcYStride, srcV, srcVStride, srcU, srcUStride,
++                                     dstRGBA, dstRGBAStride, constants, width, height);
++        } else {
++            libyuv::I010ToARGBMatrix(srcY, srcYStride, srcV, srcVStride, srcU, srcUStride,
++                                     dstRGBA, dstRGBAStride, constants, width, height);
++        }
++        return;
++    }
++    if (bitDepth == 12 && format == CONV_FORMAT_I420) {
++        libyuv::I012ToARGBMatrix(srcY, srcYStride, srcV, srcVStride, srcU, srcUStride,
++                                 dstRGBA, dstRGBAStride, constants, width, height);
++        return;
++    }
++
++    const size_t chromaWidth = format == CONV_FORMAT_I444 ? width : (width + 1) / 2;
++    const size_t chromaHeight = format == CONV_FORMAT_I420 ? (height + 1) / 2 : height;
++    std::vector<uint8_t> planar8(width * height + 2 * chromaWidth * chromaHeight);
++    uint8_t* tmpY = planar8.data();
++    uint8_t* tmpU = tmpY + width * height;
++    uint8_t* tmpV = tmpU + chromaWidth * chromaHeight;
++    const uint32_t shift = bitDepth - 8;
++    for (size_t y = 0; y < height; ++y) {
++        for (size_t x = 0; x < width; ++x) {
++            tmpY[y * width + x] = srcY[y * srcYStride + x] >> shift;
++        }
++    }
++    if (!isMonochrome) {
++        for (size_t y = 0; y < chromaHeight; ++y) {
++            for (size_t x = 0; x < chromaWidth; ++x) {
++                tmpU[y * chromaWidth + x] = srcU[y * srcUStride + x] >> shift;
++                tmpV[y * chromaWidth + x] = srcV[y * srcVStride + x] >> shift;
++            }
++        }
++    }
++    convertPlanar8ToRGBA8888(
++            dstRGBA, dstRGBAStride, tmpY, tmpU, tmpV, width, chromaWidth,
++            chromaWidth, width, height, isMonochrome, format, aspects);
++}
++
++void convertP210ToRGBA8888(
++        uint8_t* dstRGBA, size_t dstRGBAStride, const uint16_t* srcY,
++        const uint16_t* srcUV, size_t srcYStride, size_t srcUVStride,
++        uint32_t width, uint32_t height,
++        std::shared_ptr<const C2ColorAspectsStruct> aspects) {
++    const C2ColorAspectsStruct filledAspects = FillMissingColorAspects(aspects, width, height);
++    const bool fullRange = filledAspects.range == C2Color::RANGE_FULL;
++    const libyuv::YuvConstants* constants;
++    switch (filledAspects.matrix) {
++        case C2Color::MATRIX_BT709:
++            constants = fullRange ? &libyuv::kYuvF709Constants : &libyuv::kYuvH709Constants;
++            break;
++        case C2Color::MATRIX_BT2020:
++            constants = fullRange ? &libyuv::kYuvV2020Constants : &libyuv::kYuv2020Constants;
++            break;
++        case C2Color::MATRIX_BT601:
++        default:
++            constants = fullRange ? &libyuv::kYuvJPEGConstants : &libyuv::kYuvI601Constants;
++            break;
++    }
++    libyuv::P210ToARGBMatrix(srcY, srcYStride, srcUV, srcUVStride, dstRGBA,
++                             dstRGBAStride, constants, width, height);
++    for (size_t y = 0; y < height; ++y) {
++        uint8_t* row = dstRGBA + y * dstRGBAStride;
++        for (size_t x = 0; x < width; ++x) {
++            std::swap(row[x * 4], row[x * 4 + 2]);
++        }
++    }
++}
++
+ void convertSemiPlanar8ToP210(uint16_t *dstY, uint16_t *dstUV,
+                               const uint8_t *srcY, const uint8_t *srcUV,
+                               size_t srcYStride, size_t srcUVStride,
+diff --git a/media/codec2/components/base/include/SimpleC2Component.h b/media/codec2/components/base/include/SimpleC2Component.h
+index 759a4551cd..afc09fc1ac 100644
+--- a/media/codec2/components/base/include/SimpleC2Component.h
++++ b/media/codec2/components/base/include/SimpleC2Component.h
+@@ -122,6 +122,17 @@ void convertPlanar8ToRGBA8888(
+         size_t srcUStride, size_t srcVStride, uint32_t width, uint32_t height,
+         bool isMonochrome, CONV_FORMAT_T format,
+         std::shared_ptr<const C2ColorAspectsStruct> aspects = nullptr);
++void convertPlanar16ToRGBA8888(
++        uint8_t* dstRGBA, size_t dstRGBAStride, const uint16_t* srcY,
++        const uint16_t* srcU, const uint16_t* srcV, size_t srcYStride,
++        size_t srcUStride, size_t srcVStride, uint32_t width, uint32_t height,
++        uint32_t bitDepth, bool isMonochrome, CONV_FORMAT_T format,
++        std::shared_ptr<const C2ColorAspectsStruct> aspects = nullptr);
++void convertP210ToRGBA8888(
++        uint8_t* dstRGBA, size_t dstRGBAStride, const uint16_t* srcY,
++        const uint16_t* srcUV, size_t srcYStride, size_t srcUVStride,
++        uint32_t width, uint32_t height,
++        std::shared_ptr<const C2ColorAspectsStruct> aspects = nullptr);
+ void convertSemiPlanar8ToP210(uint16_t *dstY, uint16_t *dstUV,
+                               const uint8_t *srcY, const uint8_t *srcUV,
+                               size_t srcYStride, size_t srcUVStride,
+diff --git a/media/codec2/components/dav1d/C2SoftDav1dDec.cpp b/media/codec2/components/dav1d/C2SoftDav1dDec.cpp
+index c4e1412721..4748e742bb 100644
+--- a/media/codec2/components/dav1d/C2SoftDav1dDec.cpp
++++ b/media/codec2/components/dav1d/C2SoftDav1dDec.cpp
+@@ -243,7 +243,10 @@ class C2SoftDav1dDec::IntfImpl : public SimpleInterface<void>::BaseParams {
+                         .withSetter(ColorAspectsSetter, mDefaultColorAspects, mCodedColorAspects)
+                         .build());
+ 
+-        std::vector<uint32_t> pixelFormats = {HAL_PIXEL_FORMAT_YCBCR_420_888};
++        std::vector<uint32_t> pixelFormats = {
++                HAL_PIXEL_FORMAT_YCBCR_420_888,
++                HAL_PIXEL_FORMAT_RGBA_8888,
++        };
+         if (isHalPixelFormatSupported((AHardwareBuffer_Format)HAL_PIXEL_FORMAT_YCBCR_P010)) {
+             pixelFormats.push_back(HAL_PIXEL_FORMAT_YCBCR_P010);
+         }
+@@ -1020,7 +1023,12 @@ bool C2SoftDav1dDec::outputBuffer(const std::shared_ptr<C2BlockPool>& pool,
+     std::shared_ptr<C2GraphicBlock> block;
+     uint32_t format = HAL_PIXEL_FORMAT_YV12;
+     std::shared_ptr<C2StreamColorAspectsInfo::output> codedColorAspects;
+-    if (bitdepth == 10 && mPixelFormatInfo->value != HAL_PIXEL_FORMAT_YCBCR_420_888) {
++    if (mPixelFormatInfo->value == HAL_PIXEL_FORMAT_RGBA_8888) {
++        format = HAL_PIXEL_FORMAT_RGBA_8888;
++        IntfImpl::Lock lock = mIntf->lock();
++        codedColorAspects = mIntf->getColorAspects_l();
++    } else if (bitdepth == 10 &&
++               mPixelFormatInfo->value != HAL_PIXEL_FORMAT_YCBCR_420_888) {
+         IntfImpl::Lock lock = mIntf->lock();
+         codedColorAspects = mIntf->getColorAspects_l();
+         bool allowRGBA1010102 = false;
+@@ -1074,13 +1082,19 @@ bool C2SoftDav1dDec::outputBuffer(const std::shared_ptr<C2BlockPool>& pool,
+     mOutputBufferIndex = out_frameIndex;
+ 
+     uint8_t* dstY = const_cast<uint8_t*>(wView.data()[C2PlanarLayout::PLANE_Y]);
+-    uint8_t* dstU = const_cast<uint8_t*>(wView.data()[C2PlanarLayout::PLANE_U]);
+-    uint8_t* dstV = const_cast<uint8_t*>(wView.data()[C2PlanarLayout::PLANE_V]);
++    uint8_t* dstU = nullptr;
++    uint8_t* dstV = nullptr;
+ 
+     C2PlanarLayout layout = wView.layout();
+     size_t dstYStride = layout.planes[C2PlanarLayout::PLANE_Y].rowInc;
+-    size_t dstUStride = layout.planes[C2PlanarLayout::PLANE_U].rowInc;
+-    size_t dstVStride = layout.planes[C2PlanarLayout::PLANE_V].rowInc;
++    size_t dstUStride = 0;
++    size_t dstVStride = 0;
++    if (format != HAL_PIXEL_FORMAT_RGBA_8888) {
++        dstU = const_cast<uint8_t*>(wView.data()[C2PlanarLayout::PLANE_U]);
++        dstV = const_cast<uint8_t*>(wView.data()[C2PlanarLayout::PLANE_V]);
++        dstUStride = layout.planes[C2PlanarLayout::PLANE_U].rowInc;
++        dstVStride = layout.planes[C2PlanarLayout::PLANE_V].rowInc;
++    }
+ 
+     CONV_FORMAT_T convFormat;
+     switch (img.p.layout) {
+@@ -1095,7 +1109,18 @@ bool C2SoftDav1dDec::outputBuffer(const std::shared_ptr<C2BlockPool>& pool,
+             break;
+     }
+ 
+-    if (bitdepth == 10) {
++    if (format == HAL_PIXEL_FORMAT_RGBA_8888 && bitdepth > 8) {
++        const uint16_t* srcY = (const uint16_t*)img.data[0];
++        const uint16_t* srcU = (const uint16_t*)img.data[1];
++        const uint16_t* srcV = (const uint16_t*)img.data[2];
++        const size_t srcYStride = img.stride[0] / 2;
++        const size_t srcUStride = img.stride[1] / 2;
++        const size_t srcVStride = img.stride[1] / 2;
++        convertPlanar16ToRGBA8888(
++                dstY, dstYStride, srcY, srcU, srcV, srcYStride, srcUStride,
++                srcVStride, mWidth, mHeight, bitdepth, isMonochrome, convFormat,
++                std::static_pointer_cast<const C2ColorAspectsStruct>(codedColorAspects));
++    } else if (bitdepth == 10) {
+         // TODO: b/277797541 - Investigate if we can ask DAV1D to output the required format during
+         // decompression to avoid color conversion.
+         const uint16_t* srcY = (const uint16_t*)img.data[0];
+@@ -1187,9 +1212,16 @@ bool C2SoftDav1dDec::outputBuffer(const std::shared_ptr<C2BlockPool>& pool,
+         mC2SoftDav1dDump.dumpOutput<uint8_t>(srcY, srcU, srcV, srcYStride, srcUStride, srcVStride,
+                                              mWidth, mHeight);
+ #endif
+-        convertPlanar8ToYV12(dstY, dstU, dstV, srcY, srcU, srcV, srcYStride, srcUStride, srcVStride,
+-                             dstYStride, dstUStride, dstVStride, mWidth, mHeight, isMonochrome,
+-                             convFormat);
++        if (format == HAL_PIXEL_FORMAT_RGBA_8888) {
++            convertPlanar8ToRGBA8888(
++                    dstY, dstYStride, srcY, srcU, srcV, srcYStride, srcUStride,
++                    srcVStride, mWidth, mHeight, isMonochrome, convFormat,
++                    std::static_pointer_cast<const C2ColorAspectsStruct>(codedColorAspects));
++        } else {
++            convertPlanar8ToYV12(dstY, dstU, dstV, srcY, srcU, srcV, srcYStride,
++                                 srcUStride, srcVStride, dstYStride, dstUStride,
++                                 dstVStride, mWidth, mHeight, isMonochrome, convFormat);
++        }
+     }
+ 
+     finishWork(out_frameIndex, work, std::move(block), img);
+diff --git a/media/codec2/components/gav1/C2SoftGav1Dec.cpp b/media/codec2/components/gav1/C2SoftGav1Dec.cpp
+index b9a0897c74..c22f4f0f88 100644
+--- a/media/codec2/components/gav1/C2SoftGav1Dec.cpp
++++ b/media/codec2/components/gav1/C2SoftGav1Dec.cpp
+@@ -857,7 +857,7 @@ bool C2SoftGav1Dec::outputBuffer(const std::shared_ptr<C2BlockPool> &pool,
+   std::shared_ptr<C2GraphicBlock> block;
+   uint32_t format = HAL_PIXEL_FORMAT_YV12;
+   std::shared_ptr<C2StreamColorAspectsInfo::output> codedColorAspects;
+-  if (buffer->bitdepth == 8 && mPixelFormatInfo->value == HAL_PIXEL_FORMAT_RGBA_8888) {
++  if (mPixelFormatInfo->value == HAL_PIXEL_FORMAT_RGBA_8888) {
+     format = HAL_PIXEL_FORMAT_RGBA_8888;
+     IntfImpl::Lock lock = mIntf->lock();
+     codedColorAspects = mIntf->getColorAspects_l();
+@@ -954,7 +954,20 @@ bool C2SoftGav1Dec::outputBuffer(const std::shared_ptr<C2BlockPool> &pool,
+       dstVStride = layout.planes[C2PlanarLayout::PLANE_V].rowInc;
+   }
+ 
+-  if (buffer->bitdepth == 12) {
++  if (format == HAL_PIXEL_FORMAT_RGBA_8888 && buffer->bitdepth > 8) {
++      CONV_FORMAT_T sourceFormat = CONV_FORMAT_I420;
++      if (buffer->image_format == libgav1::kImageFormatYuv444) {
++          sourceFormat = CONV_FORMAT_I444;
++      } else if (buffer->image_format == libgav1::kImageFormatYuv422) {
++          sourceFormat = CONV_FORMAT_I422;
++      }
++      convertPlanar16ToRGBA8888(
++              dstY, dstYStride, (const uint16_t*)buffer->plane[0],
++              (const uint16_t*)buffer->plane[1], (const uint16_t*)buffer->plane[2],
++              buffer->stride[0] / 2, buffer->stride[1] / 2, buffer->stride[2] / 2,
++              mWidth, mHeight, buffer->bitdepth, isMonochrome, sourceFormat,
++              std::static_pointer_cast<const C2ColorAspectsStruct>(codedColorAspects));
++  } else if (buffer->bitdepth == 12) {
+ #if LIBYUV_VERSION >= 1871
+       const uint16_t *srcY = (const uint16_t *)buffer->plane[0];
+       const uint16_t *srcU = (const uint16_t *)buffer->plane[1];
+diff --git a/media/codec2/components/hevc/C2SoftHevcDec.cpp b/media/codec2/components/hevc/C2SoftHevcDec.cpp
+index 4fe70e82c3..9497894943 100644
+--- a/media/codec2/components/hevc/C2SoftHevcDec.cpp
++++ b/media/codec2/components/hevc/C2SoftHevcDec.cpp
+@@ -189,11 +189,15 @@ public:
+                 .withSetter(ColorAspectsSetter, mDefaultColorAspects, mCodedColorAspects)
+                 .build());
+ 
+-        // TODO: support more formats?
+         addParameter(
+                 DefineParam(mPixelFormat, C2_PARAMKEY_PIXEL_FORMAT)
+-                .withConstValue(new C2StreamPixelFormatInfo::output(
+-                                     0u, HAL_PIXEL_FORMAT_YCBCR_420_888))
++                .withDefault(new C2StreamPixelFormatInfo::output(
++                        0u, HAL_PIXEL_FORMAT_YCBCR_420_888))
++                .withFields({C2F(mPixelFormat, value).oneOf({
++                        HAL_PIXEL_FORMAT_YCBCR_420_888,
++                        HAL_PIXEL_FORMAT_RGBA_8888,
++                })})
++                .withSetter(Setter<decltype(*mPixelFormat)>::StrictValueWithNoDeps)
+                 .build());
+     }
+ 
+@@ -290,6 +294,10 @@ public:
+         return mColorAspects;
+     }
+ 
++    std::shared_ptr<C2StreamPixelFormatInfo::output> getPixelFormat_l() const {
++        return mPixelFormat;
++    }
++
+ private:
+     std::shared_ptr<C2StreamProfileLevelInfo::input> mProfileLevel;
+     std::shared_ptr<C2StreamPictureSizeInfo::output> mSize;
+@@ -337,6 +345,9 @@ C2SoftHevcDec::C2SoftHevcDec(
+         mOutputDelay(kDefaultOutputDelay),
+         mWidth(320),
+         mHeight(240),
++        mOutputPixelFormat(HAL_PIXEL_FORMAT_YV12),
++        mConversionBuffer(nullptr),
++        mConversionBufferSize(0),
+         mHeaderDecoded(false),
+         mOutIndex(0u) {
+ }
+@@ -373,6 +384,11 @@ void C2SoftHevcDec::onRelease() {
+         ivd_aligned_free(nullptr, mOutBufferFlush);
+         mOutBufferFlush = nullptr;
+     }
++    if (mConversionBuffer) {
++        ivd_aligned_free(nullptr, mConversionBuffer);
++        mConversionBuffer = nullptr;
++        mConversionBufferSize = 0;
++    }
+     if (mOutBlock) {
+         mOutBlock.reset();
+     }
+@@ -533,7 +549,10 @@ bool C2SoftHevcDec::setDecodeArgs(ivd_video_decode_ip_t *ps_decode_ip,
+                                   size_t inSize,
+                                   uint32_t tsMarker) {
+     uint32_t displayStride = mStride;
+-    if (outBuffer) {
++    const bool outputRGBA = outBuffer && mOutputPixelFormat == HAL_PIXEL_FORMAT_RGBA_8888;
++    if (outputRGBA) {
++        displayStride = ALIGN128(mWidth);
++    } else if (outBuffer) {
+         C2PlanarLayout layout;
+         layout = outBuffer->layout();
+         displayStride = layout.planes[C2PlanarLayout::PLANE_Y].rowInc;
+@@ -567,9 +586,30 @@ bool C2SoftHevcDec::setDecodeArgs(ivd_video_decode_ip_t *ps_decode_ip,
+                   outBuffer->width(), outBuffer->height(), displayStride, displayHeight);
+             return false;
+         }
+-        ps_decode_ip->s_out_buffer.pu1_bufs[0] = outBuffer->data()[C2PlanarLayout::PLANE_Y];
+-        ps_decode_ip->s_out_buffer.pu1_bufs[1] = outBuffer->data()[C2PlanarLayout::PLANE_U];
+-        ps_decode_ip->s_out_buffer.pu1_bufs[2] = outBuffer->data()[C2PlanarLayout::PLANE_V];
++        if (outputRGBA) {
++            const size_t bufferSize = lumaSize + 2 * chromaSize;
++            if (mConversionBufferSize < bufferSize) {
++                ivd_aligned_free(nullptr, mConversionBuffer);
++                mConversionBuffer = static_cast<uint8_t *>(
++                        ivd_aligned_malloc(nullptr, 128, bufferSize));
++                mConversionBufferSize = mConversionBuffer ? bufferSize : 0;
++            }
++            if (!mConversionBuffer) {
++                ALOGE("could not allocate RGBA conversion buffer of size %zu", bufferSize);
++                return false;
++            }
++            ps_decode_ip->s_out_buffer.pu1_bufs[0] = mConversionBuffer;
++            ps_decode_ip->s_out_buffer.pu1_bufs[1] = mConversionBuffer + lumaSize;
++            ps_decode_ip->s_out_buffer.pu1_bufs[2] =
++                    mConversionBuffer + lumaSize + chromaSize;
++        } else {
++            ps_decode_ip->s_out_buffer.pu1_bufs[0] =
++                    outBuffer->data()[C2PlanarLayout::PLANE_Y];
++            ps_decode_ip->s_out_buffer.pu1_bufs[1] =
++                    outBuffer->data()[C2PlanarLayout::PLANE_U];
++            ps_decode_ip->s_out_buffer.pu1_bufs[2] =
++                    outBuffer->data()[C2PlanarLayout::PLANE_V];
++        }
+     } else {
+         ps_decode_ip->s_out_buffer.pu1_bufs[0] = mOutBufferFlush;
+         ps_decode_ip->s_out_buffer.pu1_bufs[1] = mOutBufferFlush + lumaSize;
+@@ -582,6 +622,23 @@ bool C2SoftHevcDec::setDecodeArgs(ivd_video_decode_ip_t *ps_decode_ip,
+     return true;
+ }
+ 
++void C2SoftHevcDec::convertToRGBA(C2GraphicView &view) {
++    const size_t lumaSize = mStride * mHeight;
++    std::shared_ptr<C2StreamColorAspectsInfo::output> aspects;
++    {
++        IntfImpl::Lock lock = mIntf->lock();
++        aspects = mIntf->getColorAspects_l();
++    }
++    convertPlanar8ToRGBA8888(
++            view.data()[C2PlanarLayout::PLANE_Y],
++            view.layout().planes[C2PlanarLayout::PLANE_Y].rowInc,
++            mConversionBuffer, mConversionBuffer + lumaSize,
++            mConversionBuffer + lumaSize + lumaSize / 4,
++            mStride, mStride / 2, mStride / 2, mWidth, mHeight, false,
++            CONV_FORMAT_I420,
++            std::static_pointer_cast<const C2ColorAspectsStruct>(aspects));
++}
++
+ bool C2SoftHevcDec::getVuiParams() {
+     ivdext_ctl_get_vui_params_ip_t s_get_vui_params_ip = {};
+     ivdext_ctl_get_vui_params_op_t s_get_vui_params_op = {};
+@@ -782,12 +839,17 @@ c2_status_t C2SoftHevcDec::ensureDecoderState(const std::shared_ptr<C2BlockPool>
+         ALOGE("not supposed to be here, invalid decoder context");
+         return C2_CORRUPTED;
+     }
+-    if (mOutBlock &&
+-            (mOutBlock->width() != ALIGN128(mWidth) || mOutBlock->height() != mHeight)) {
++    uint32_t format;
++    {
++        IntfImpl::Lock lock = mIntf->lock();
++        format = mIntf->getPixelFormat_l()->value == HAL_PIXEL_FORMAT_RGBA_8888
++                ? HAL_PIXEL_FORMAT_RGBA_8888 : HAL_PIXEL_FORMAT_YV12;
++    }
++    if (mOutBlock && (mOutBlock->width() != ALIGN128(mWidth) ||
++            mOutBlock->height() != mHeight || mOutputPixelFormat != format)) {
+         mOutBlock.reset();
+     }
+     if (!mOutBlock) {
+-        uint32_t format = HAL_PIXEL_FORMAT_YV12;
+         C2MemoryUsage usage = { C2MemoryUsage::CPU_READ, C2MemoryUsage::CPU_WRITE };
+         c2_status_t err =
+             pool->fetchGraphicBlock(ALIGN128(mWidth), mHeight, format, usage, &mOutBlock);
+@@ -795,6 +857,7 @@ c2_status_t C2SoftHevcDec::ensureDecoderState(const std::shared_ptr<C2BlockPool>
+             ALOGE("fetchGraphicBlock for Output failed with status %d", err);
+             return err;
+         }
++        mOutputPixelFormat = format;
+         ALOGV("provided (%dx%d) required (%dx%d)",
+               mOutBlock->width(), mOutBlock->height(), ALIGN128(mWidth), mHeight);
+     }
+@@ -960,6 +1023,9 @@ void C2SoftHevcDec::process(
+         (void) getVuiParams();
+         hasPicture |= (1 == ps_decode_op->u4_frame_decoded_flag);
+         if (ps_decode_op->u4_output_present) {
++            if (mOutputPixelFormat == HAL_PIXEL_FORMAT_RGBA_8888) {
++                convertToRGBA(wView);
++            }
+             finishWork(ps_decode_op->u4_ts, work);
+             configUpdateQueued = c2_cntr64_t(ps_decode_op->u4_ts) == work->input.ordinal.frameIndex;
+         }
+@@ -1032,6 +1098,9 @@ c2_status_t C2SoftHevcDec::drainInternal(
+         }
+         (void) ivdec_api_function(mDecHandle, ps_decode_ip, ps_decode_op);
+         if (ps_decode_op->u4_output_present) {
++            if (mOutputPixelFormat == HAL_PIXEL_FORMAT_RGBA_8888) {
++                convertToRGBA(wView);
++            }
+             finishWork(ps_decode_op->u4_ts, work);
+         } else {
+             fillEmptyWork(work);
+diff --git a/media/codec2/components/hevc/C2SoftHevcDec.h b/media/codec2/components/hevc/C2SoftHevcDec.h
+index 843341a9af..b10ad0896f 100644
+--- a/media/codec2/components/hevc/C2SoftHevcDec.h
++++ b/media/codec2/components/hevc/C2SoftHevcDec.h
+@@ -80,6 +80,7 @@ struct C2SoftHevcDec : public SimpleC2Component {
+                        size_t inSize,
+                        uint32_t tsMarker);
+     bool getVuiParams();
++    void convertToRGBA(C2GraphicView &view);
+     // TODO:This is not the right place for colorAspects functions. These should
+     // be part of c2-vndk so that they can be accessed by all video plugins
+     // until then, make them feel at home
+@@ -118,6 +119,9 @@ struct C2SoftHevcDec : public SimpleC2Component {
+     uint32_t mWidth;
+     uint32_t mHeight;
+     uint32_t mStride;
++    uint32_t mOutputPixelFormat;
++    uint8_t *mConversionBuffer;
++    size_t mConversionBufferSize;
+     bool mSignalledOutputEos;
+     bool mSignalledError;
+     bool mHeaderDecoded;
+diff --git a/media/codec2/components/mpeg2/C2SoftMpeg2Dec.cpp b/media/codec2/components/mpeg2/C2SoftMpeg2Dec.cpp
+index 8437726aa0..b91257aacf 100644
+--- a/media/codec2/components/mpeg2/C2SoftMpeg2Dec.cpp
++++ b/media/codec2/components/mpeg2/C2SoftMpeg2Dec.cpp
+@@ -180,11 +180,15 @@ public:
+                 .withSetter(ColorAspectsSetter, mDefaultColorAspects, mCodedColorAspects)
+                 .build());
+ 
+-        // TODO: support more formats?
+         addParameter(
+                 DefineParam(mPixelFormat, C2_PARAMKEY_PIXEL_FORMAT)
+-                .withConstValue(new C2StreamPixelFormatInfo::output(
+-                                     0u, HAL_PIXEL_FORMAT_YCBCR_420_888))
++                .withDefault(new C2StreamPixelFormatInfo::output(
++                        0u, HAL_PIXEL_FORMAT_YCBCR_420_888))
++                .withFields({C2F(mPixelFormat, value).oneOf({
++                        HAL_PIXEL_FORMAT_YCBCR_420_888,
++                        HAL_PIXEL_FORMAT_RGBA_8888,
++                })})
++                .withSetter(Setter<decltype(*mPixelFormat)>::StrictValueWithNoDeps)
+                 .build());
+     }
+ 
+@@ -281,6 +285,10 @@ public:
+         return mColorAspects;
+     }
+ 
++    std::shared_ptr<C2StreamPixelFormatInfo::output> getPixelFormat_l() const {
++        return mPixelFormat;
++    }
++
+ private:
+     std::shared_ptr<C2StreamProfileLevelInfo::input> mProfileLevel;
+     std::shared_ptr<C2StreamPictureSizeInfo::output> mSize;
+@@ -357,6 +365,11 @@ void C2SoftMpeg2Dec::onRelease() {
+         ivd_aligned_free(mOutBufferDrain);
+         mOutBufferDrain = nullptr;
+     }
++    if (mConversionBuffer) {
++        ivd_aligned_free(mConversionBuffer);
++        mConversionBuffer = nullptr;
++        mConversionBufferSize = 0;
++    }
+     if (mOutBlock) {
+         mOutBlock.reset();
+     }
+@@ -595,7 +608,10 @@ bool C2SoftMpeg2Dec::setDecodeArgs(ivd_video_decode_ip_t *ps_decode_ip,
+                                    size_t inSize,
+                                    uint32_t tsMarker) {
+     uint32_t displayStride = mStride;
+-    if (outBuffer) {
++    const bool outputRGBA = outBuffer && mOutputPixelFormat == HAL_PIXEL_FORMAT_RGBA_8888;
++    if (outputRGBA) {
++        displayStride = ALIGN128(mWidth);
++    } else if (outBuffer) {
+         C2PlanarLayout layout;
+         layout = outBuffer->layout();
+         displayStride = layout.planes[C2PlanarLayout::PLANE_Y].rowInc;
+@@ -629,9 +645,30 @@ bool C2SoftMpeg2Dec::setDecodeArgs(ivd_video_decode_ip_t *ps_decode_ip,
+                   outBuffer->width(), outBuffer->height(), displayStride, displayHeight);
+             return false;
+         }
+-        ps_decode_ip->s_out_buffer.pu1_bufs[0] = outBuffer->data()[C2PlanarLayout::PLANE_Y];
+-        ps_decode_ip->s_out_buffer.pu1_bufs[1] = outBuffer->data()[C2PlanarLayout::PLANE_U];
+-        ps_decode_ip->s_out_buffer.pu1_bufs[2] = outBuffer->data()[C2PlanarLayout::PLANE_V];
++        if (outputRGBA) {
++            const size_t bufferSize = lumaSize + 2 * chromaSize;
++            if (mConversionBufferSize < bufferSize) {
++                ivd_aligned_free(mConversionBuffer);
++                mConversionBuffer = static_cast<uint8_t *>(
++                        ivd_aligned_malloc(128, bufferSize));
++                mConversionBufferSize = mConversionBuffer ? bufferSize : 0;
++            }
++            if (!mConversionBuffer) {
++                ALOGE("could not allocate RGBA conversion buffer of size %zu", bufferSize);
++                return false;
++            }
++            ps_decode_ip->s_out_buffer.pu1_bufs[0] = mConversionBuffer;
++            ps_decode_ip->s_out_buffer.pu1_bufs[1] = mConversionBuffer + lumaSize;
++            ps_decode_ip->s_out_buffer.pu1_bufs[2] =
++                    mConversionBuffer + lumaSize + chromaSize;
++        } else {
++            ps_decode_ip->s_out_buffer.pu1_bufs[0] =
++                    outBuffer->data()[C2PlanarLayout::PLANE_Y];
++            ps_decode_ip->s_out_buffer.pu1_bufs[1] =
++                    outBuffer->data()[C2PlanarLayout::PLANE_U];
++            ps_decode_ip->s_out_buffer.pu1_bufs[2] =
++                    outBuffer->data()[C2PlanarLayout::PLANE_V];
++        }
+     } else {
+         ps_decode_ip->s_out_buffer.pu1_bufs[0] = mOutBufferDrain;
+         ps_decode_ip->s_out_buffer.pu1_bufs[1] = mOutBufferDrain + lumaSize;
+@@ -643,6 +680,23 @@ bool C2SoftMpeg2Dec::setDecodeArgs(ivd_video_decode_ip_t *ps_decode_ip,
+     return true;
+ }
+ 
++void C2SoftMpeg2Dec::convertToRGBA(C2GraphicView &view) {
++    const size_t lumaSize = mStride * mHeight;
++    std::shared_ptr<C2StreamColorAspectsInfo::output> aspects;
++    {
++        IntfImpl::Lock lock = mIntf->lock();
++        aspects = mIntf->getColorAspects_l();
++    }
++    convertPlanar8ToRGBA8888(
++            view.data()[C2PlanarLayout::PLANE_Y],
++            view.layout().planes[C2PlanarLayout::PLANE_Y].rowInc,
++            mConversionBuffer, mConversionBuffer + lumaSize,
++            mConversionBuffer + lumaSize + lumaSize / 4,
++            mStride, mStride / 2, mStride / 2, mWidth, mHeight, false,
++            CONV_FORMAT_I420,
++            std::static_pointer_cast<const C2ColorAspectsStruct>(aspects));
++}
++
+ 
+ bool C2SoftMpeg2Dec::getSeqInfo() {
+     ivdext_ctl_get_seq_info_ip_t s_ctl_get_seq_info_ip;
+@@ -870,12 +924,17 @@ c2_status_t C2SoftMpeg2Dec::ensureDecoderState(const std::shared_ptr<C2BlockPool
+         ALOGE("not supposed to be here, invalid decoder context");
+         return C2_CORRUPTED;
+     }
+-    if (mOutBlock &&
+-            (mOutBlock->width() != ALIGN128(mWidth) || mOutBlock->height() != mHeight)) {
++    uint32_t format;
++    {
++        IntfImpl::Lock lock = mIntf->lock();
++        format = mIntf->getPixelFormat_l()->value == HAL_PIXEL_FORMAT_RGBA_8888
++                ? HAL_PIXEL_FORMAT_RGBA_8888 : HAL_PIXEL_FORMAT_YV12;
++    }
++    if (mOutBlock && (mOutBlock->width() != ALIGN128(mWidth) ||
++            mOutBlock->height() != mHeight || mOutputPixelFormat != format)) {
+         mOutBlock.reset();
+     }
+     if (!mOutBlock) {
+-        uint32_t format = HAL_PIXEL_FORMAT_YV12;
+         C2MemoryUsage usage = { C2MemoryUsage::CPU_READ, C2MemoryUsage::CPU_WRITE };
+         c2_status_t err =
+             pool->fetchGraphicBlock(ALIGN128(mWidth), mHeight, format, usage, &mOutBlock);
+@@ -883,6 +942,7 @@ c2_status_t C2SoftMpeg2Dec::ensureDecoderState(const std::shared_ptr<C2BlockPool
+             ALOGE("fetchGraphicBlock for Output failed with status %d", err);
+             return err;
+         }
++        mOutputPixelFormat = format;
+         ALOGV("provided (%dx%d) required (%dx%d)",
+               mOutBlock->width(), mOutBlock->height(), ALIGN128(mWidth), mHeight);
+     }
+@@ -957,7 +1017,6 @@ void C2SoftMpeg2Dec::process(
+         DUMP_TO_FILE(mInFile, s_decode_ip.pv_stream_buffer, s_decode_ip.u4_num_Bytes);
+         nsecs_t delay = mTimeStart - mTimeEnd;
+         (void) ivdec_api_function(mDecHandle, &s_decode_ip, &s_decode_op);
+-
+         mTimeEnd = systemTime();
+         nsecs_t decodeTime = mTimeEnd - mTimeStart;
+         ALOGV("decodeTime=%" PRId64 " delay=%" PRId64 " numBytes=%6d ", decodeTime, delay,
+@@ -1031,6 +1090,9 @@ void C2SoftMpeg2Dec::process(
+         (void) getSeqInfo();
+         hasPicture |= (1 == s_decode_op.u4_frame_decoded_flag);
+         if (s_decode_op.u4_output_present) {
++            if (mOutputPixelFormat == HAL_PIXEL_FORMAT_RGBA_8888) {
++                convertToRGBA(wView);
++            }
+             finishWork(s_decode_op.u4_ts, work);
+         }
+ 
+@@ -1085,6 +1147,9 @@ c2_status_t C2SoftMpeg2Dec::drainInternal(
+         }
+         (void) ivdec_api_function(mDecHandle, &s_decode_ip, &s_decode_op);
+         if (s_decode_op.u4_output_present) {
++            if (mOutputPixelFormat == HAL_PIXEL_FORMAT_RGBA_8888) {
++                convertToRGBA(wView);
++            }
+             finishWork(s_decode_op.u4_ts, work);
+         } else {
+             fillEmptyWork(work);
+diff --git a/media/codec2/components/mpeg2/C2SoftMpeg2Dec.h b/media/codec2/components/mpeg2/C2SoftMpeg2Dec.h
+index 72bcaf4848..cd8c069d5e 100644
+--- a/media/codec2/components/mpeg2/C2SoftMpeg2Dec.h
++++ b/media/codec2/components/mpeg2/C2SoftMpeg2Dec.h
+@@ -125,6 +125,7 @@ struct C2SoftMpeg2Dec : public SimpleC2Component {
+                        size_t inSize,
+                        uint32_t tsMarker);
+     bool getSeqInfo();
++    void convertToRGBA(C2GraphicView &view);
+     c2_status_t ensureDecoderState(const std::shared_ptr<C2BlockPool> &pool);
+     void finishWork(uint64_t index, const std::unique_ptr<C2Work> &work);
+     status_t setFlushMode();
+@@ -159,6 +160,9 @@ struct C2SoftMpeg2Dec : public SimpleC2Component {
+     uint32_t mWidth = 320;
+     uint32_t mHeight = 240;
+     uint32_t mStride = 0;
++    uint32_t mOutputPixelFormat = 0;
++    uint8_t *mConversionBuffer = nullptr;
++    size_t mConversionBufferSize = 0;
+     bool mSignalledOutputEos = false;
+     bool mSignalledError = false;
+     bool mKeepThreadsActive = false;
+diff --git a/media/codec2/components/mpeg4_h263/C2SoftMpeg4Dec.cpp b/media/codec2/components/mpeg4_h263/C2SoftMpeg4Dec.cpp
+index b695f4d51b..816915ab68 100644
+--- a/media/codec2/components/mpeg4_h263/C2SoftMpeg4Dec.cpp
++++ b/media/codec2/components/mpeg4_h263/C2SoftMpeg4Dec.cpp
+@@ -161,11 +161,15 @@ public:
+                 .withConstValue(defaultColorInfo)
+                 .build());
+ 
+-        // TODO: support more formats?
+         addParameter(
+                 DefineParam(mPixelFormat, C2_PARAMKEY_PIXEL_FORMAT)
+-                .withConstValue(new C2StreamPixelFormatInfo::output(
+-                                     0u, HAL_PIXEL_FORMAT_YCBCR_420_888))
++                .withDefault(new C2StreamPixelFormatInfo::output(
++                        0u, HAL_PIXEL_FORMAT_YCBCR_420_888))
++                .withFields({C2F(mPixelFormat, value).oneOf({
++                        HAL_PIXEL_FORMAT_YCBCR_420_888,
++                        HAL_PIXEL_FORMAT_RGBA_8888,
++                })})
++                .withSetter(Setter<decltype(*mPixelFormat)>::StrictValueWithNoDeps)
+                 .build());
+     }
+ 
+@@ -213,6 +217,10 @@ public:
+     uint32_t getMaxWidth() const { return mMaxSize->width; }
+     uint32_t getMaxHeight() const { return mMaxSize->height; }
+ 
++    std::shared_ptr<C2StreamPixelFormatInfo::output> getPixelFormat_l() const {
++        return mPixelFormat;
++    }
++
+ private:
+     std::shared_ptr<C2StreamProfileLevelInfo::input> mProfileLevel;
+     std::shared_ptr<C2StreamPictureSizeInfo::output> mSize;
+@@ -365,18 +373,24 @@ c2_status_t C2SoftMpeg4Dec::ensureDecoderState(const std::shared_ptr<C2BlockPool
+             }
+         }
+     }
+-    if (mOutBlock &&
+-            (mOutBlock->width() != align(mWidth, 16) || mOutBlock->height() != mHeight)) {
++    uint32_t format;
++    {
++        IntfImpl::Lock lock = mIntf->lock();
++        format = mIntf->getPixelFormat_l()->value == HAL_PIXEL_FORMAT_RGBA_8888
++                ? HAL_PIXEL_FORMAT_RGBA_8888 : HAL_PIXEL_FORMAT_YV12;
++    }
++    if (mOutBlock && (mOutBlock->width() != align(mWidth, 16) ||
++            mOutBlock->height() != mHeight || mOutputPixelFormat != format)) {
+         mOutBlock.reset();
+     }
+     if (!mOutBlock) {
+-        uint32_t format = HAL_PIXEL_FORMAT_YV12;
+         C2MemoryUsage usage = { C2MemoryUsage::CPU_READ, C2MemoryUsage::CPU_WRITE };
+         c2_status_t err = pool->fetchGraphicBlock(align(mWidth, 16), mHeight, format, usage, &mOutBlock);
+         if (err != C2_OK) {
+             ALOGE("fetchGraphicBlock for Output failed with status %d", err);
+             return err;
+         }
++        mOutputPixelFormat = format;
+         ALOGV("provided (%dx%d) required (%dx%d)",
+               mOutBlock->width(), mOutBlock->height(), mWidth, mHeight);
+     }
+@@ -606,14 +620,7 @@ void C2SoftMpeg4Dec::process(
+             return;
+         }
+ 
+-        uint8_t *outputBufferY = wView.data()[C2PlanarLayout::PLANE_Y];
+-        uint8_t *outputBufferU = wView.data()[C2PlanarLayout::PLANE_U];
+-        uint8_t *outputBufferV = wView.data()[C2PlanarLayout::PLANE_V];
+-
+         C2PlanarLayout layout = wView.layout();
+-        size_t dstYStride = layout.planes[C2PlanarLayout::PLANE_Y].rowInc;
+-        size_t dstUStride = layout.planes[C2PlanarLayout::PLANE_U].rowInc;
+-        size_t dstVStride = layout.planes[C2PlanarLayout::PLANE_V].rowInc;
+         size_t srcYStride = align(mWidth, 16);
+         size_t srcUStride = srcYStride / 2;
+         size_t srcVStride = srcYStride / 2;
+@@ -622,9 +629,22 @@ void C2SoftMpeg4Dec::process(
+         const uint8_t *srcU = (const uint8_t *)srcY + vStride * srcYStride;
+         const uint8_t *srcV = (const uint8_t *)srcY + vStride * srcYStride * 5 / 4;
+ 
+-        convertYUV420Planar8ToYV12(outputBufferY, outputBufferU, outputBufferV, srcY, srcU, srcV,
+-                                   srcYStride, srcUStride, srcVStride, dstYStride, dstUStride,
+-                                   dstVStride, mWidth, mHeight);
++        if (mOutputPixelFormat == HAL_PIXEL_FORMAT_RGBA_8888) {
++            convertPlanar8ToRGBA8888(
++                    wView.data()[C2PlanarLayout::PLANE_Y],
++                    layout.planes[C2PlanarLayout::PLANE_Y].rowInc,
++                    srcY, srcU, srcV, srcYStride, srcUStride, srcVStride,
++                    mWidth, mHeight, false, CONV_FORMAT_I420);
++        } else {
++            convertYUV420Planar8ToYV12(
++                    wView.data()[C2PlanarLayout::PLANE_Y],
++                    wView.data()[C2PlanarLayout::PLANE_U],
++                    wView.data()[C2PlanarLayout::PLANE_V], srcY, srcU, srcV,
++                    srcYStride, srcUStride, srcVStride,
++                    layout.planes[C2PlanarLayout::PLANE_Y].rowInc,
++                    layout.planes[C2PlanarLayout::PLANE_U].rowInc,
++                    layout.planes[C2PlanarLayout::PLANE_V].rowInc, mWidth, mHeight);
++        }
+ 
+         inPos += inSize - (size_t)tmpInSize;
+         finishWork(workIndex, work);
+diff --git a/media/codec2/components/mpeg4_h263/C2SoftMpeg4Dec.h b/media/codec2/components/mpeg4_h263/C2SoftMpeg4Dec.h
+index 8540b570db..b8a78a403f 100644
+--- a/media/codec2/components/mpeg4_h263/C2SoftMpeg4Dec.h
++++ b/media/codec2/components/mpeg4_h263/C2SoftMpeg4Dec.h
+@@ -65,6 +65,7 @@ struct C2SoftMpeg4Dec : public SimpleC2Component {
+     uint32_t mWidth;
+     uint32_t mHeight;
+     uint32_t mNumSamplesOutput;
++    uint32_t mOutputPixelFormat = 0;
+ 
+     bool mIsMpeg4;
+     bool mInitialized;
+diff --git a/media/codec2/components/vpx/C2SoftVpxDec.cpp b/media/codec2/components/vpx/C2SoftVpxDec.cpp
+index b550473347..de0ee101c5 100644
+--- a/media/codec2/components/vpx/C2SoftVpxDec.cpp
++++ b/media/codec2/components/vpx/C2SoftVpxDec.cpp
+@@ -218,7 +218,10 @@ public:
+                 .build());
+ 
+         // TODO: support more formats?
+-        std::vector<uint32_t> pixelFormats = {HAL_PIXEL_FORMAT_YCBCR_420_888};
++        std::vector<uint32_t> pixelFormats = {
++            HAL_PIXEL_FORMAT_YCBCR_420_888,
++            HAL_PIXEL_FORMAT_RGBA_8888,
++        };
+ #ifdef VP9
+         if (isHalPixelFormatSupported((AHardwareBuffer_Format)HAL_PIXEL_FORMAT_YCBCR_P010)) {
+             pixelFormats.push_back(HAL_PIXEL_FORMAT_YCBCR_P010);
+@@ -735,7 +738,13 @@ status_t C2SoftVpxDec::outputBuffer(
+         }
+ 
+     }
+-    if(img->fmt != VPX_IMG_FMT_I420 && img->fmt != VPX_IMG_FMT_I42016) {
++    const bool outputRGBARequested =
++            mPixelFormatInfo->value == HAL_PIXEL_FORMAT_RGBA_8888;
++    if (img->fmt != VPX_IMG_FMT_I420 && img->fmt != VPX_IMG_FMT_I42016
++            && !(outputRGBARequested
++                    && (img->fmt == VPX_IMG_FMT_I422 || img->fmt == VPX_IMG_FMT_I444
++                            || img->fmt == VPX_IMG_FMT_I42216
++                            || img->fmt == VPX_IMG_FMT_I44416))) {
+         ALOGE("img->fmt %d not supported", img->fmt);
+         mSignalledError = true;
+         work->workletsProcessed = 1u;
+@@ -746,7 +755,11 @@ status_t C2SoftVpxDec::outputBuffer(
+     std::shared_ptr<C2GraphicBlock> block;
+     uint32_t format = HAL_PIXEL_FORMAT_YV12;
+     std::shared_ptr<C2StreamColorAspectsTuning::output> defaultColorAspects;
+-    if (img->fmt == VPX_IMG_FMT_I42016 &&
++    if (outputRGBARequested) {
++        format = HAL_PIXEL_FORMAT_RGBA_8888;
++        IntfImpl::Lock lock = mIntf->lock();
++        defaultColorAspects = mIntf->getDefaultColorAspects_l();
++    } else if (img->fmt == VPX_IMG_FMT_I42016 &&
+             mPixelFormatInfo->value != HAL_PIXEL_FORMAT_YCBCR_420_888) {
+         IntfImpl::Lock lock = mIntf->lock();
+         defaultColorAspects = mIntf->getDefaultColorAspects_l();
+@@ -801,23 +814,42 @@ status_t C2SoftVpxDec::outputBuffer(
+            ((c2_cntr64_t *)img->user_priv)->peekll());
+ 
+     uint8_t *dstY = const_cast<uint8_t *>(wView.data()[C2PlanarLayout::PLANE_Y]);
+-    uint8_t *dstU = const_cast<uint8_t *>(wView.data()[C2PlanarLayout::PLANE_U]);
+-    uint8_t *dstV = const_cast<uint8_t *>(wView.data()[C2PlanarLayout::PLANE_V]);
++    uint8_t *dstU = nullptr;
++    uint8_t *dstV = nullptr;
+ 
+     size_t srcYStride = img->stride[VPX_PLANE_Y];
+     size_t srcUStride = img->stride[VPX_PLANE_U];
+     size_t srcVStride = img->stride[VPX_PLANE_V];
+     C2PlanarLayout layout = wView.layout();
+     size_t dstYStride = layout.planes[C2PlanarLayout::PLANE_Y].rowInc;
+-    size_t dstUStride = layout.planes[C2PlanarLayout::PLANE_U].rowInc;
+-    size_t dstVStride = layout.planes[C2PlanarLayout::PLANE_V].rowInc;
++    size_t dstUStride = 0;
++    size_t dstVStride = 0;
++    if (format != HAL_PIXEL_FORMAT_RGBA_8888) {
++        dstU = const_cast<uint8_t *>(wView.data()[C2PlanarLayout::PLANE_U]);
++        dstV = const_cast<uint8_t *>(wView.data()[C2PlanarLayout::PLANE_V]);
++        dstUStride = layout.planes[C2PlanarLayout::PLANE_U].rowInc;
++        dstVStride = layout.planes[C2PlanarLayout::PLANE_V].rowInc;
++    }
+ 
+-    if (img->fmt == VPX_IMG_FMT_I42016) {
++    if (img->fmt == VPX_IMG_FMT_I42016 || img->fmt == VPX_IMG_FMT_I42216
++            || img->fmt == VPX_IMG_FMT_I44416) {
+         const uint16_t *srcY = (const uint16_t *)img->planes[VPX_PLANE_Y];
+         const uint16_t *srcU = (const uint16_t *)img->planes[VPX_PLANE_U];
+         const uint16_t *srcV = (const uint16_t *)img->planes[VPX_PLANE_V];
+ 
+-        if (format == HAL_PIXEL_FORMAT_RGBA_1010102) {
++        if (format == HAL_PIXEL_FORMAT_RGBA_8888) {
++            CONV_FORMAT_T sourceFormat = CONV_FORMAT_I420;
++            if (img->fmt == VPX_IMG_FMT_I44416) {
++                sourceFormat = CONV_FORMAT_I444;
++            } else if (img->fmt == VPX_IMG_FMT_I42216) {
++                sourceFormat = CONV_FORMAT_I422;
++            }
++            convertPlanar16ToRGBA8888(
++                    dstY, dstYStride, srcY, srcU, srcV, srcYStride / 2,
++                    srcUStride / 2, srcVStride / 2, mWidth, mHeight,
++                    img->bit_depth, false, sourceFormat,
++                    std::static_pointer_cast<const C2ColorAspectsStruct>(defaultColorAspects));
++        } else if (format == HAL_PIXEL_FORMAT_RGBA_1010102) {
+             Mutexed<ConversionQueue>::Locked queue(*mQueue);
+             size_t i = 0;
+             constexpr size_t kHeight = 64;
+@@ -859,8 +891,22 @@ status_t C2SoftVpxDec::outputBuffer(
+         const uint8_t *srcU = (const uint8_t *)img->planes[VPX_PLANE_U];
+         const uint8_t *srcV = (const uint8_t *)img->planes[VPX_PLANE_V];
+ 
+-        convertYUV420Planar8ToYV12(dstY, dstU, dstV, srcY, srcU, srcV, srcYStride, srcUStride,
+-                                   srcVStride, dstYStride, dstVStride, dstVStride, mWidth, mHeight);
++        CONV_FORMAT_T sourceFormat = CONV_FORMAT_I420;
++        if (img->fmt == VPX_IMG_FMT_I444) {
++            sourceFormat = CONV_FORMAT_I444;
++        } else if (img->fmt == VPX_IMG_FMT_I422) {
++            sourceFormat = CONV_FORMAT_I422;
++        }
++        if (format == HAL_PIXEL_FORMAT_RGBA_8888) {
++            convertPlanar8ToRGBA8888(
++                    dstY, dstYStride, srcY, srcU, srcV, srcYStride, srcUStride,
++                    srcVStride, mWidth, mHeight, false, sourceFormat,
++                    std::static_pointer_cast<const C2ColorAspectsStruct>(defaultColorAspects));
++        } else {
++            convertPlanar8ToYV12(dstY, dstU, dstV, srcY, srcU, srcV, srcYStride, srcUStride,
++                                 srcVStride, dstYStride, dstUStride, dstVStride, mWidth, mHeight,
++                                 false, sourceFormat);
++        }
+     }
+     finishWork(((c2_cntr64_t *)img->user_priv)->peekull(), work, std::move(block));
+     return OK;
+-- 
+2.47.3
+

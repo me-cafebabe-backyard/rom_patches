@@ -1,7 +1,7 @@
-From 621c5cc10dc0145d6f2c0d8ab903a7f0bcc82469 Mon Sep 17 00:00:00 2001
+From a5055dff90346be9ab67abab597ef370366f2d8a Mon Sep 17 00:00:00 2001
 From: Yumi Yukimura <me.cafebabe@gmail.com>
 Date: Tue, 15 Jul 2025 20:39:11 +0800
-Subject: [PATCH] sepolicy: private: Label
+Subject: [PATCH 1/2] sepolicy: private: Label
  `ro.surface_flinger.native_window_buffers_format`
 
 Change-Id: I0f376ba9c5f47f27dd921e41ab847620bcdfea8f
