@@ -1,0 +1,95 @@
+From cf8f9081c18a20eb30bad78dc9ae1e184aa093b4 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Tue, 8 Sep 2026 08:00:17 +0000
+Subject: [PATCH] [nl80211] Retry scans without unsupported flags
+
+Some legacy drivers advertise random MAC scan support but reject scan
+requests using NL80211_SCAN_FLAG_RANDOM_ADDR with EOPNOTSUPP.
+
+Retry the scan once without optional flags when this occurs.
+
+Assisted-by: OpenCode/gpt-5.6-sol
+Change-Id: Ia22e445fe63ba7e763ee69ecfb2fc5f762b5209c
+---
+ .../server/wifi/nl80211/Nl80211Utils.java     | 10 ++++++++-
+ .../server/wifi/nl80211/Nl80211UtilsTest.java | 22 +++++++++++++++++++
+ 2 files changed, 31 insertions(+), 1 deletion(-)
+
+diff --git a/service/java/com/android/server/wifi/nl80211/Nl80211Utils.java b/service/java/com/android/server/wifi/nl80211/Nl80211Utils.java
+index c90f275dcd..c7b98df1c7 100644
+--- a/service/java/com/android/server/wifi/nl80211/Nl80211Utils.java
++++ b/service/java/com/android/server/wifi/nl80211/Nl80211Utils.java
+@@ -20,6 +20,7 @@ import static android.system.OsConstants.EBUSY;
+ import static android.system.OsConstants.EINVAL;
+ import static android.system.OsConstants.ENODEV;
+ import static android.system.OsConstants.ENOENT;
++import static android.system.OsConstants.EOPNOTSUPP;
+ 
+ import static com.android.net.module.util.netlink.StructNlMsgHdr.NLM_F_ACK;
+ import static com.android.server.wifi.nl80211.NetlinkConstants.ANDROID_NL80211_SUBCMD_GET_PWRSTATS;
+@@ -2633,7 +2634,9 @@ public class Nl80211Utils {
+             request.addAttribute(freqsAttr);
+         }
+ 
+-        request.addAttribute(new StructNlAttr(NL80211_ATTR_SCAN_FLAGS, scanFlags));
++        if (scanFlags != 0) {
++            request.addAttribute(new StructNlAttr(NL80211_ATTR_SCAN_FLAGS, scanFlags));
++        }
+ 
+         Nl80211Response response = mNl80211Proxy.sendMessageAndReceiveResponse(request);
+         if (response == null) {
+@@ -2641,6 +2644,11 @@ public class Nl80211Utils {
+             return WifiScanner.REASON_UNSPECIFIED;
+         }
+ 
++        if (response.getErrorCode() == EOPNOTSUPP && scanFlags != 0) {
++            Log.w(TAG, "Scan flags unsupported, retrying without optional flags");
++            return triggerScan(ifIndex, 0, freqs, hiddenNetworkSSIDs, vendorIes);
++        }
++
+         return convertStdErrNumToScanStatus(response.getErrorCode());
+     }
+ 
+diff --git a/service/tests/wifitests/src/com/android/server/wifi/nl80211/Nl80211UtilsTest.java b/service/tests/wifitests/src/com/android/server/wifi/nl80211/Nl80211UtilsTest.java
+index 5454abc5ac..67a98617e9 100644
+--- a/service/tests/wifitests/src/com/android/server/wifi/nl80211/Nl80211UtilsTest.java
++++ b/service/tests/wifitests/src/com/android/server/wifi/nl80211/Nl80211UtilsTest.java
+@@ -19,6 +19,7 @@ package com.android.server.wifi.nl80211;
+ import static android.system.OsConstants.EBUSY;
+ import static android.system.OsConstants.ENODEV;
+ import static android.system.OsConstants.ENOENT;
++import static android.system.OsConstants.EOPNOTSUPP;
+ 
+ import static com.android.server.wifi.nl80211.NetlinkConstants.NL80211_ATTR_BSS;
+ import static com.android.server.wifi.nl80211.NetlinkConstants.NL80211_ATTR_EXT_FEATURES;
+@@ -1027,6 +1028,27 @@ public class Nl80211UtilsTest {
+         assertEquals(scanFlags, (int) request.getAttributeValueAsInteger(NL80211_ATTR_SCAN_FLAGS));
+     }
+ 
++    @Test
++    public void testTriggerScan_unsupportedScanFlags_retriesWithoutFlags() {
++        ArgumentCaptor<GenericNetlinkMsg> requestCaptor =
++                ArgumentCaptor.forClass(GenericNetlinkMsg.class);
++        when(mNl80211Proxy.sendMessageAndReceiveResponse(requestCaptor.capture()))
++                .thenReturn(new Nl80211Response(EOPNOTSUPP), new Nl80211Response(0));
++        when(mNl80211Proxy.createNl80211Request(eq(NL80211_CMD_TRIGGER_SCAN), anyShort()))
++                .thenAnswer(i -> new GenericNetlinkMsg(
++                        NL80211_CMD_TRIGGER_SCAN, (short) 0, (short) 0, 0));
++
++        int result = mNl80211Utils.triggerScan(TEST_IF_INDEX,
++                NL80211_SCAN_FLAG_RANDOM_ADDR, null, null, null);
++
++        assertEquals(WifiScanner.REASON_SUCCEEDED, result);
++        List<GenericNetlinkMsg> requests = requestCaptor.getAllValues();
++        assertEquals(2, requests.size());
++        assertEquals(NL80211_SCAN_FLAG_RANDOM_ADDR,
++                (int) requests.get(0).getAttributeValueAsInteger(NL80211_ATTR_SCAN_FLAGS));
++        assertNull(requests.get(1).getAttribute(NL80211_ATTR_SCAN_FLAGS));
++    }
++
+     @Test
+     public void testTriggerScan_errorEBUSY() {
+         when(mNl80211Proxy.sendMessageAndReceiveResponse(any(GenericNetlinkMsg.class)))
+-- 
+2.47.3
+
