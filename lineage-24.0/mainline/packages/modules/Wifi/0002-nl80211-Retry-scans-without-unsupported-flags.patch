@@ -1,7 +1,7 @@
-From cf8f9081c18a20eb30bad78dc9ae1e184aa093b4 Mon Sep 17 00:00:00 2001
+From f6f2dd27e718636e2f9357138727ee0a5ef5eba9 Mon Sep 17 00:00:00 2001
 From: Yumi Yukimura <me.cafebabe@gmail.com>
 Date: Tue, 8 Sep 2026 08:00:17 +0000
-Subject: [PATCH] [nl80211] Retry scans without unsupported flags
+Subject: [PATCH 2/2] [nl80211] Retry scans without unsupported flags
 
 Some legacy drivers advertise random MAC scan support but reject scan
 requests using NL80211_SCAN_FLAG_RANDOM_ADDR with EOPNOTSUPP.
@@ -16,7 +16,7 @@ Change-Id: Ia22e445fe63ba7e763ee69ecfb2fc5f762b5209c
  2 files changed, 31 insertions(+), 1 deletion(-)
 
 diff --git a/service/java/com/android/server/wifi/nl80211/Nl80211Utils.java b/service/java/com/android/server/wifi/nl80211/Nl80211Utils.java
-index c90f275dcd..c7b98df1c7 100644
+index f37764b19b..f2c8178f42 100644
 --- a/service/java/com/android/server/wifi/nl80211/Nl80211Utils.java
 +++ b/service/java/com/android/server/wifi/nl80211/Nl80211Utils.java
 @@ -20,6 +20,7 @@ import static android.system.OsConstants.EBUSY;
@@ -51,7 +51,7 @@ index c90f275dcd..c7b98df1c7 100644
      }
  
 diff --git a/service/tests/wifitests/src/com/android/server/wifi/nl80211/Nl80211UtilsTest.java b/service/tests/wifitests/src/com/android/server/wifi/nl80211/Nl80211UtilsTest.java
-index 5454abc5ac..67a98617e9 100644
+index 098a875264..f7658aeda0 100644
 --- a/service/tests/wifitests/src/com/android/server/wifi/nl80211/Nl80211UtilsTest.java
 +++ b/service/tests/wifitests/src/com/android/server/wifi/nl80211/Nl80211UtilsTest.java
 @@ -19,6 +19,7 @@ package com.android.server.wifi.nl80211;
@@ -62,7 +62,7 @@ index 5454abc5ac..67a98617e9 100644
  
  import static com.android.server.wifi.nl80211.NetlinkConstants.NL80211_ATTR_BSS;
  import static com.android.server.wifi.nl80211.NetlinkConstants.NL80211_ATTR_EXT_FEATURES;
-@@ -1027,6 +1028,27 @@ public class Nl80211UtilsTest {
+@@ -1057,6 +1058,27 @@ public class Nl80211UtilsTest {
          assertEquals(scanFlags, (int) request.getAttributeValueAsInteger(NL80211_ATTR_SCAN_FLAGS));
      }
  
