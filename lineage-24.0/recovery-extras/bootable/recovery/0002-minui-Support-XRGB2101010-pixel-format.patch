@@ -1,0 +1,309 @@
+From 854887677f87ef963730d98ae6d37c3f68c13fc4 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Tue, 8 Sep 2026 20:26:33 +0000
+Subject: [PATCH 02/14] minui: Support XRGB2101010 pixel format
+
+Assisted-by: OpenCode/openai/gpt-5.6-sol
+Change-Id: I3fbdc66933122952d7909768638811efd34b0c89
+---
+ minui/graphics.cpp          | 47 +++++++++++++++++++++++++++++++++----
+ minui/graphics_drm.cpp      |  5 ++++
+ minui/graphics_drm_qti.cpp  |  3 +++
+ minui/graphics_fbdev.cpp    | 13 ++++++++--
+ minui/include/minui/minui.h |  1 +
+ minui/resources.cpp         | 43 +++++++++++++++++++++++----------
+ 6 files changed, 92 insertions(+), 20 deletions(-)
+
+diff --git a/minui/graphics.cpp b/minui/graphics.cpp
+index 987c00c8..02029e85 100644
+--- a/minui/graphics.cpp
++++ b/minui/graphics.cpp
+@@ -38,6 +38,7 @@ static int overscan_offset_x = 0;
+ static int overscan_offset_y = 0;
+ 
+ static uint32_t gr_current = ~0;
++static uint8_t gr_current_alpha = 255;
+ 
+ // gr_draw is owned by backends.
+ static GRSurface* gr_draw = nullptr;
+@@ -123,7 +124,28 @@ static inline uint32_t pixel_blend_rgba(uint8_t alpha, uint32_t pix) {
+   return (gr_current & 0xff) | (out_r & 0xff00) | (out_g & 0xff0000) | (out_b & 0xff000000);
+ }
+ 
++static inline uint32_t pixel_blend_xrgb2101010(uint8_t alpha, uint32_t pix) {
++  if (alpha == 255) return gr_current;
++  if (alpha == 0) return pix;
++
++  uint32_t pix_r = (pix >> 20) & 0x3ff;
++  uint32_t pix_g = (pix >> 10) & 0x3ff;
++  uint32_t pix_b = pix & 0x3ff;
++  uint32_t cur_r = (gr_current >> 20) & 0x3ff;
++  uint32_t cur_g = (gr_current >> 10) & 0x3ff;
++  uint32_t cur_b = gr_current & 0x3ff;
++
++  uint32_t out_r = (pix_r * (255 - alpha) + cur_r * alpha) / 255;
++  uint32_t out_g = (pix_g * (255 - alpha) + cur_g * alpha) / 255;
++  uint32_t out_b = (pix_b * (255 - alpha) + cur_b * alpha) / 255;
++
++  return (gr_current & 0xc0000000) | (out_r << 20) | (out_g << 10) | out_b;
++}
++
+ static inline uint32_t pixel_blend(uint8_t alpha, uint32_t pix) {
++  if (pixel_format == PixelFormat::XRGB2101010) {
++    return pixel_blend_xrgb2101010(alpha, pix);
++  }
+   if (pixel_format == PixelFormat::RGBA) {
+     return pixel_blend_rgba(alpha, pix);
+   }
+@@ -131,6 +153,9 @@ static inline uint32_t pixel_blend(uint8_t alpha, uint32_t pix) {
+ }
+ 
+ static inline uint32_t get_alphamask() {
++  if (pixel_format == PixelFormat::XRGB2101010) {
++    return 0xc0000000;
++  }
+   if (pixel_format == PixelFormat::RGBA) {
+     return 0x000000ff;
+   }
+@@ -138,6 +163,9 @@ static inline uint32_t get_alphamask() {
+ }
+ 
+ static inline uint8_t get_alpha_shift() {
++  if (pixel_format == PixelFormat::XRGB2101010) {
++    return 30;
++  }
+   if (pixel_format == PixelFormat::RGBA) {
+     return 0;
+   }
+@@ -145,7 +173,10 @@ static inline uint8_t get_alpha_shift() {
+ }
+ 
+ static inline uint8_t get_alpha(uint32_t pix) {
+-  return static_cast<uint8_t>((pix & (gr_current & get_alphamask())) >> get_alpha_shift());
++  if (pixel_format == PixelFormat::XRGB2101010) {
++    return static_cast<uint8_t>(((pix >> 30) & 0x3) * 255 / 3);
++  }
++  return static_cast<uint8_t>((pix & get_alphamask()) >> get_alpha_shift());
+ }
+ 
+ // Increments pixel pointer right, with current rotation.
+@@ -195,7 +226,7 @@ static uint32_t* PixelAt(GRSurface* surface, int x, int y, int row_pixels) {
+ 
+ static void TextBlend(const uint8_t* src_p, int src_row_bytes, uint32_t* dst_p, int dst_row_pixels,
+                       int width, int height) {
+-  uint8_t alpha_current = get_alpha(gr_current);
++  uint8_t alpha_current = gr_current_alpha;
+   for (int j = 0; j < height; ++j) {
+     const uint8_t* sx = src_p;
+     uint32_t* px = dst_p;
+@@ -210,7 +241,7 @@ static void TextBlend(const uint8_t* src_p, int src_row_bytes, uint32_t* dst_p,
+ }
+ 
+ void gr_text(const GRFont* font, int x, int y, const char* s, bool bold) {
+-  if (!font || !font->texture || (gr_current & get_alphamask()) == 0) return;
++  if (!font || !font->texture || gr_current_alpha == 0) return;
+ 
+   if (font->texture->pixel_bytes != 1) {
+     printf("gr_text: font has wrong format\n");
+@@ -263,7 +294,11 @@ void gr_texticon(int x, int y, const GRSurface* icon) {
+ 
+ void gr_color(unsigned char r, unsigned char g, unsigned char b, unsigned char a) {
+   uint32_t r32 = r, g32 = g, b32 = b, a32 = a;
+-  if (pixel_format == PixelFormat::ARGB || pixel_format == PixelFormat::BGRA ||
++  gr_current_alpha = a;
++  if (pixel_format == PixelFormat::XRGB2101010) {
++    gr_current = ((a32 * 3 + 127) / 255 << 30) | ((r32 * 1023 + 127) / 255 << 20) |
++                 ((g32 * 1023 + 127) / 255 << 10) | ((b32 * 1023 + 127) / 255);
++  } else if (pixel_format == PixelFormat::ARGB || pixel_format == PixelFormat::BGRA ||
+       pixel_format == PixelFormat::BGRX) {
+     gr_current = (a32 << 24) | (r32 << 16) | (g32 << 8) | b32;
+   } else if (pixel_format == PixelFormat::RGBA) {
+@@ -302,7 +337,7 @@ void gr_fill(int x1, int y1, int x2, int y2) {
+ 
+   int row_pixels = gr_draw->row_bytes / gr_draw->pixel_bytes;
+   uint32_t* p = PixelAt(gr_draw, x1, y1, row_pixels);
+-  uint8_t alpha = get_alpha(gr_current);
++  uint8_t alpha = gr_current_alpha;
+   if (alpha > 0) {
+     for (int y = y1; y < y2; ++y) {
+       uint32_t* px = p;
+@@ -432,6 +467,8 @@ int gr_init(std::initializer_list<GraphicsBackend> backends) {
+     pixel_format = PixelFormat::RGBA;
+   } else if (format == "BGRX_8888") {
+     pixel_format = PixelFormat::BGRX;
++  } else if (format == "XRGB_2101010") {
++    pixel_format = PixelFormat::XRGB2101010;
+   } else {
+     pixel_format = PixelFormat::UNKNOWN;
+   }
+diff --git a/minui/graphics_drm.cpp b/minui/graphics_drm.cpp
+index 5ce6a611..48b43584 100644
+--- a/minui/graphics_drm.cpp
++++ b/minui/graphics_drm.cpp
+@@ -67,6 +67,7 @@ static int drm_format_to_bpp(uint32_t format) {
+     case DRM_FORMAT_BGRX8888:
+     case DRM_FORMAT_XBGR8888:
+     case DRM_FORMAT_XRGB8888:
++    case DRM_FORMAT_XRGB2101010:
+       return 32;
+     case DRM_FORMAT_RGB565:
+       return 16;
+@@ -90,6 +91,8 @@ static PixelFormat drm_format_to_pixel_format(uint32_t format) {
+       return PixelFormat::RGBA;
+     case DRM_FORMAT_XRGB8888:
+       return PixelFormat::BGRX;
++    case DRM_FORMAT_XRGB2101010:
++      return PixelFormat::XRGB2101010;
+     default:
+       return PixelFormat::UNKNOWN;
+   }
+@@ -131,6 +134,8 @@ std::unique_ptr<GRSurfaceDrm> GRSurfaceDrm::Create(int drm_fd, int width, int he
+     format = DRM_FORMAT_XRGB8888;
+   } else if (pixel_format == PixelFormat::RGBA) {
+     format = DRM_FORMAT_ABGR8888;
++  } else if (pixel_format == PixelFormat::XRGB2101010) {
++    format = DRM_FORMAT_XRGB2101010;
+   } else {
+     format = DRM_FORMAT_RGB565;
+   }
+diff --git a/minui/graphics_drm_qti.cpp b/minui/graphics_drm_qti.cpp
+index aa7dadb6..5cb6d56b 100644
+--- a/minui/graphics_drm_qti.cpp
++++ b/minui/graphics_drm_qti.cpp
+@@ -430,6 +430,7 @@ static int drm_format_to_bpp(uint32_t format) {
+     case DRM_FORMAT_BGRX8888:
+     case DRM_FORMAT_XBGR8888:
+     case DRM_FORMAT_XRGB8888:
++    case DRM_FORMAT_XRGB2101010:
+       return 32;
+     case DRM_FORMAT_RGB565:
+       return 16;
+@@ -456,6 +457,8 @@ std::unique_ptr<GRSurfaceDrmQti> GRSurfaceDrmQti::Create(int drm_fd, int width,
+     format = DRM_FORMAT_BGRA8888;
+   } else if (pixel_format == PixelFormat::BGRX) {
+     format = DRM_FORMAT_XRGB8888;
++  } else if (pixel_format == PixelFormat::XRGB2101010) {
++    format = DRM_FORMAT_XRGB2101010;
+   } else {
+     format = DRM_FORMAT_RGB565;
+   }
+diff --git a/minui/graphics_fbdev.cpp b/minui/graphics_fbdev.cpp
+index a5ffc303..55485ad9 100644
+--- a/minui/graphics_fbdev.cpp
++++ b/minui/graphics_fbdev.cpp
+@@ -39,8 +39,17 @@ std::unique_ptr<GRSurfaceFbdev> GRSurfaceFbdev::Create(size_t width, size_t heig
+ }
+ 
+ static PixelFormat detect_fbdev_pixel_format(const fb_var_screeninfo& vi) {
+-  if (vi.bits_per_pixel != 32 || vi.red.length != 8 || vi.green.length != 8 ||
+-      vi.blue.length != 8) {
++  if (vi.bits_per_pixel != 32) {
++    return PixelFormat::UNKNOWN;
++  }
++
++  if (vi.red.offset == 20 && vi.red.length == 10 && vi.green.offset == 10 &&
++      vi.green.length == 10 && vi.blue.offset == 0 && vi.blue.length == 10 &&
++      (vi.transp.length == 0 || (vi.transp.offset == 30 && vi.transp.length == 2))) {
++    return PixelFormat::XRGB2101010;
++  }
++
++  if (vi.red.length != 8 || vi.green.length != 8 || vi.blue.length != 8) {
+     return PixelFormat::UNKNOWN;
+   }
+ 
+diff --git a/minui/include/minui/minui.h b/minui/include/minui/minui.h
+index 183a015e..e90f2b6a 100644
+--- a/minui/include/minui/minui.h
++++ b/minui/include/minui/minui.h
+@@ -104,6 +104,7 @@ enum class PixelFormat : int {
+   ARGB = 4,
+   RGBA = 5, // LSB Alpha
+   BGRX = 6,
++  XRGB2101010 = 7,
+ };
+ 
+ enum class GraphicsBackend : int {
+diff --git a/minui/resources.cpp b/minui/resources.cpp
+index ce157219..a99da129 100644
+--- a/minui/resources.cpp
++++ b/minui/resources.cpp
+@@ -138,8 +138,8 @@ PngHandler::~PngHandler() {
+   }
+ }
+ 
+-// "display" surfaces are transformed into the framebuffer's required pixel format (currently only
+-// RGBX is supported) at load time, so gr_blit() can be nothing more than a memcpy() for each row.
++// "display" surfaces are transformed into the framebuffer's required pixel format at load time,
++// so gr_blit() can be nothing more than a memcpy() for each row.
+ 
+ // Copies 'input_row' to 'output_row', transforming it to the framebuffer pixel format. The input
+ // format depends on the value of 'channels':
+@@ -149,6 +149,13 @@ PngHandler::~PngHandler() {
+ //   4 - input is 32-bit RGBA/RGBX
+ //
+ // 'width' is the number of pixels in the row.
++static uint32_t PackXrgb2101010(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
++  return ((static_cast<uint32_t>(a) * 3 + 127) / 255 << 30) |
++         ((static_cast<uint32_t>(r) * 1023 + 127) / 255 << 20) |
++         ((static_cast<uint32_t>(g) * 1023 + 127) / 255 << 10) |
++         ((static_cast<uint32_t>(b) * 1023 + 127) / 255);
++}
++
+ static void TransformRgbToDraw(const uint8_t* input_row, uint8_t* output_row, int channels,
+                                int width) {
+   const uint8_t* ip = input_row;
+@@ -159,7 +166,9 @@ static void TransformRgbToDraw(const uint8_t* input_row, uint8_t* output_row, in
+     case 1:
+       // expand gray level to RGBX
+       for (int x = 0; x < width; ++x) {
+-        if (pixel_format == PixelFormat::RGBA) {
++        if (pixel_format == PixelFormat::XRGB2101010) {
++          reinterpret_cast<uint32_t*>(op)[x] = PackXrgb2101010(*ip, *ip, *ip, 255);
++        } else if (pixel_format == PixelFormat::RGBA) {
+           *op++ = 0xff;
+           *op++ = *ip;
+           *op++ = *ip;
+@@ -177,22 +186,30 @@ static void TransformRgbToDraw(const uint8_t* input_row, uint8_t* output_row, in
+     case 3:
+       for (int x = 0; x < width; ++x) {
+         // expand RGBA to RGBX
+-        if (pixel_format == PixelFormat::RGBA) {
+-            *op++ = 0xff;
+-            *op++ = *ip++;
+-            *op++ = *ip++;
+-            *op++ = *ip++;
++        if (pixel_format == PixelFormat::XRGB2101010) {
++          reinterpret_cast<uint32_t*>(op)[x] = PackXrgb2101010(ip[0], ip[1], ip[2], 255);
++          ip += 3;
++        } else if (pixel_format == PixelFormat::RGBA) {
++          *op++ = 0xff;
++          *op++ = *ip++;
++          *op++ = *ip++;
++          *op++ = *ip++;
+         } else {
+-            *op++ = *ip++;
+-            *op++ = *ip++;
+-            *op++ = *ip++;
+-            *op++ = 0xff;
++          *op++ = *ip++;
++          *op++ = *ip++;
++          *op++ = *ip++;
++          *op++ = 0xff;
+         }
+       }
+       break;
+ 
+     case 4:
+-      if (pixel_format == PixelFormat::RGBA) {
++      if (pixel_format == PixelFormat::XRGB2101010) {
++        for (int x = 0; x < width; ++x) {
++          reinterpret_cast<uint32_t*>(op)[x] = PackXrgb2101010(ip[0], ip[1], ip[2], ip[3]);
++          ip += 4;
++        }
++      } else if (pixel_format == PixelFormat::RGBA) {
+         for (int x = 0; x < width; ++x) {
+             *op++ = *(ip + 3);
+             *op++ = *ip++;
+-- 
+2.47.3
+

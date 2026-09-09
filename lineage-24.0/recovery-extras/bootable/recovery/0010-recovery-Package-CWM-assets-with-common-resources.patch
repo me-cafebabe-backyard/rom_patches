@@ -1,0 +1,83 @@
+From 0b7aeb830e462526edfcb294681513504b723742 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Tue, 8 Sep 2026 19:49:11 +0000
+Subject: [PATCH 10/14] recovery: Package CWM assets with common resources
+
+Change-Id: I90cbbf1b47cf0ad12a565acbd29187e63c5fa28b
+Assisted-by: OpenCode/openai/gpt-5.6-sol
+---
+ Android.bp | 17 +++++------------
+ 1 file changed, 5 insertions(+), 12 deletions(-)
+
+diff --git a/Android.bp b/Android.bp
+index 1955ca82..ef9c3652 100644
+--- a/Android.bp
++++ b/Android.bp
+@@ -198,7 +198,6 @@ cc_binary {
+         "mke2fs.recovery",
+         "mkshrc.recovery",
+         "reboot.recovery",
+-        "recovery-resources-cwm",
+         "recovery_deps",
+         "ueventd.rc.recovery",
+     ],
+@@ -320,23 +319,13 @@ cc_library_shared {
+     }),
+ }
+ 
+-prebuilt_res {
+-    name: "recovery-resources-cwm",
+-    recovery: true,
+-    install_in_root: true,
+-    relative_install_path: "images",
+-    srcs: [
+-        "res-cwm/images/*.png",
+-    ],
+-    no_full_install: true,
+-}
+-
+ prebuilt_res {
+     name: "recovery-resources-common-mdpi",
+     recovery: true,
+     install_in_root: true,
+     relative_install_path: "images",
+     srcs: [
++        "res-cwm/images/*.png",
+         "res-mdpi/images/*.png",
+     ],
+     no_full_install: true,
+@@ -348,6 +337,7 @@ prebuilt_res {
+     install_in_root: true,
+     relative_install_path: "images",
+     srcs: [
++        "res-cwm/images/*.png",
+         "res-hdpi/images/*.png",
+     ],
+     no_full_install: true,
+@@ -359,6 +349,7 @@ prebuilt_res {
+     install_in_root: true,
+     relative_install_path: "images",
+     srcs: [
++        "res-cwm/images/*.png",
+         "res-xhdpi/images/*.png",
+     ],
+     no_full_install: true,
+@@ -370,6 +361,7 @@ prebuilt_res {
+     install_in_root: true,
+     relative_install_path: "images",
+     srcs: [
++        "res-cwm/images/*.png",
+         "res-xxhdpi/images/*.png",
+     ],
+     no_full_install: true,
+@@ -381,6 +373,7 @@ prebuilt_res {
+     install_in_root: true,
+     relative_install_path: "images",
+     srcs: [
++        "res-cwm/images/*.png",
+         "res-xxxhdpi/images/*.png",
+     ],
+     no_full_install: true,
+-- 
+2.47.3
+

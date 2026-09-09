@@ -1,0 +1,102 @@
+From fad6d26aaef8265035fb66257108619e9b880e3e Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Wed, 9 Sep 2026 12:40:23 +0800
+Subject: [PATCH 13/14] recovery_ui: Match CWM progress rendering
+
+Change-Id: I6f4263ad08c51c4f59039c3d3dde430774764e4f
+Assisted-by: OpenCode/openai/gpt-5.6-sol
+---
+ recovery_ui/include/recovery_ui/screen_ui.h |  2 +
+ recovery_ui/screen_ui.cpp                   | 42 ++++++++++++++-------
+ 2 files changed, 30 insertions(+), 14 deletions(-)
+
+diff --git a/recovery_ui/include/recovery_ui/screen_ui.h b/recovery_ui/include/recovery_ui/screen_ui.h
+index ef6ccfc8..4754607a 100644
+--- a/recovery_ui/include/recovery_ui/screen_ui.h
++++ b/recovery_ui/include/recovery_ui/screen_ui.h
+@@ -520,6 +520,8 @@ class ScreenRecoveryUI : public RecoveryUI, public DrawInterface {
+   std::unique_ptr<GRSurface> cwm6_progress_empty_;
+   std::unique_ptr<GRSurface> cwm6_progress_fill_;
+   std::unique_ptr<GRSurface> cwm6_stitch_;
++  size_t cwm_progress_frame_ = 0;
++  size_t cwm_installing_frame_ = 0;
+ 
+   // current_icon_ points to one of the frames in intro_frames_ or loop_frames_, indexed by
+   // current_frame_, or error_icon_.
+diff --git a/recovery_ui/screen_ui.cpp b/recovery_ui/screen_ui.cpp
+index 0b49d8bd..adb51df1 100644
+--- a/recovery_ui/screen_ui.cpp
++++ b/recovery_ui/screen_ui.cpp
+@@ -639,8 +639,7 @@ void ScreenRecoveryUI::draw_background_locked() {
+ void ScreenRecoveryUI::draw_foreground_locked() {
+   if (theme_ == Theme::CWM6 &&
+       (current_icon_ == INSTALLING_UPDATE || current_icon_ == ERASING)) {
+-    const auto& overlay =
+-        cwm6_installing_overlay_[current_frame_ % cwm6_installing_overlay_.size()];
++    const auto& overlay = cwm6_installing_overlay_[cwm_installing_frame_];
+     int base_x = (ScreenWidth() - gr_get_width(cwm6_installing_.get())) / 2;
+     int base_y = (ScreenHeight() - gr_get_height(cwm6_installing_.get())) / 2;
+     DrawSurface(overlay.get(), 0, 0, gr_get_width(overlay.get()), gr_get_height(overlay.get()),
+@@ -658,13 +657,16 @@ void ScreenRecoveryUI::draw_foreground_locked() {
+     int height = gr_get_height(empty);
+     int x = (ScreenWidth() - width) / 2;
+     int y = GetProgressBaseline();
++    gr_color(0, 0, 0, 255);
++    gr_fill(x, y, x + width, y + height);
+     if (progressBarType == INDETERMINATE) {
+-      const auto& frame = frames[current_frame_ % frames.size()];
++      const auto& frame = frames[cwm_progress_frame_];
+       DrawSurface(frame.get(), 0, 0, width, height, x, y);
++      cwm_progress_frame_ = (cwm_progress_frame_ + 1) % frames.size();
+     } else {
+       int pos = static_cast<int>((progressScopeStart + progress * progressScopeSize) * width);
+-      DrawSurface(empty, pos, 0, width - pos, height, x + pos, y);
+       if (pos > 0) DrawSurface(fill, 0, 0, pos, height, x, y);
++      if (pos < width - 1) DrawSurface(empty, pos, 0, width - pos, height, x + pos, y);
+     }
+     return;
+   }
+@@ -1223,18 +1225,30 @@ void ScreenRecoveryUI::ProgressThreadLoop() {
+       int fps = theme_ == Theme::CWM5 ? 15 : theme_ == Theme::CWM6 ? 20 : animation_fps_;
+       interval = 1.0 / fps;
+ 
+-      // Keep CWM animations behind its text overlay; skip Lineage text overlays as before.
+-      if ((current_icon_ == INSTALLING_UPDATE || current_icon_ == ERASING) &&
+-          (!show_text || IsCwmTheme())) {
+-        if (!intro_done_) {
+-          if (current_frame_ == intro_frames_.size() - 1) {
+-            intro_done_ = true;
+-            current_frame_ = 0;
++      bool animate = (current_icon_ == INSTALLING_UPDATE || current_icon_ == ERASING) && !show_text;
++      if (theme_ == Theme::CWM5) {
++        animate = progressBarType == INDETERMINATE && !show_text;
++      } else if (theme_ == Theme::CWM6) {
++        animate = progressBarType == INDETERMINATE || current_icon_ == INSTALLING_UPDATE ||
++                  current_icon_ == ERASING;
++      }
++      if (animate) {
++        if (theme_ == Theme::CWM6) {
++          if (current_icon_ == INSTALLING_UPDATE || current_icon_ == ERASING) {
++            cwm_installing_frame_ =
++                (cwm_installing_frame_ + 1) % cwm6_installing_overlay_.size();
++          }
++        } else if (theme_ == Theme::LINEAGE) {
++          if (!intro_done_) {
++            if (current_frame_ == intro_frames_.size() - 1) {
++              intro_done_ = true;
++              current_frame_ = 0;
++            } else {
++              ++current_frame_;
++            }
+           } else {
+-            ++current_frame_;
++            current_frame_ = (current_frame_ + 1) % loop_frames_.size();
+           }
+-        } else {
+-          current_frame_ = (current_frame_ + 1) % loop_frames_.size();
+         }
+ 
+         redraw = true;
+-- 
+2.47.3
+

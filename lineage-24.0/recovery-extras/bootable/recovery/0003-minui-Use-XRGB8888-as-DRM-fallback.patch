@@ -1,0 +1,30 @@
+From 247f4b64f30c865a31ca37f72886d3a4d41f388f Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Tue, 8 Sep 2026 20:29:06 +0000
+Subject: [PATCH 03/14] minui: Use XRGB8888 as DRM fallback
+
+Assisted-by: OpenCode/openai/gpt-5.6-sol
+Change-Id: I2af9b525de1a64a387f2048663724371f00dd816
+---
+ minui/graphics_drm.cpp | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/minui/graphics_drm.cpp b/minui/graphics_drm.cpp
+index 48b43584..7c0db5e3 100644
+--- a/minui/graphics_drm.cpp
++++ b/minui/graphics_drm.cpp
+@@ -431,8 +431,9 @@ GRSurface* MinuiBackendDrm::Init() {
+ 
+       detect_drm_pixel_format(drm_fd, drm[i].monitor_crtc);
+       if (gr_pixel_format() == PixelFormat::UNKNOWN) {
+-        printf("Unable to detect DRM pixel format, defaulting to RGBX_8888\n");
+-        gr_set_pixel_format(PixelFormat::RGBX);
++        // XRGB8888 is the standard DRM fallback and is emulated by sysfb drivers when needed.
++        printf("Unable to detect DRM pixel format, defaulting to XRGB8888\n");
++        gr_set_pixel_format(PixelFormat::BGRX);
+       }
+ 
+       int width = drm[i].monitor_crtc->mode.hdisplay;
+-- 
+2.47.3
+

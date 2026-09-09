@@ -1,0 +1,43 @@
+From c22efe95c951132b7d417cd2d02394a6f10e8677 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Tue, 8 Sep 2026 20:04:14 +0000
+Subject: [PATCH] build: Copy CWM resources into recovery ramdisk
+
+Change-Id: I8ea9d3a79334066ea384f0255082fd36e60ea53f
+Assisted-by: OpenCode/openai/gpt-5.6-sol
+---
+ core/Makefile | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/core/Makefile b/core/Makefile
+index 3046dfbcde..1f3ce3ce22 100644
+--- a/core/Makefile
++++ b/core/Makefile
+@@ -2476,6 +2476,7 @@ recovery_kernel := $(firstword $(INSTALLED_KERNEL_TARGET))
+ recovery_ramdisk := $(PRODUCT_OUT)/ramdisk-recovery.img
+ recovery_uncompressed_ramdisk := $(PRODUCT_OUT)/ramdisk-recovery.cpio
+ recovery_resources_common := bootable/recovery/res
++recovery_resources_cwm := $(wildcard bootable/recovery/res-cwm)
+ 
+ ifneq (,$(TARGET_RECOVERY_DENSITY))
+ recovery_density := $(filter %dpi,$(TARGET_RECOVERY_DENSITY))
+@@ -2602,7 +2603,7 @@ ifndef TARGET_PRIVATE_RES_DIRS
+ TARGET_PRIVATE_RES_DIRS := $(wildcard $(TARGET_DEVICE_DIR)/recovery/res)
+ endif
+ recovery_resource_deps := $(shell find $(recovery_resources_common) \
+-  $(TARGET_PRIVATE_RES_DIRS) -type f -not -name "*.bp")
++  $(recovery_resources_cwm) $(TARGET_PRIVATE_RES_DIRS) -type f -not -name "*.bp")
+ recovery_resource_deps += $(generated_recovery_text_files)
+ 
+ 
+@@ -2776,6 +2777,7 @@ $(INTERNAL_RECOVERY_RAMDISK_FILES_TIMESTAMP): $(MKBOOTFS) \
+ 	mkdir -p $(TARGET_RECOVERY_ROOT_OUT)/res
+ 	rm -rf $(TARGET_RECOVERY_ROOT_OUT)/res/*
+ 	cp -rf $(recovery_resources_common)/* $(TARGET_RECOVERY_ROOT_OUT)/res
++	$(if $(recovery_resources_cwm),cp -rf $(recovery_resources_cwm)/* $(TARGET_RECOVERY_ROOT_OUT)/res)
+ 	$(foreach recovery_text_file,$(generated_recovery_text_files), \
+ 	  cp -rf $(recovery_text_file) $(TARGET_RECOVERY_ROOT_OUT)/res/images/ &&) true
+ 	cp -f $(recovery_font) $(TARGET_RECOVERY_ROOT_OUT)/res/images/font.png
+-- 
+2.47.3
+

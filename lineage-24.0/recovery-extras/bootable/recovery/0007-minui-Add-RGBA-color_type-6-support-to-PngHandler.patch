@@ -1,0 +1,32 @@
+From 359da9746fcf3bde28a4b302c51df5375206f80a Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Tue, 8 Sep 2026 17:36:18 +0000
+Subject: [PATCH 07/14] minui: Add RGBA (color_type 6) support to PngHandler
+
+Allow 8-bit RGBA PNGs (depth 8, channels 4, color_type 6) through
+PngHandler without transformation. The downstream TransformRgbToDraw()
+already handles 4-channel input. This fixes loading CWM resource images
+which are RGBA PNGs.
+
+Assisted-by: opencode/remote-qwen/qwen3.7-max
+Change-Id: I0d5521d7be574ab2ba312d92cfd81e9f81d839cc
+---
+ minui/resources.cpp | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/minui/resources.cpp b/minui/resources.cpp
+index a99da129..65044e98 100644
+--- a/minui/resources.cpp
++++ b/minui/resources.cpp
+@@ -115,6 +115,8 @@ PngHandler::PngHandler(const std::string& name) {
+ 
+   if (bit_depth_ == 8 && channels_ == 3 && color_type_ == PNG_COLOR_TYPE_RGB) {
+     // 8-bit RGB images: great, nothing to do.
++  } else if (bit_depth_ == 8 && channels_ == 4 && color_type_ == PNG_COLOR_TYPE_RGB_ALPHA) {
++    // 8-bit RGBA images: great, nothing to do.
+   } else if (bit_depth_ <= 8 && channels_ == 1 && color_type_ == PNG_COLOR_TYPE_GRAY) {
+     // 1-, 2-, 4-, or 8-bit gray images: expand to 8-bit gray.
+     png_set_expand_gray_1_2_4_to_8(png_ptr_);
+-- 
+2.47.3
+
