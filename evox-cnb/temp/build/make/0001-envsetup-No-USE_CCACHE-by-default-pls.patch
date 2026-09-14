@@ -1,0 +1,24 @@
+From d827fd8446eaa9f47ee2e89f95193203cc7f5d5e Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Tue, 15 Sep 2026 03:57:11 +0800
+Subject: [PATCH] envsetup: No USE_CCACHE by default pls
+
+---
+ envsetup.sh | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/envsetup.sh b/envsetup.sh
+index 4aa723e2e7..66f069472b 100644
+--- a/envsetup.sh
++++ b/envsetup.sh
+@@ -1336,7 +1336,6 @@ function setup_ccache() {
+     # check and set ccache path on envsetup
+     if [ -z "${CCACHE_EXEC}" ]; then
+         if command -v ccache &>/dev/null; then
+-            export USE_CCACHE=1
+             export CCACHE_EXEC=$(command -v ccache)
+             [ -z "${CCACHE_DIR}" ] && export CCACHE_DIR="$HOME/.ccache"
+             echo "ccache directory found, CCACHE_DIR set to: $CCACHE_DIR" >&2
+-- 
+2.47.3
+

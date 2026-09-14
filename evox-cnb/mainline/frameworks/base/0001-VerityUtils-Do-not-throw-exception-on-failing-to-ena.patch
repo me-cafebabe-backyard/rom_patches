@@ -1,0 +1,36 @@
+From 07e0bfec2086f0c2b6ecfcf5fcd481f21a9ffd16 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Mon, 11 Aug 2025 14:13:33 +0800
+Subject: [PATCH] VerityUtils: Do not throw exception on failing to enable
+ fs-verity
+
+Change-Id: I3b80f4f03e0c80596276be116eb2fa4a5607757d
+---
+ core/java/com/android/internal/security/VerityUtils.java | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/core/java/com/android/internal/security/VerityUtils.java b/core/java/com/android/internal/security/VerityUtils.java
+index ac186d0a26b5..049c09d49527 100644
+--- a/core/java/com/android/internal/security/VerityUtils.java
++++ b/core/java/com/android/internal/security/VerityUtils.java
+@@ -63,7 +63,7 @@ public abstract class VerityUtils {
+     public static void setUpFsverity(@NonNull String filePath) throws IOException {
+         int errno = enableFsverityNative(filePath);
+         if (errno != 0) {
+-            throw new IOException("Failed to enable fs-verity on " + filePath + ": "
++            Slog.e(TAG, "Failed to enable fs-verity on " + filePath + ": "
+                     + Os.strerror(errno));
+         }
+     }
+@@ -72,7 +72,7 @@ public abstract class VerityUtils {
+     public static void setUpFsverity(int fd) throws IOException {
+         int errno = enableFsverityForFdNative(fd);
+         if (errno != 0) {
+-            throw new IOException("Failed to enable fs-verity on FD(" + fd + "): "
++            Slog.e(TAG, "Failed to enable fs-verity on FD(" + fd + "): "
+                     + Os.strerror(errno));
+         }
+     }
+-- 
+2.47.3
+

@@ -1,0 +1,89 @@
+From 16b0404a90ed0411774afd31e86a89989bbca2bc Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Fri, 9 Aug 2024 17:42:06 +0000
+Subject: [PATCH] surfaceflinger: Allow to override native window pixel format
+
+* Reference: https://github.com/BlissOS/platform_frameworks_native/commit/236dd8f55c7beaa5d30803ddaf5610ac199cdc44
+
+Change-Id: I6721e06f81ff7acfd7cb6a24154ec57e59f0f157
+---
+ .../CompositionEngine/src/RenderSurface.cpp               | 5 ++++-
+ services/surfaceflinger/SurfaceFlingerProperties.cpp      | 8 ++++++++
+ services/surfaceflinger/SurfaceFlingerProperties.h        | 2 ++
+ .../sysprop/SurfaceFlingerProperties.sysprop              | 8 ++++++++
+ 4 files changed, 22 insertions(+), 1 deletion(-)
+
+diff --git a/services/surfaceflinger/CompositionEngine/src/RenderSurface.cpp b/services/surfaceflinger/CompositionEngine/src/RenderSurface.cpp
+index d6028bf4cf..e04e89b4d4 100644
+--- a/services/surfaceflinger/CompositionEngine/src/RenderSurface.cpp
++++ b/services/surfaceflinger/CompositionEngine/src/RenderSurface.cpp
+@@ -16,6 +16,7 @@
+ 
+ #define ATRACE_TAG ATRACE_TAG_GRAPHICS
+ 
++#include <SurfaceFlingerProperties.h>
+ #include <android-base/stringprintf.h>
+ #include <android/native_window.h>
+ #include <common/trace.h>
+@@ -83,7 +84,9 @@ void RenderSurface::initialize() {
+ 
+     int status = native_window_api_connect(window, NATIVE_WINDOW_API_EGL);
+     ALOGE_IF(status != NO_ERROR, "Unable to connect BQ producer: %d", status);
+-    status = native_window_set_buffers_format(window, HAL_PIXEL_FORMAT_RGBA_8888);
++    status = native_window_set_buffers_format(window,
++                                              android::sysprop::native_window_buffers_format(
++                                                      HAL_PIXEL_FORMAT_RGBA_8888));
+     ALOGE_IF(status != NO_ERROR, "Unable to set BQ format to RGBA888: %d", status);
+     status = native_window_set_usage(window, DEFAULT_USAGE);
+     ALOGE_IF(status != NO_ERROR, "Unable to set BQ usage bits for GPU rendering: %d", status);
+diff --git a/services/surfaceflinger/SurfaceFlingerProperties.cpp b/services/surfaceflinger/SurfaceFlingerProperties.cpp
+index a5cea04b64..06aa39c220 100644
+--- a/services/surfaceflinger/SurfaceFlingerProperties.cpp
++++ b/services/surfaceflinger/SurfaceFlingerProperties.cpp
+@@ -78,6 +78,14 @@ int32_t max_graphics_height(int32_t defaultValue) {
+     return defaultValue;
+ }
+ 
++int32_t native_window_buffers_format(int32_t defaultValue) {
++    auto temp = SurfaceFlingerProperties::native_window_buffers_format();
++    if (temp.has_value()) {
++        return *temp;
++    }
++    return defaultValue;
++}
++
+ bool has_wide_color_display(bool defaultValue) {
+     auto temp = SurfaceFlingerProperties::has_wide_color_display();
+     if (temp.has_value()) {
+diff --git a/services/surfaceflinger/SurfaceFlingerProperties.h b/services/surfaceflinger/SurfaceFlingerProperties.h
+index 15cab93aba..f1e45914ca 100644
+--- a/services/surfaceflinger/SurfaceFlingerProperties.h
++++ b/services/surfaceflinger/SurfaceFlingerProperties.h
+@@ -111,6 +111,8 @@ int32_t resync_on_tx_timeout(int64_t defaultValue);
+ 
+ int32_t resync_on_choreographer_timeout(int64_t defaultValue);
+ 
++int32_t native_window_buffers_format(int32_t defaultValue);
++
+ } // namespace sysprop
+ } // namespace android
+ #endif // SURFACEFLINGERPROPERTIES_H_
+diff --git a/services/surfaceflinger/sysprop/SurfaceFlingerProperties.sysprop b/services/surfaceflinger/sysprop/SurfaceFlingerProperties.sysprop
+index cc96a616d3..95d391e288 100644
+--- a/services/surfaceflinger/sysprop/SurfaceFlingerProperties.sysprop
++++ b/services/surfaceflinger/sysprop/SurfaceFlingerProperties.sysprop
+@@ -556,3 +556,11 @@ prop {
+     access: Readonly
+     prop_name: "ro.surface_flinger.resync_on_choreographer_timeout"
+ }
++
++prop {
++    api_name: "native_window_buffers_format"
++    type: Integer
++    scope: Public
++    access: Readonly
++    prop_name: "ro.surface_flinger.native_window_buffers_format"
++}
+-- 
+2.47.3
+
