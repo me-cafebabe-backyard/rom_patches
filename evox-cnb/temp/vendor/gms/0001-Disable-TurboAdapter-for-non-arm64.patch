@@ -1,0 +1,30 @@
+From 6ae02a586406b7cdad10b4930e072278df738daf Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Tue, 15 Sep 2026 04:20:48 +0800
+Subject: [PATCH] Disable TurboAdapter for non-arm64
+
+TARGET module TurboAdapter requires non-existent TARGET module: libpowerstatshaldataprovider:64
+---
+ system_ext/packages/privileged_apps/TurboAdapter/Android.mk | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/system_ext/packages/privileged_apps/TurboAdapter/Android.mk b/system_ext/packages/privileged_apps/TurboAdapter/Android.mk
+index e04d255..3026670 100644
+--- a/system_ext/packages/privileged_apps/TurboAdapter/Android.mk
++++ b/system_ext/packages/privileged_apps/TurboAdapter/Android.mk
+@@ -18,6 +18,7 @@
+ 
+ LOCAL_PATH := $(call my-dir)
+ 
++ifneq ($(filter arm64,$(TARGET_ARCH)),)
+ include $(CLEAR_VARS)
+ LOCAL_MODULE := TurboAdapter
+ LOCAL_MODULE_TAGS := optional
+@@ -33,3 +34,4 @@ LOCAL_PRIVILEGED_MODULE := true
+ LOCAL_JNI_SHARED_LIBRARIES := libpowerstatshaldataprovider
+ LOCAL_MODULE_SUFFIX := $(COMMON_ANDROID_PACKAGE_SUFFIX)
+ include $(BUILD_PREBUILT)
++endif
+-- 
+2.47.3
+
