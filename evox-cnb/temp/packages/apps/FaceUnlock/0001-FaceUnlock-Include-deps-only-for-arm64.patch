@@ -1,0 +1,37 @@
+From dd576ad464b14579398a64eca746345c6768ec2f Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Mon, 14 Sep 2026 20:31:51 +0000
+Subject: [PATCH] FaceUnlock: Include deps only for arm64
+
+TARGET module FaceUnlock requires non-existent TARGET module: libFaceDetectCA
+TARGET module FaceUnlock requires non-existent TARGET module: libMegviiUnlock
+TARGET module FaceUnlock requires non-existent TARGET module: libMegviiUnlock-jni-1.2
+---
+ Android.bp | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/Android.bp b/Android.bp
+index 82a72ca..e8d0527 100644
+--- a/Android.bp
++++ b/Android.bp
+@@ -25,6 +25,8 @@ android_app {
+         "vendor.aospa.biometrics.face.impl",
+     ],
+ 
++arch: {
++arm64: {
+     required: [
+         "libFaceDetectCA",
+         "libmegface_faceunlock",
+@@ -35,6 +37,8 @@ android_app {
+         "privapp_whitelist_co.aospa.sense.xml",
+         "FaceUnlockOverlay",
+     ],
++},
++},
+ 
+     platform_apis: true,
+     privileged: true,
+-- 
+2.47.3
+
