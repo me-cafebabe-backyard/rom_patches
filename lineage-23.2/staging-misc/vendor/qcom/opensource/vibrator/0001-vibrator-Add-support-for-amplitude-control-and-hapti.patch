@@ -1,4 +1,4 @@
-From 27d95f7937ba20576c69c11aa4a8de57e1934c52 Mon Sep 17 00:00:00 2001
+From c52790b400ddec6da2c10d540199d073cd93be17 Mon Sep 17 00:00:00 2001
 From: Yumi Yukimura <me.cafebabe@gmail.com>
 Date: Wed, 19 Jun 2024 23:40:59 +0800
 Subject: [PATCH] vibrator: Add support for amplitude control and haptic
@@ -10,11 +10,11 @@ Change-Id: I0ece275c7935e5510c40d24cfb1f39638c148b3c
  aidl/VibratorOL/Vibrator.cpp         |  58 ++++++++-
  aidl/VibratorOL/Vibrator.h           |  14 +++
  aidl/VibratorOL/VibratorLedExtra.cpp | 177 +++++++++++++++++++++++++++
- 4 files changed, 244 insertions(+), 6 deletions(-)
+ 4 files changed, 245 insertions(+), 5 deletions(-)
  create mode 100644 aidl/VibratorOL/VibratorLedExtra.cpp
 
 diff --git a/aidl/VibratorOL/Android.bp b/aidl/VibratorOL/Android.bp
-index 219609f..ac98a74 100644
+index fb2d3d9..ac71a4c 100644
 --- a/aidl/VibratorOL/Android.bp
 +++ b/aidl/VibratorOL/Android.bp
 @@ -7,6 +7,7 @@ cc_library_shared {
@@ -26,17 +26,22 @@ index 219609f..ac98a74 100644
      ],
      shared_libs: [
 diff --git a/aidl/VibratorOL/Vibrator.cpp b/aidl/VibratorOL/Vibrator.cpp
-index 31bfe5c..4ec4f2d 100644
+index 4425021..6dba943 100644
 --- a/aidl/VibratorOL/Vibrator.cpp
 +++ b/aidl/VibratorOL/Vibrator.cpp
-@@ -399,9 +399,56 @@ LedVibratorDevice::LedVibratorDevice() {
+@@ -407,12 +407,61 @@ LedVibratorDevice::LedVibratorDevice() {
      if (fd < 0) {
          ALOGE("open %s failed, errno = %d", devicename, errno);
          return;
 +    } else {
 +        close(fd);
 +        mDetected = true;
-+    }
+     }
+ 
+     mDetected = true;
+ 
+     snprintf(devicename, sizeof(devicename), "%s/%s", LED_DEVICE, "device/driver");
+     mIsLdo = realpath(devicename, devicename) && strstr(devicename, "/qcom,qpnp-vibrator-ldo");
 +
 +    snprintf(devicename, sizeof(devicename), "%s/%s", LED_DEVICE, "vmax_mv");
 +    fd = open(devicename, O_RDWR);
@@ -80,14 +85,13 @@ index 31bfe5c..4ec4f2d 100644
 +        if (mEffectMsMultiplier > 0) {
 +            ALOGI("Effect ms multiplier is %d", mEffectMsMultiplier);
 +        }
-     }
- 
--    mDetected = true;
++    }
++
 +    return;
  }
  
  int LedVibratorDevice::write_value(const char *file, const char *value) {
-@@ -557,8 +604,7 @@ ndk::ScopedAStatus VibratorOL::getCapabilities(int32_t* _aidl_return) {
+@@ -568,8 +617,7 @@ ndk::ScopedAStatus VibratorOL::getCapabilities(int32_t* _aidl_return) {
      *_aidl_return = IVibrator::CAP_ON_CALLBACK;
  
      if (ledVib.mDetected) {
@@ -97,7 +101,7 @@ index 31bfe5c..4ec4f2d 100644
      }
  
      if (ff.mSupportGain)
-@@ -633,7 +679,7 @@ ndk::ScopedAStatus VibratorOL::perform(Effect effect, EffectStrength es, const s
+@@ -655,7 +703,7 @@ ndk::ScopedAStatus VibratorOL::perform(Effect effect, EffectStrength es, const s
      int ret;
  
      if (ledVib.mDetected)
@@ -106,7 +110,7 @@ index 31bfe5c..4ec4f2d 100644
  
      ALOGD("Vibrator perform effect %d", effect);
  
-@@ -672,7 +718,7 @@ ndk::ScopedAStatus VibratorOL::perform(Effect effect, EffectStrength es, const s
+@@ -694,7 +742,7 @@ ndk::ScopedAStatus VibratorOL::perform(Effect effect, EffectStrength es, const s
  
  ndk::ScopedAStatus VibratorOL::getSupportedEffects(std::vector<Effect>* _aidl_return) {
      if (ledVib.mDetected)
@@ -115,7 +119,7 @@ index 31bfe5c..4ec4f2d 100644
  
          if (Offload.mEnabled == 1) {
              *_aidl_return = {Effect::CLICK, Effect::DOUBLE_CLICK, Effect::TICK, Effect::THUD,
-@@ -703,7 +749,7 @@ ndk::ScopedAStatus VibratorOL::setAmplitude(float amplitude) {
+@@ -725,7 +773,7 @@ ndk::ScopedAStatus VibratorOL::setAmplitude(float amplitude) {
      int ret;
  
      if (ledVib.mDetected)
@@ -125,13 +129,13 @@ index 31bfe5c..4ec4f2d 100644
      if (!ff.mSupportGain)
          return ndk::ScopedAStatus(AStatus_fromExceptionCode(EX_UNSUPPORTED_OPERATION));
 diff --git a/aidl/VibratorOL/Vibrator.h b/aidl/VibratorOL/Vibrator.h
-index 0d45ff9..56fa150 100644
+index 1a4f22a..74259e6 100644
 --- a/aidl/VibratorOL/Vibrator.h
 +++ b/aidl/VibratorOL/Vibrator.h
-@@ -94,8 +94,22 @@ public:
-     int on(int32_t timeoutMs);
+@@ -95,8 +95,22 @@ public:
      int off();
      bool mDetected;
+     bool mIsLdo;
 +
 +    ndk::ScopedAStatus getCapabilities(int32_t* _aidl_return);
 +    ndk::ScopedAStatus perform(Effect effect, EffectStrength es,
