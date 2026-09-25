@@ -1,0 +1,33 @@
+From 2fd0eccc6536d86f8fa7c530adfebd58aef0b81c Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Sat, 19 Sep 2026 13:50:51 +0000
+Subject: [PATCH] SetupWizard: Show "Skip" button unconditionally
+
+Change-Id: I151748022bb5be70d24feb5f5e00f7f499e54d7a
+---
+ .../org/lineageos/setupwizard/widget/NavigationLayout.kt | 9 +--------
+ 1 file changed, 1 insertion(+), 8 deletions(-)
+
+diff --git a/app/src/main/java/org/lineageos/setupwizard/widget/NavigationLayout.kt b/app/src/main/java/org/lineageos/setupwizard/widget/NavigationLayout.kt
+index 85a1357..b0fadd3 100644
+--- a/app/src/main/java/org/lineageos/setupwizard/widget/NavigationLayout.kt
++++ b/app/src/main/java/org/lineageos/setupwizard/widget/NavigationLayout.kt
+@@ -35,14 +35,7 @@ class NavigationLayout(context: Context, attrs: AttributeSet) : RelativeLayout(c
+         FooterButtonStyleUtils.applyPrimaryButtonPartnerResource(context, nextButton, true)
+         FooterButtonStyleUtils.applySecondaryButtonPartnerResource(context, skipButton, true)
+ 
+-        val showSkipButton =
+-            context.theme.obtainStyledAttributes(attrs, R.styleable.NavigationLayout, 0, 0).use {
+-                it.getBoolean(R.styleable.NavigationLayout_showSkipButton, false)
+-            }
+-
+-        if (showSkipButton) {
+-            skipButton.visibility = View.VISIBLE
+-        }
++        skipButton.visibility = View.VISIBLE
+     }
+ 
+     fun setNavigationBarListener(listener: NavigationBarListener) {
+-- 
+2.47.3
+
