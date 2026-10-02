@@ -1,0 +1,132 @@
+From 88f19f62d5adc2e08e42575fcf848613e66f8f40 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Sat, 3 Oct 2026 00:36:51 +0800
+Subject: [PATCH 2/2] SetupWizard: Offer the wizard Skip on the TV welcome
+ screen
+
+The welcome Skip chip lives in the Glif layout, so leanback devices,
+which start on the TV locale list, never got one. List a Skip entry
+above the languages there, and drop the now-dead isSkipAvailable
+branches from WelcomeActivity.
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Change-Id: I14dcb3e1f546cd959ee6370d0509c74a9dae7f91
+---
+ .../lineageos/setupwizard/WelcomeActivity.kt  | 13 +----------
+ .../setupwizard/locale/LocaleActivity.kt      | 22 ++++++++++++++++++-
+ .../locale/WelcomeLocaleActivity.kt           |  2 ++
+ 3 files changed, 24 insertions(+), 13 deletions(-)
+
+diff --git a/app/src/main/java/org/lineageos/setupwizard/WelcomeActivity.kt b/app/src/main/java/org/lineageos/setupwizard/WelcomeActivity.kt
+index 2b897b6..ae81178 100644
+--- a/app/src/main/java/org/lineageos/setupwizard/WelcomeActivity.kt
++++ b/app/src/main/java/org/lineageos/setupwizard/WelcomeActivity.kt
+@@ -26,8 +26,6 @@ import org.lineageos.setupwizard.util.SetupWizardUtils
+ 
+ class WelcomeActivity : SubBaseActivity() {
+ 
+-    private val isSkipAvailable = true
+-
+     override fun onStartSubactivity() {
+         // no-op
+     }
+@@ -93,12 +91,7 @@ class WelcomeActivity : SubBaseActivity() {
+         val edgeMargin = backButtonMarginStart()
+         actionButtonContainer.updateLayoutParams<MarginLayoutParams> { marginEnd = edgeMargin }
+         infoButton.updateLayoutParams<MarginLayoutParams> {
+-            marginEnd =
+-                if (isSkipAvailable) {
+-                    resources.getDimensionPixelSize(R.dimen.welcome_top_button_spacing)
+-                } else {
+-                    edgeMargin
+-                }
++            marginEnd = resources.getDimensionPixelSize(R.dimen.welcome_top_button_spacing)
+         }
+     }
+ 
+@@ -112,10 +105,6 @@ class WelcomeActivity : SubBaseActivity() {
+ 
+     private fun setupSkipButton() {
+         val mixin = glifLayout.getMixin(FloatingActionButtonMixin::class.java)
+-        if (!isSkipAvailable) {
+-            mixin.visibility = View.GONE
+-            return
+-        }
+         mixin.visibility = View.VISIBLE
+         mixin.onClickListener =
+             View.OnClickListener { SetupWizardUtils.finishSetupWizard(this@WelcomeActivity) }
+diff --git a/app/src/main/java/org/lineageos/setupwizard/locale/LocaleActivity.kt b/app/src/main/java/org/lineageos/setupwizard/locale/LocaleActivity.kt
+index 65f8f20..e78f51c 100644
+--- a/app/src/main/java/org/lineageos/setupwizard/locale/LocaleActivity.kt
++++ b/app/src/main/java/org/lineageos/setupwizard/locale/LocaleActivity.kt
+@@ -35,6 +35,7 @@ import java.util.concurrent.Executors
+ import org.lineageos.setupwizard.R
+ import org.lineageos.setupwizard.SetupWizardApp
+ import org.lineageos.setupwizard.base.BaseSetupWizardActivity
++import org.lineageos.setupwizard.util.SetupWizardUtils
+ 
+ open class LocaleActivity : BaseSetupWizardActivity() {
+ 
+@@ -162,6 +163,9 @@ open class LocaleActivity : BaseSetupWizardActivity() {
+         val (suggested, remaining) = locales.partition { it.isSuggested }
+ 
+         val root = ItemGroup()
++        if (offersSetupSkip && !countryMode) {
++            root.addChild(skipItem())
++        }
+         suggested.forEach { root.addChild(localeItem(it, countryMode, it.id in expandable)) }
+ 
+         if (remaining.isNotEmpty()) {
+@@ -175,7 +179,10 @@ open class LocaleActivity : BaseSetupWizardActivity() {
+ 
+         val adapter = RecyclerItemAdapter(root)
+         adapter.setOnItemSelectedListener { item ->
+-            (item as? LocaleItem)?.let { onItemSelected(it) }
++            when (item) {
++                is LocaleItem -> onItemSelected(item)
++                is SkipItem -> SetupWizardUtils.finishSetupWizard(this)
++            }
+         }
+         itemAdapter = adapter
+         scrollItemsToTop()
+@@ -185,6 +192,17 @@ open class LocaleActivity : BaseSetupWizardActivity() {
+ 
+     protected open val separatesSuggestedLocales = true
+ 
++    /** Whether to list an entry that skips the whole setup wizard above the languages. */
++    protected open val offersSetupSkip = false
++
++    private fun skipItem() =
++        SkipItem().apply {
++            if (localeItemLayoutResId != 0) {
++                layoutResource = localeItemLayoutResId
++            }
++            title = getString(R.string.skip)
++        }
++
+     private fun localeItem(
+         localeInfo: LocaleStore.LocaleInfo,
+         countryMode: Boolean,
+@@ -282,6 +300,8 @@ open class LocaleActivity : BaseSetupWizardActivity() {
+         return telephonyManager.simLocale
+     }
+ 
++    private class SkipItem : Item()
++
+     private class LocaleItem(
+         val localeInfo: LocaleStore.LocaleInfo,
+         private val expandable: Boolean,
+diff --git a/app/src/main/java/org/lineageos/setupwizard/locale/WelcomeLocaleActivity.kt b/app/src/main/java/org/lineageos/setupwizard/locale/WelcomeLocaleActivity.kt
+index fdb3777..ace257f 100644
+--- a/app/src/main/java/org/lineageos/setupwizard/locale/WelcomeLocaleActivity.kt
++++ b/app/src/main/java/org/lineageos/setupwizard/locale/WelcomeLocaleActivity.kt
+@@ -32,4 +32,6 @@ class WelcomeLocaleActivity : LocaleActivity() {
+     override val localeItemLayoutResId = R.layout.tv_list_item
+ 
+     override val separatesSuggestedLocales = false
++
++    override val offersSetupSkip = true
+ }
+-- 
+2.47.3
+

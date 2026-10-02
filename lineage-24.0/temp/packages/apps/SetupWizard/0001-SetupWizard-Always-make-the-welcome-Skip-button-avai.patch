@@ -1,0 +1,39 @@
+From b60e46cebc4007df476abcb4ea21b9bdd17d0327 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Sat, 3 Oct 2026 00:36:08 +0800
+Subject: [PATCH 1/2] SetupWizard: Always make the welcome Skip button
+ available
+
+Previously it was only shown on eng builds.
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Change-Id: I4449f41a077b75d99b771c0193d183cfa71b3399
+---
+ .../main/java/org/lineageos/setupwizard/WelcomeActivity.kt    | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/app/src/main/java/org/lineageos/setupwizard/WelcomeActivity.kt b/app/src/main/java/org/lineageos/setupwizard/WelcomeActivity.kt
+index 9b80d62..2b897b6 100644
+--- a/app/src/main/java/org/lineageos/setupwizard/WelcomeActivity.kt
++++ b/app/src/main/java/org/lineageos/setupwizard/WelcomeActivity.kt
+@@ -6,7 +6,6 @@
+ package org.lineageos.setupwizard
+ 
+ import android.content.Intent
+-import android.os.Build
+ import android.os.Bundle
+ import android.util.TypedValue
+ import android.view.View
+@@ -27,8 +26,7 @@ import org.lineageos.setupwizard.util.SetupWizardUtils
+ 
+ class WelcomeActivity : SubBaseActivity() {
+ 
+-    private val isSkipAvailable: Boolean
+-        get() = Build.TYPE == "eng"
++    private val isSkipAvailable = true
+ 
+     override fun onStartSubactivity() {
+         // no-op
+-- 
+2.47.3
+
