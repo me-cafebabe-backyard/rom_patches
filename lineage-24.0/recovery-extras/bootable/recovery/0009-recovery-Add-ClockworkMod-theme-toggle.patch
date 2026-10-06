@@ -1,4 +1,4 @@
-From daf80d6164a001b93d95615f3249c38733a5795b Mon Sep 17 00:00:00 2001
+From 21a1096a7aa9a918c9abeb7fe8256f85abec09cc Mon Sep 17 00:00:00 2001
 From: Yumi Yukimura <me.cafebabe@gmail.com>
 Date: Tue, 8 Sep 2026 18:41:04 +0000
 Subject: [PATCH 09/14] recovery: Add ClockworkMod theme toggle

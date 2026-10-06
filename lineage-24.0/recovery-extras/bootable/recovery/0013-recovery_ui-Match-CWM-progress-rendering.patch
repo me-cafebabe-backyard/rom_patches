@@ -1,4 +1,4 @@
-From fad6d26aaef8265035fb66257108619e9b880e3e Mon Sep 17 00:00:00 2001
+From 1a7a42f50a67fbec298c4306a39720d9e1fe3b37 Mon Sep 17 00:00:00 2001
 From: Yumi Yukimura <me.cafebabe@gmail.com>
 Date: Wed, 9 Sep 2026 12:40:23 +0800
 Subject: [PATCH 13/14] recovery_ui: Match CWM progress rendering

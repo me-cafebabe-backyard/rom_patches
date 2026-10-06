@@ -1,4 +1,4 @@
-From f198dc87bb8f8e64f24ff8fabde887ce4f3d4c0f Mon Sep 17 00:00:00 2001
+From 4031fd0d936cb15f3ee5330fc390af49386fbc6b Mon Sep 17 00:00:00 2001
 From: Yumi Yukimura <me.cafebabe@gmail.com>
 Date: Wed, 9 Sep 2026 05:09:57 +0800
 Subject: [PATCH 11/14] recovery: Keep `RUN_GRAPHICS_TEST` option for userdebug

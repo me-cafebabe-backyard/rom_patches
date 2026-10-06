@@ -1,4 +1,4 @@
-From 359da9746fcf3bde28a4b302c51df5375206f80a Mon Sep 17 00:00:00 2001
+From 5ef4f0c7b78a11df173558ec1129b4c58228d21d Mon Sep 17 00:00:00 2001
 From: Yumi Yukimura <me.cafebabe@gmail.com>
 Date: Tue, 8 Sep 2026 17:36:18 +0000
 Subject: [PATCH 07/14] minui: Add RGBA (color_type 6) support to PngHandler

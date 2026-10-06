@@ -1,7 +1,7 @@
-From 247f4b64f30c865a31ca37f72886d3a4d41f388f Mon Sep 17 00:00:00 2001
+From 58049b2a728347da46a5b3cc94e6db3db88dbc90 Mon Sep 17 00:00:00 2001
 From: Yumi Yukimura <me.cafebabe@gmail.com>
 Date: Tue, 8 Sep 2026 20:29:06 +0000
-Subject: [PATCH 03/14] minui: Use XRGB8888 as DRM fallback
+Subject: [PATCH 05/14] minui: Use XRGB8888 as DRM fallback
 
 Assisted-by: OpenCode/openai/gpt-5.6-sol
 Change-Id: I2af9b525de1a64a387f2048663724371f00dd816

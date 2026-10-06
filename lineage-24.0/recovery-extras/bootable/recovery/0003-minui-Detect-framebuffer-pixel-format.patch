@@ -1,7 +1,7 @@
-From a8f9b1f625ed9d7e9a5746b8a8f1e930533d657d Mon Sep 17 00:00:00 2001
+From d8fb6ee0b4dc30b41469d6547e50e37ca896f8c2 Mon Sep 17 00:00:00 2001
 From: Yumi Yukimura <me.cafebabe@gmail.com>
 Date: Tue, 8 Sep 2026 20:23:53 +0000
-Subject: [PATCH 01/14] minui: Detect framebuffer pixel format
+Subject: [PATCH 03/14] minui: Detect framebuffer pixel format
 
 Assisted-by: OpenCode/openai/gpt-5.6-sol
 Change-Id: Ieca04524667296aafba3faa5e209b0dee8bf9c1b

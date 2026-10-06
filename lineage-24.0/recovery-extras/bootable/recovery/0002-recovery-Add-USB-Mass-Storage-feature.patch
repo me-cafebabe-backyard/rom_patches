@@ -1,7 +1,7 @@
-From f2dcb36c464c456fc08257dce9f38f23240383d5 Mon Sep 17 00:00:00 2001
+From 1eba1ddc561c425e1062d0c308605da3a02cc043 Mon Sep 17 00:00:00 2001
 From: Yumi Yukimura <me.cafebabe@gmail.com>
 Date: Fri, 23 May 2025 19:39:37 +0800
-Subject: [PATCH] [DNM] recovery: Add USB Mass Storage feature
+Subject: [PATCH 02/14] recovery: Add USB Mass Storage feature
 
 Change-Id: Id5c0bd12188cf8ed89501e7f6a252661cee9f28a
 ---
@@ -16,10 +16,10 @@ Change-Id: Id5c0bd12188cf8ed89501e7f6a252661cee9f28a
  create mode 100644 recovery-usb_mass_storage.cpp
 
 diff --git a/etc/init.rc b/etc/init.rc
-index 8369c96f..a1f45261 100644
+index 0475b388..91ad21e3 100644
 --- a/etc/init.rc
 +++ b/etc/init.rc
-@@ -205,6 +205,7 @@ on property:sys.usb.config=none && property:sys.usb.configfs=1
+@@ -196,6 +196,7 @@ on property:sys.usb.config=none && property:sys.usb.configfs=1
      stop fastbootd
      setprop sys.usb.ffs.ready 0
      rm /config/usb_gadget/g1/configs/b.1/f1
@@ -27,7 +27,7 @@ index 8369c96f..a1f45261 100644
      setprop sys.usb.state ${sys.usb.config}
  
  on property:sys.usb.config=sideload && property:sys.usb.ffs.ready=1 && property:sys.usb.configfs=1
-@@ -227,3 +228,11 @@ on property:sys.usb.config=fastboot && property:sys.usb.ffs.ready=1 && property:
+@@ -218,3 +219,11 @@ on property:sys.usb.config=fastboot && property:sys.usb.ffs.ready=1 && property:
      symlink /config/usb_gadget/g1/functions/ffs.fastboot /config/usb_gadget/g1/configs/b.1/f1
      write /config/usb_gadget/g1/UDC ${sys.usb.controller}
      setprop sys.usb.state ${sys.usb.config}
@@ -347,7 +347,7 @@ index 00000000..4064c9b5
 +  }
 +}
 diff --git a/recovery.cpp b/recovery.cpp
-index f769154c..3a83f076 100644
+index 44c7261f..19358cd7 100644
 --- a/recovery.cpp
 +++ b/recovery.cpp
 @@ -66,6 +66,8 @@
@@ -359,7 +359,7 @@ index f769154c..3a83f076 100644
  static constexpr const char* COMMAND_FILE = "/cache/recovery/command";
  static constexpr const char* LAST_KMSG_FILE = "/cache/recovery/last_kmsg";
  static constexpr const char* LAST_LOG_FILE = "/cache/recovery/last_log";
-@@ -649,6 +651,10 @@ change_menu:
+@@ -687,6 +689,10 @@ change_menu:
          break;
        }
  
@@ -371,10 +371,10 @@ index f769154c..3a83f076 100644
          return Device::KEY_INTERRUPTED;
      }
 diff --git a/recovery_main.cpp b/recovery_main.cpp
-index 91b2515a..8936f8e8 100644
+index 3dc4c400..90381cff 100644
 --- a/recovery_main.cpp
 +++ b/recovery_main.cpp
-@@ -218,7 +218,7 @@ static void copy_userdata_files() {
+@@ -217,7 +217,7 @@ static void copy_userdata_files() {
  }
  
  // Sets the usb config to 'state'.
@@ -384,7 +384,7 @@ index 91b2515a..8936f8e8 100644
    return android::base::WaitForProperty("sys.usb.state", state);
  }
 diff --git a/recovery_ui/device.cpp b/recovery_ui/device.cpp
-index a0f20127..21499099 100644
+index db357d72..ff9fb273 100644
 --- a/recovery_ui/device.cpp
 +++ b/recovery_ui/device.cpp
 @@ -35,6 +35,7 @@ static std::vector<menu_action_t> g_main_actions{
@@ -396,7 +396,7 @@ index a0f20127..21499099 100644
  
  static std::vector<std::string> g_advanced_header{ "Advanced options" };
 diff --git a/recovery_ui/include/recovery_ui/device.h b/recovery_ui/include/recovery_ui/device.h
-index 7517c44b..497ca422 100644
+index d33bda2d..047d7ba2 100644
 --- a/recovery_ui/include/recovery_ui/device.h
 +++ b/recovery_ui/include/recovery_ui/device.h
 @@ -73,6 +73,7 @@ class Device {
@@ -457,5 +457,5 @@ index 1ed0a4ef..6598626a 100644
    virtual int SetSwCallback(int code, int value) = 0;
  
 -- 
-2.39.5
+2.47.3
 

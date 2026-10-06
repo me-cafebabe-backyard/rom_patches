@@ -1,7 +1,7 @@
-From a4998a940e57c1cdc8296d3401ec3a3203bb6b91 Mon Sep 17 00:00:00 2001
+From 39fdca2789e27e8665dd8fb3204060fd72bc047a Mon Sep 17 00:00:00 2001
 From: Yumi Yukimura <me.cafebabe@gmail.com>
 Date: Thu, 20 Jun 2024 16:34:24 +0800
-Subject: [PATCH 1/2] sepolicy: qcom: Allow vibrator HAL to read
+Subject: [PATCH] sepolicy: qcom: Allow vibrator HAL to read
  `vendor.qcom.vibrator.` props
 
 Change-Id: Ic1bf798d9512740d755d13a38c2aff38c5dc5916
@@ -14,7 +14,6 @@ Change-Id: Ic1bf798d9512740d755d13a38c2aff38c5dc5916
  create mode 100644 qcom/vendor/hal_vibrator.te
  create mode 100644 qcom/vendor/property.te
  create mode 100644 qcom/vendor/property_contexts
- create mode 100644 qcom/vendor/vendor_init.te
 
 diff --git a/qcom/vendor/hal_vibrator.te b/qcom/vendor/hal_vibrator.te
 new file mode 100644
@@ -40,12 +39,12 @@ index 0000000..df39d3c
 +# Vibrator
 +vendor.qcom.vibrator.    u:object_r:vendor_qcom_vibrator_prop:s0
 diff --git a/qcom/vendor/vendor_init.te b/qcom/vendor/vendor_init.te
-new file mode 100644
-index 0000000..f5d5641
---- /dev/null
+index 98ae89e..968e009 100644
+--- a/qcom/vendor/vendor_init.te
 +++ b/qcom/vendor/vendor_init.te
-@@ -0,0 +1 @@
+@@ -1 +1,2 @@
 +set_prop(vendor_init, vendor_qcom_vibrator_prop)
+ set_prop(vendor_init, vendor_ssr_prop)
 -- 
 2.47.3
 

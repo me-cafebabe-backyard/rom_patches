@@ -1,7 +1,7 @@
-From 854887677f87ef963730d98ae6d37c3f68c13fc4 Mon Sep 17 00:00:00 2001
+From c6309070bd0d4978556d366eb896315931c8ead0 Mon Sep 17 00:00:00 2001
 From: Yumi Yukimura <me.cafebabe@gmail.com>
 Date: Tue, 8 Sep 2026 20:26:33 +0000
-Subject: [PATCH 02/14] minui: Support XRGB2101010 pixel format
+Subject: [PATCH 04/14] minui: Support XRGB2101010 pixel format
 
 Assisted-by: OpenCode/openai/gpt-5.6-sol
 Change-Id: I3fbdc66933122952d7909768638811efd34b0c89

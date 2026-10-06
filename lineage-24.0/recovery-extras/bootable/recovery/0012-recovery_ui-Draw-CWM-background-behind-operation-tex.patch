@@ -1,4 +1,4 @@
-From 7c9669e7da0c79582d9305e42484b600b3b6937a Mon Sep 17 00:00:00 2001
+From 436a1337be156170993e4d2b00c3999c501e8599 Mon Sep 17 00:00:00 2001
 From: Yumi Yukimura <me.cafebabe@gmail.com>
 Date: Tue, 8 Sep 2026 22:10:23 +0000
 Subject: [PATCH 12/14] recovery_ui: Draw CWM background behind operation text

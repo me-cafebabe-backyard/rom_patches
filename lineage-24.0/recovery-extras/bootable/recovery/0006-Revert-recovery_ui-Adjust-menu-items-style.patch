@@ -1,4 +1,4 @@
-From 574161125470dc93eb2a850105153ccc6b6a95c7 Mon Sep 17 00:00:00 2001
+From 5914a6f59798020ad6348d3d60c75ceaf0207a94 Mon Sep 17 00:00:00 2001
 From: Yumi Yukimura <me.cafebabe@gmail.com>
 Date: Wed, 9 Sep 2026 00:52:32 +0800
 Subject: [PATCH 06/14] Revert "recovery_ui: Adjust menu items style"
