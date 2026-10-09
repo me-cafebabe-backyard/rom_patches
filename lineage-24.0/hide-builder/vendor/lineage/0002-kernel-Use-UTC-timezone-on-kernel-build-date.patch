@@ -1,4 +1,4 @@
-From 1546a779f820af70c729277c8fe59c65213f2d26 Mon Sep 17 00:00:00 2001
+From e4a5042d2e14019aa78f62d7e9cd073b1338600f Mon Sep 17 00:00:00 2001
 From: Yumi Yukimura <me.cafebabe@gmail.com>
 Date: Fri, 14 Mar 2025 03:42:19 +0800
 Subject: [PATCH 2/2] kernel: Use UTC timezone on kernel build date
@@ -9,13 +9,13 @@ Change-Id: I764bc2da45766de70e8be44dd0161338c6b9e671
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/config/BoardConfigKernel.mk b/config/BoardConfigKernel.mk
-index fdf5688f..32692cf0 100644
+index ca1a52ad..254eba82 100644
 --- a/config/BoardConfigKernel.mk
 +++ b/config/BoardConfigKernel.mk
-@@ -140,7 +140,7 @@ endif
+@@ -141,7 +141,7 @@ endif
  
  # Clear these first to prevent accidental poisoning from env
- KERNEL_BAZEL_FLAGS :=
+ KERNEL_BAZEL_FLAGS := $(TARGET_KERNEL_BAZEL_FLAGS)
 -KERNEL_MAKE_FLAGS :=
 +KERNEL_MAKE_FLAGS := KBUILD_BUILD_TIMESTAMP="$(shell LC_ALL=C TZ=UTC date '+%a %b %e 00:00:00 %Z %Y')"
  
