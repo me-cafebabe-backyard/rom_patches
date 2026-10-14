@@ -1,0 +1,89 @@
+From c19f15c42021b463bc8ef17bec7b9ab4a717b086 Mon Sep 17 00:00:00 2001
+From: Yumi Yukimura <me.cafebabe@gmail.com>
+Date: Sun, 21 Jun 2026 22:23:46 +0800
+Subject: [PATCH] kernel: Add option to avoid rebuilding kernel everytimes
+
+Sometimes when we repeat making full builds for debugging non-kernel
+stuff, the kernel may won't really change, however the build system
+always has to rebuild the kernel thus adds a long delay, which is
+annoying.
+
+In that case, enable this option by setting the environment variable
+DO_NOT_REBUILD_KERNEL=true.
+
+The kernel image target depends on file_list.txt, which is regenerated
+on every build, and its recipe also stages the modules into the
+partition directories and appends them to file_list.txt. Dropping that
+dependency (as the previous version did) leaves the modules out of the
+images. Instead, keep the recipe running but skip only the kbuild
+invocations when a previous kernel and modules tree already exists.
+
+Change-Id: I8f6546e6b2f8f6c2b3bafd71659719b29d92fdfe
+---
+ build/tasks/kernel.mk | 25 +++++++++++++++++++------
+ 1 file changed, 19 insertions(+), 6 deletions(-)
+
+diff --git a/build/tasks/kernel.mk b/build/tasks/kernel.mk
+index 7a8aaf6c..7a7dc4cd 100644
+--- a/build/tasks/kernel.mk
++++ b/build/tasks/kernel.mk
+@@ -72,6 +72,9 @@
+ #   NEED_KERNEL_MODULE_VENDOR_OVERLAY  = Optional, if true, install kernel
+ #                                          modules in vendor_overlay instead of vendor
+ #
++#   DO_NOT_REBUILD_KERNEL              = Optional, environment variable; if true, skip
++#                                          kbuild when a previous kernel build exists
++#
+ #   TARGET_FORCE_PREBUILT_KERNEL       = Optional, use TARGET_PREBUILT_KERNEL even if
+ #                                          kernel sources are present
+ #   TARGET_PREBUILT_KERNEL_HEADERS     = Optional, if this is set, don't warn about prebuilt
+@@ -134,6 +137,16 @@ DTBS_OUT := $(DTB_OUT)/out
+ endif
+ KERNEL_CONFIG := $(KERNEL_OUT)/.config
+ KERNEL_RELEASE := $(KERNEL_OUT)/include/config/kernel.release
++
++# With DO_NOT_REBUILD_KERNEL=true, skip the kbuild invocations when a previous
++# build left a complete kernel and modules tree behind. The module staging and
++# file_list.txt bookkeeping still runs every time, since the image build
++# regenerates file_list.txt and wipes the partition staging dirs.
++ifeq ($(DO_NOT_REBUILD_KERNEL),true)
++KERNEL_SKIP_BUILD = [ -f $(TARGET_PREBUILT_INT_KERNEL) ] && [ -f $(KERNEL_RELEASE) ] && [ -d $(MODULES_INTERMEDIATES)/lib/modules ]
++else
++KERNEL_SKIP_BUILD = false
++endif
+ ifeq ($(BOARD_USES_QCOM_HARDWARE),true)
+ ifeq ($(call is-version-greater-or-equal,$(TARGET_KERNEL_VERSION),5.15),true)
+ ifeq ($(call is-version-lower-or-equal,$(TARGET_KERNEL_VERSION),6.1),true)
+@@ -521,23 +534,23 @@ $(KERNEL_CONFIG): $(ALL_KERNEL_DEFCONFIG_SRCS)
+ 
+ $(TARGET_PREBUILT_INT_KERNEL): $(KERNEL_CONFIG) $(DEPMOD) $(DTC) $(KERNEL_MODULES_PARTITION_FILE_LIST) $(SYSTEM_KERNEL_MODULES_PARTITION_FILE_LIST) $(BOOT_KERNEL_MODULES_FINDER) $(RECOVERY_KERNEL_MODULES_FINDER)
+ 	@echo "Building Kernel Image ($(BOARD_KERNEL_IMAGE_NAME))"
+-	$(call make-kernel-target,$(BOARD_KERNEL_IMAGE_NAME))
++	$(KERNEL_SKIP_BUILD) || $(call make-kernel-target,$(BOARD_KERNEL_IMAGE_NAME))
+ 	$(hide) if [ -d "$(KERNEL_SRC)/arch/$(KERNEL_ARCH)/boot/dts/" ]; then \
+ 			echo "Building DTBs"; \
+-			$(call make-kernel-target,dtbs); \
++			$(KERNEL_SKIP_BUILD) || $(call make-kernel-target,dtbs); \
+ 		fi
+ 	$(hide) if grep -q '=m' $(KERNEL_CONFIG); then \
+ 			echo "Building Kernel Modules"; \
+-			$(call make-kernel-target,modules) || exit "$$?"; \
++			$(KERNEL_SKIP_BUILD) || $(call make-kernel-target,modules) || exit "$$?"; \
+ 			echo "Installing Kernel Modules"; \
+-			$(call make-kernel-target,INSTALL_MOD_PATH=$(MODULES_INTERMEDIATES) INSTALL_MOD_STRIP=1 modules_install); \
++			$(KERNEL_SKIP_BUILD) || $(call make-kernel-target,INSTALL_MOD_PATH=$(MODULES_INTERMEDIATES) INSTALL_MOD_STRIP=1 modules_install); \
+ 			$(if $(TARGET_KERNEL_EXT_MODULES),\
+ 				echo "Building and Installing External Kernel Modules"; \
+ 				rpath=$$(python3 -c 'import os,sys;print(os.path.relpath(*(sys.argv[1:])))' $(TARGET_KERNEL_EXT_MODULE_ROOT) $(KERNEL_SRC)); \
+ 				$(foreach p, $(TARGET_KERNEL_EXT_MODULES),\
+ 					$$pwd; \
+-					$(call $(if $(filter $(word 2,$(subst :, ,$(p))),kbuild),make-kbuild-module-target,make-external-module-target),$(word 1,$(subst :, ,$(p))),$$rpath,) || exit "$$?";  \
+-					$(call $(if $(filter $(word 2,$(subst :, ,$(p))),kbuild),make-kbuild-module-target,make-external-module-target),$(word 1,$(subst :, ,$(p))),$$rpath,INSTALL_MOD_PATH=$(MODULES_INTERMEDIATES) INSTALL_MOD_STRIP=1 KERNEL_UAPI_HEADERS_DIR=$(KERNEL_OUT) modules_install)) || exit "$$?"; \
++					$(KERNEL_SKIP_BUILD) || $(call $(if $(filter $(word 2,$(subst :, ,$(p))),kbuild),make-kbuild-module-target,make-external-module-target),$(word 1,$(subst :, ,$(p))),$$rpath,) || exit "$$?";  \
++					$(KERNEL_SKIP_BUILD) || $(call $(if $(filter $(word 2,$(subst :, ,$(p))),kbuild),make-kbuild-module-target,make-external-module-target),$(word 1,$(subst :, ,$(p))),$$rpath,INSTALL_MOD_PATH=$(MODULES_INTERMEDIATES) INSTALL_MOD_STRIP=1 KERNEL_UAPI_HEADERS_DIR=$(KERNEL_OUT) modules_install)) || exit "$$?"; \
+ 			) \
+ 			kernel_release=$$(cat $(KERNEL_RELEASE)) \
+ 			kernel_modules_dir=$(MODULES_INTERMEDIATES)/lib/modules/$$kernel_release \
+-- 
+2.47.3
+
